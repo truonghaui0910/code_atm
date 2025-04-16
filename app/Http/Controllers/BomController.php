@@ -19,8 +19,10 @@ use TheSeer\Tokenizer\Exception;
 
 class BomController extends Controller {
 
-    public function __construct() {
-//        $this->middleware('auth');
+    protected $bomService;
+
+    public function __construct(BomService $bomService) {
+        $this->bomService = $bomService;
     }
 
     public function index(Request $request) {
@@ -191,15 +193,6 @@ class BomController extends Controller {
             if ($request->deezerId != null) {
 
                 $listDeezerId = explode("@;@", str_replace(array("\r\n", "\n"), "@;@", trim($request->deezerId)));
-
-//                if (count($listDeezerId) == 1) {
-//                    if ($request->songName == null) {
-//                        return response()->json(array("status" => "error", "message" => "Song Name is invalid"));
-//                    }
-//                    if ($request->artist == null) {
-//                        return response()->json(array("status" => "error", "message" => "Artist is invalid"));
-//                    }
-//                }
                 $fail = 0;
                 $success = 0;
                 foreach ($listDeezerId as $dzid) {
@@ -231,35 +224,13 @@ class BomController extends Controller {
                             continue;
                         }
                     }
-//                    Log::info("deezerId $deezerId");
-//                if (is_numeric($request->deezerId)) {
-//                    $deezerId = $request->deezerId;
-//                } else {
-//                    if (!Utils::containString($request->deezerId, "deezer.com")) {
-//                        return response()->json(array("status" => "error", "message" => "You must enter deezer link"));
-//                    }
-//                    preg_match("/track\/(\d+)/", $request->deezerId, $matches);
-//                    if (count($matches) == 2) {
-//                        $deezerId = $matches[1];
-//                    }
-//                    if ($deezerId == null) {
-//                        return response()->json(array("status" => "error", "message" => "Deezer link is invalid"));
-//                    }
-//                }
+
                     $isLyric = 0;
                     $isSync = 0;
                     $isrc = null;
                     $songTitle = null;
                     $songArtist = null;
-//                    //check bai hat da co lyric va da download mp3 ve system chua
-//                    $temp = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?format=json&check_lyric=$deezerId");
-//                    $checkLyric = json_decode($temp);
-//                    if (!empty($checkLyric->lyric_status)) {
-//                        $isLyric = $checkLyric->lyric_status;
-//                    }
-//                    if (!empty($checkLyric->song_status)) {
-//                        $isSync = $checkLyric->song_status;
-//                    }
+
                     //check bài hát dã đươc download về hệ thống chưa
                     if ($isSync == 0) {
                         //nếu chưa được down thì thực hiện download
@@ -267,18 +238,6 @@ class BomController extends Controller {
                         $res = RequestHelper::getRequest("http://source.automusic.win/deezer/track/get/$deezerId");
                         Log::info("download $res");
 
-//                        if ($res != null && $res != "") {
-//                            $response = json_decode($res);
-//                            $isrc = $response->isrc;
-//                            $songTitle = $response->title;
-//                            $songArtist = $response->artist;
-//                            $isSync = 1;
-//                            if ($response->lyric_sync != "" && $response->lyric_sync != "null" && $response->lyric_sync != null) {
-//                                $isLyric = 1;
-//                            }
-//                        } else {
-//                            continue;
-//                        }
                     }
 
                     $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$deezerId");
@@ -2354,6 +2313,10 @@ class BomController extends Controller {
                         "message" => "Not found Artist"
             ]);
         }
+        $instruments = [];
+        if (!empty($request->instruments)) {
+            $instruments = explode(",", $request->instruments);
+        }
 
         $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
         $pathPublic = public_path("images/album_covers/");
@@ -2378,6 +2341,7 @@ class BomController extends Controller {
             $album->release_date = $request->releaseDate ?? null;
             $album->album_cover = $direct;
             $album->created = Utils::timeToStringGmT7(time());
+            $album->instruments = json_encode($instruments);
             $album->save();
             return response()->json([
                         'status' => "success",
@@ -2441,6 +2405,50 @@ class BomController extends Controller {
         } else {
             $upc = $albumDb->upc;
         }
+        $participants = [
+                [
+                "id" => null,
+                "name" => $albumDb->artist,
+                "role" => "Main Artist",
+                "sort_order" => 0
+            ],
+                [
+                "id" => null,
+                "name" => "James Dunn",
+                "role" => "Composer",
+                "sort_order" => 1
+            ],
+                [
+                "id" => null,
+                "name" => "James Dunn",
+                "role" => "Songwriter",
+                "sort_order" => 2
+            ],
+                [
+                "id" => "119",
+                "name" => "SoundHex",
+                "role" => "Producer",
+                "sort_order" => 3
+            ],
+                [
+                "id" => null,
+                "name" => $albumDb->artist,
+                "role" => "Performer",
+                "sort_order" => 4
+            ]
+        ];
+        if (!empty($albumDb->instruments)) {
+            foreach (json_decode($albumDb->instruments) as $idx => $ins) {
+                $idxs = $idx + 5;
+                $participants[] = [
+                    "id" => null,
+                    "name" => $albumDb->artist,
+                    "role" => $ins,
+                    "sort_order" => $idxs
+                ];
+            }
+        }
+
         $album = (object) [
                     "format" => $format,
                     "upc" => $upc,
@@ -2459,26 +2467,7 @@ class BomController extends Controller {
                     "metadata_language" => "English",
                     "primary_genre" => $albumDb->genre_id,
                     "secondary_genre" => null,
-                    "participants" => [
-                            [
-                            "id" => null,
-                            "name" => $albumDb->artist,
-                            "role" => "Main Artist",
-                            "sort_order" => 0
-                        ],
-                            [
-                            "id" => "119",
-                            "name" => "SoundHex",
-                            "role" => "Producer",
-                            "sort_order" => 1
-                        ],
-                            [
-                            "id" => null,
-                            "name" => $albumDb->artist,
-                            "role" => "Composer",
-                            "sort_order" => 2
-                        ]
-                    ],
+                    "participants" => $participants,
                     "cover_image" => $albumDb->album_cover
         ];
 
@@ -2513,26 +2502,7 @@ class BomController extends Controller {
                         "audio_language" => "English",
                         "primary_genre" => $albumDb->genre_id,
                         "secondary_genre" => null,
-                        "participants" => [
-                                [
-                                "id" => null,
-                                "name" => $albumDb->artist,
-                                "role" => "Main Artist",
-                                "sort_order" => 0
-                            ],
-                                [
-                                "id" => "119",
-                                "name" => "SoundHex",
-                                "role" => "Producer",
-                                "sort_order" => 1
-                            ],
-                                [
-                                "id" => null,
-                                "name" => $albumDb->artist,
-                                "role" => "Composer",
-                                "sort_order" => 2
-                            ]
-                        ],
+                        "participants" => $participants,
                         "audio_url" => $track->direct_wav
             ];
             $tracks[] = $temp;
@@ -2598,9 +2568,9 @@ class BomController extends Controller {
         $query = DB::table('bom_albums as a')
                 ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
                 ->select(
-                        'a.id', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', DB::raw('GROUP_CONCAT(b.id) as songs')
+                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', DB::raw('GROUP_CONCAT(b.id) as songs')
                 )
-                ->groupBy('a.id', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist');
+                ->groupBy('a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist');
         $query->where('a.status', 1);
         // Nếu có id thì chỉ lấy album đó
         if (!empty($albumId)) {
@@ -2695,19 +2665,42 @@ class BomController extends Controller {
 
     public function albumAddArtist(Request $request) {
         $user = Auth::user();
+        Log::info("$user->user_name|BomController.albumAddArtist|request=" . json_encode($request->all()));
         if (!isset($request->artist_name)) {
             return response()->json(["status" => "success", "message" => "Artist can not be empty"]);
         }
-        $data = BomArtist::where("artist_name", trim($request->artist_name))->first();
-        if (!$data) {
-            $data = new BomArtist();
-            $data->username = $user->user_name;
-            $data->artist_name = trim($request->artist_name);
-            $data->created = Utils::timeToStringGmT7(time());
-            $data->save();
-            return response()->json(["status" => "success", "message" => "Success"]);
+        $artist_name = trim($request->artist_name);
+        $edit_album_id = $request->edit_album_id;
+        if ($edit_album_id) {
+            $bomArtist = BomArtist::find($request->artist_id);
+            if (!$bomArtist) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Album not found'
+                ]);
+            }
+
+            $bomArtist->artist_name = $artist_name;
+            $bomArtist->save();
+            //sửa tên bài artist ở bảng bom_artits
+            BomAlbum::where("id", $edit_album_id)->update(["artist" => $artist_name]);
+            Bom::where("album_id", $edit_album_id)->update(["artist" => $artist_name]);
+            return response()->json([
+                        'status' => 'success',
+                        'message' => 'Artist name updated successfully'
+            ]);
+        } else {
+            $data = BomArtist::where("artist_name", $artist_name)->first();
+            if (!$data) {
+                $data = new BomArtist();
+                $data->username = $user->user_name;
+                $data->artist_name = trim($request->artist_name);
+                $data->created = Utils::timeToStringGmT7(time());
+                $data->save();
+                return response()->json(["status" => "success", "message" => "Success"]);
+            }
+            return response()->json(["status" => "error", "message" => "Artist is already exists"]);
         }
-        return response()->json(["status" => "error", "message" => "Artist is already exists"]);
     }
 
     public function updateAlbumReleaseDate(Request $request) {
@@ -2733,9 +2726,9 @@ class BomController extends Controller {
                             "message" => "The release date must be at least 7 days from today."
                 ]);
             }
+            $album->release_date = $request->release_date;
         }
 
-        $album->release_date = $request->release_date;
         $album->save();
         return response()->json(["status" => "success", "message" => "Release date updated successfully"]);
     }
@@ -2747,7 +2740,7 @@ class BomController extends Controller {
         if (!$album) {
             return response()->json(["status" => "error", "message" => "Not found album"]);
         }
-        $album->status = $request->status;
+        $album->distro_status = $request->status;
         $album->distro_log = $request->log;
         if ($album->status == 5) {
             $album->distro_release_date = gmdate("Y-m-d", time());
@@ -2899,6 +2892,50 @@ class BomController extends Controller {
             }
         }
         return null;
+    }
+
+    //kiểm tra xem artist đã có trên spotify chưa
+    public function checkAlbumArtist(Request $request) {
+        try {
+            $artistName = $request->input('artist_name');
+
+            // Basic validation
+            if (empty(trim($artistName))) {
+                return response()->json(['status' => 'invalid', 'message' => 'Artist name cannot be empty']);
+            }
+
+            if (strlen($artistName) < 2) {
+                return response()->json(['status' => 'invalid', 'message' => 'Artist name is too short']);
+            }
+
+            if (preg_match('/[<>\/\\\\]/', $artistName)) {
+                return response()->json(['status' => 'invalid', 'message' => 'Artist name contains invalid characters']);
+            }
+
+            // Call Spotify API to check if artist exists
+            $encodedArtistName = urlencode($artistName);
+            $url = "http://source.automusic.win/spotify/search/custom/{$encodedArtistName}/artist";
+
+            $response = file_get_contents($url);
+            $data = json_decode($response, true);
+
+            // Check if artist exists on Spotify
+            if (isset($data['artists']) && isset($data['artists']['items'])) {
+                foreach ($data['artists']['items'] as $artist) {
+                    if (strtolower($artist['name']) === strtolower($artistName)) {
+                        return response()->json([
+                                    'status' => 'invalid',
+                                    'message' => 'This artist already exists on Spotify.'
+                        ]);
+                    }
+                }
+            }
+
+            // If we get here, the artist name is valid
+            return response()->json(['status' => 'valid', 'message' => 'Artist name is valid']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Error checking artist: ' . $e->getMessage()]);
+        }
     }
 
 }

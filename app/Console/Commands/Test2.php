@@ -755,9 +755,44 @@ class Test2 extends Command {
                 $json["rewards"]["views"] = $accountInfo->view_count;
                 $json["rewards_given"] = false;
             }
-            $accountInfo->epid_extra_data  = $json;
+            $accountInfo->epid_extra_data = $json;
             $accountInfo->save();
             error_log("$idx $accountInfo->id");
+        }
+    }
+
+    public function updateUserToHub() {
+        $users = ["truongpv_1515486846"
+,"hoadev_1492490931"
+,"huymusic_1527129950"
+,"manhmusic_1554824317"
+,"sangmusic_1568953186"
+,"hiepmusic_1596599107"
+,"ketmusic_1596599202"
+,"quynhanhmusic_1607051529"
+,"nhungmusic_1607051554"
+,"thuymusic_1607051628"
+,"jamesmusic_1638329193"
+,"quocgiangmusic_1649304730"
+,"darrell_1651207695"
+,"tungtt_1659410238"
+,"chrismusic_1638329193"
+,"hieumusic_1527129950"
+,"uyenmusic_1527129950"
+,"yenmusic_1527129950"
+,"nhimusic_1527129950"
+,"hanmusic_1527129950"
+,"hangmusic_1527129950"];
+        $channels = AccountInfo::where("del_status", 1)->whereRaw("chanel_id NOT LIKE ?", ['%@%'])->whereNotNull("gologin")->whereIn("user_name",$users)->get();
+        $total = count($channels);
+        $i = 0;
+        foreach ($channels as $channel) {
+            $i++;
+            $username = Utils::getUserFromUserCode($channel->user_name);
+            $url = "http://api-magicframe.automusic.win/hub/fix-update/$channel->chanel_id/$username";
+            error_log("$i/$total $url");
+            RequestHelper::callAPI2("GET", $url, []);
+
         }
     }
 

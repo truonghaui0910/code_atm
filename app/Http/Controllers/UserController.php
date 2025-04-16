@@ -342,5 +342,10 @@ class UserController extends Controller {
         }
         return response()->json(["is_valid" => false, "message" => "token is invalid"]);
     }
+    
+    public function listUser(){
+        $user = User::where("status",1)->where("role","like","%16%")->pluck("user_name");
+        return response()->json($user);
+    }
 
 }

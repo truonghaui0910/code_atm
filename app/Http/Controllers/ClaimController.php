@@ -68,7 +68,7 @@ class ClaimController extends Controller {
         if ($request->is_admin_music) {
             $datas = $datas->get();
         } else {
-            $datas = $datas->where("username",$user->user_name)->get();
+            $datas = $datas->where("username", $user->user_name)->get();
 //            $datas = $datas->where(function ($query) use ($user) {
 //                        $query->where('username', $user->user_name)
 //                                ->orWhereNull('username');
@@ -2799,25 +2799,104 @@ class ClaimController extends Controller {
         $viewMonth_0 = DB::select("SELECT video_id,sum(views_real_daily) as views FROM `athena_promo_sync` WHERE date >= $dateFrom and date < $dateTo group by video_id");
         $viewMonth25_0 = DB::select("SELECT video_id,sum(views_real_daily) as views FROM `athena_promo_sync` WHERE date > $dateFrom25 and date <= $dateTo25 group by video_id");
 
+        $distributors = [
+            'Orchard' => [
+                'tax_percent' => 30,
+                'artist_percent' => 20,
+                'cost_percent' => 30,
+                'bass_percent' => 30
+            ],
+            'AdRev' => [
+                'tax_percent' => 30,
+                'artist_percent' => 0,
+                'cost_percent' => 20,
+                'bass_percent' => 30
+            ],
+            'Cygnus' => [
+                'tax_percent' => 0,
+                'artist_percent' => 35,
+                'cost_percent' => 10,
+                'bass_percent' => 30
+            ],
+            'Tunecore_Heddo' => [
+                'tax_percent' => 0,
+                'artist_percent' => 30,
+                'cost_percent' => 10,
+                'bass_percent' => 30
+            ],
+            'Indiy' => [
+                'tax_percent' => 0,
+                'artist_percent' => 50,
+                'cost_percent' => 10,
+                'bass_percent' => 30
+            ],
+            'SME' => [
+                'tax_percent' => 0,
+                'artist_percent' => 0,
+                'cost_percent' => 10,
+                'bass_percent' => 30
+            ],
+            'Orchard_UrbanoVibe' => [
+                'tax_percent' => 30,
+                'artist_percent' => 50,
+                'cost_percent' => 10,
+                'bass_percent' => 30
+            ],
+            '51st_State' => [
+                'tax_percent' => 15,
+                'artist_percent' => 50,
+                'cost_percent' => 10,
+                'bass_percent' => 30
+            ],
+            'WMG/Sparta' => [
+                'tax_percent' => 20,
+                'artist_percent' => 40,
+                'cost_percent' => 10,
+                'bass_percent' => 30
+            ],
+            'AdRev_Indiy' => [
+                'tax_percent' => 0,
+                'artist_percent' => 50,
+                'cost_percent' => 10,
+                'bass_percent' => 30
+            ],
+            'Orchard_Indiy' => [
+                'tax_percent' => 0,
+                'artist_percent' => 50,
+                'cost_percent' => 10,
+                'bass_percent' => 30
+            ]
+        ];
+
         $revenue = CampaignClaimRev::where("period", $period)->where("type", 1)->get();
 
         foreach ($revenue as $rev) {
             foreach ($claims as $claim) {
                 if ($rev->campaign_id == $claim->id) {
-                    //từ tháng 3/2024 tăng cost lên 30%
-                    $costPercent = $claim->cost_percent;
-                    if ($claim->distributor == "Orchard" && $request->period >= '202403') {
-                        $costPercent = 30;
+
+                    $distributorName = $claim->distributor;
+                    if (isset($distributors[$distributorName])) {
+                        $distributorConfig = $distributors[$distributorName];
+                        $rev->tax_percent = $distributorConfig['tax_percent'];
+                        $rev->artist_percent = $distributorConfig['artist_percent'];
+                        $rev->cost_percent = $distributorConfig['cost_percent'];
+                        $rev->bass_percent = $distributorConfig['bass_percent'];
+                    } else {
+                        // Nếu không tìm thấy, sử dụng giá trị từ claim
+                        $rev->tax_percent = $claim->tax_percent;
+                        $rev->bass_percent = $claim->bass_percent;
+                        $rev->artist_percent = $claim->artist_percent;
+                        $rev->cost_percent = $claim->cost_percent;
                     }
-                    $rev->tax_percent = $claim->tax_percent;
-                    $rev->bass_percent = $claim->bass_percent;
-                    $rev->artist_percent = $claim->artist_percent;
-                    $rev->cost_percent = $costPercent;
+                    //từ tháng 3/2024 tăng cost lên 30%
+                    if ($claim->distributor == "Orchard" && $request->period >= '202403') {
+                        $rev->cost_percent = 30;
+                    }
 
                     $tax = $rev->tax_percent * $rev->revenue / 100;
                     $afterTax = $rev->revenue - $tax;
                     $artist = $rev->artist_percent * $afterTax / 100;
-                    $cost = $costPercent * $afterTax / 100;
+                    $cost = $rev->cost_percent * $afterTax / 100;
                     //số tiền thực nhận
                     $rev->received = $rev->revenue - ($tax + $artist);
                     //lợi nhuận để tính % chi trả cho bassteam
@@ -2829,10 +2908,10 @@ class ClaimController extends Controller {
                     //chi phí khác
                     $rev->cost = $cost;
                     //bassteam sẽ nhận dc 95% của 30% profit
-                    $rev->bass_money = 0.95 * $rev->profit * $claim->bass_percent / 100;
+                    $rev->bass_money = 0.95 * $rev->profit * $rev->bass_percent / 100;
                     //devteam sẽ nhận dc 5% của 30% của profit
-                    $rev->dev_money = 0.05 * $rev->profit * $claim->bass_percent / 100;
-                    //lợi nhuận của admin
+                    $rev->dev_money = 0.05 * $rev->profit * $rev->bass_percent / 100;
+                    //lợi nhuận của admin, dc tính cả cost vào
                     $rev->admin_profit = $rev->revenue - ($tax + $artist + $rev->bass_money + $rev->dev_money);
                 }
             }
@@ -2969,7 +3048,7 @@ class ClaimController extends Controller {
         //tính tiền mỗi claim
         if (isset($request->distributor)) {
             if ($request->distributor == 'Indiy') {
-                $distributors = ['51st_State', 'Indiy', 'Orchard_Indiy','AdRev_Indiy'];
+                $distributors = ['51st_State', 'Indiy', 'Orchard_Indiy', 'AdRev_Indiy'];
             } else {
                 $distributors = [];
                 $distributors[] = $request->distributor;
@@ -2978,18 +3057,34 @@ class ClaimController extends Controller {
         } else {
             $claimsViews = ClaimsViews::where("period", $period)->get();
         }
+        $processedCampaigns = [];
         foreach ($claimsViews as $claimView) {
             $claimView->created = Utils::timeToStringGmT7(time());
             $claimView->save();
             $claimView->revenue = 0;
             $claimView->bass_money = 0;
             $claimView->dev_money = 0;
+            $claimView->is_primary = 0;
             foreach ($revenue as $rev) {
                 if ($rev->period == $period && $rev->campaign_id == $claimView->campaign_id) {
                     $claimView->revenue = $rev->revenue;
-                    $claimView->bass_money = $rev->bass_money;
-                    $claimView->dev_money = $rev->dev_money;
-                    $claimView->profit = $rev->admin_profit;
+                    // Áp dụng logic is_primary
+                    if (!isset($processedCampaigns[$rev->campaign_id])) {
+                        // Nếu chưa xử lý, đây là bản ghi đầu tiên, gán toàn bộ giá trị
+                        $claimView->bass_money = $rev->bass_money;
+                        $claimView->dev_money = $rev->dev_money;
+                        $claimView->is_primary = 1; // Đánh dấu là bản ghi chính
+                        // Đánh dấu campaign này đã được xử lý
+                        $processedCampaigns[$rev->campaign_id] = true;
+                    } else {
+                        // Nếu đã xử lý, gán giá trị 0
+                        $claimView->bass_money = 0;
+                        $claimView->dev_money = 0;
+                    }
+
+//                    $claimView->bass_money = $rev->bass_money;
+//                    $claimView->dev_money = $rev->dev_money;
+                    $claimView->profit = $rev->profit;
                     $claimView->received = $rev->received;
                     $claimView->save();
 //                    Log::info(json_encode($claimView));
@@ -3031,11 +3126,6 @@ class ClaimController extends Controller {
             }
         }
 
-//        SELECT a.distributor,sum(a.revenue), SUM(a.bass_money), SUM(a.dev_money)
-//FROM (select  distinct campaign_id,distributor,revenue,bass_money,dev_money from claims_views 
-//WHERE `distributor` = 'Orchard' and period =202305) a
-//group by a.distributor
-
         $message = "caculateClaims|pid=$pid|period=$period,timeAll=" . (time() - $startTime);
         Log::info($message);
         RequestHelper::callAPI("GET", $tele . urlencode($message), []);
@@ -3059,12 +3149,12 @@ class ClaimController extends Controller {
         if ($request->is_supper_admin) {
             $datas = DB::select("SELECT a.period,SUM(if(a.revenue is not null, 1, 0)) AS claim ,sum(a.revenue) as revenue,
                             sum(a.received) as received,sum(a.profit) as profit, SUM(a.bass_money) as bass_money, SUM(a.dev_money) as dev_money
-                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where 1=1 $condition) a
+                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where is_primary = 1 $condition) a
                             group by a.period");
         } else {
             $datas = DB::select("SELECT a.period,SUM(if(a.revenue is not null, 1, 0)) AS claim ,0 as revenue,
                             0 as received,0 as profit,SUM(a.bass_money) as bass_money, SUM(a.dev_money) as dev_money
-                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where 1=1 $condition) a
+                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where is_primary = 1 $condition) a
                             group by a.period");
         }
         $listPays = CampaignClaimRevStatus::where("rev_type", $revType)->get();
@@ -3112,7 +3202,7 @@ class ClaimController extends Controller {
             if ($request->type == 5) {
                 $condition = " and distributor = 'AdRev' ";
             } elseif ($request->type == 6) {
-                $condition = " and distributor in ('Orchard_Indiy','51st_State','Indiy')";
+                $condition = " and distributor in ('Orchard_Indiy','51st_State','Indiy','AdRev_Indiy')";
             }
         }
 
@@ -3132,12 +3222,13 @@ class ClaimController extends Controller {
         }
 
         $devUser = DB::select("SELECT a.period,SUM(a.dev_money) as dev_money
-                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where period= ? $condition) a
+                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where period= ? and is_primary = 1 $condition) a
                             group by a.period", [$request->period]);
 
         $dataUser = DB::select("select username as user_name,role,
                                 sum(claim_view_money) as views_money,
-                                sum((claim_view_money / claim_view_money_total * bass_money)) as money  
+
+                                sum((CASE WHEN is_primary = 1 THEN claim_view_money / claim_view_money_total * bass_money ELSE 0 END)) as money 
                                 from claims_views where period = ? and claim_view_money_total > 0 $condition
                                 group by username,role order by money desc", [$request->period]);
 
@@ -3423,7 +3514,7 @@ class ClaimController extends Controller {
 
         //nếu không tồn tại file mp4 hoặc là yêu cầu làm mới lại từ đầu
         if (count(glob($video)) <= 0 || $request->remake == 1) {
-            if($claim->short_text != null){
+            if ($claim->short_text != null) {
                 $shortText = json_decode($claim->short_text);
                 $shortText->video_id = null;
                 $shortText->gmail = null;

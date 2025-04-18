@@ -501,6 +501,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/sendAlbumToSalad', 'BomController@sendAlbumToSalad')->name('sendAlbumToSalad');
         Route::get('/updateAlbumReleaseDate', 'BomController@updateAlbumReleaseDate')->name('updateAlbumReleaseDate');
         Route::get('/scanAlbum', 'BomController@scanAlbum')->name('scanAlbum');
+        Route::get('/album/check/artist', 'BomController@checkAlbumArtist')->name('checkAlbumArtist');
 
         Route::get('/intros', 'IntroController@index')->name('intros');
         Route::post('/introsStore', 'IntroController@store')->name('introsStore');
@@ -1101,6 +1102,8 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
     Route::get('/channel/epid/rewards', 'ChannelManagementController@epidRewards')->name('epidRewards');
     
     Route::get('/getChannelByHash', 'ChannelManagementController@getChannelByHash')->name('getChannelByHash');
+    
+    Route::get('/listUser', 'UserController@listUser')->name('listUser');
 });
 
 

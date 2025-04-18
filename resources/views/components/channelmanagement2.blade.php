@@ -3981,10 +3981,10 @@
             document.getElementById('search_channel').value = input.value;
 
             // Tự động submit sau khi người dùng ngừng gõ 500ms
-            clearTimeout(input.timer);
-            input.timer = setTimeout(() => {
-                $("#form-search").submit();
-            }, 500);
+//            clearTimeout(input.timer);
+//            input.timer = setTimeout(() => {
+//                $("#form-search").submit();
+//            }, 500);
 
             // Nếu nhấn Enter thì submit ngay
             if (event.key === 'Enter') {

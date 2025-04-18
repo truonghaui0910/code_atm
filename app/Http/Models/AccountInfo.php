@@ -38,7 +38,7 @@ class AccountInfo extends Model {
             self::STATUS_EPID_OFF => 'Off'
         ];
 
-        return $statusLabels[$this->epid_status] ?? 'Không xác định';
+        return $statusLabels[$this->epid_status] ?? 'Unknown';
     }
 
     public function getExtraValue($key, $default = null) {

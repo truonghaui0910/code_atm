@@ -40,30 +40,103 @@
                                                     <input type="text" class="form-control" id="albumTitle" name='albumTitle' placeholder="Enter album title" required>
                                                 </div>
 
-<!--                                                <div class="form-group">
-                                                    <label for="albumArtist">Artist/Band <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="albumArtist" name='albumArtist' placeholder="Artist or band name" required>
-                                                </div>-->
-
-
-                                                <div class="form-group">
-                                                    <label >Artist <span class="color-red">*</span> <span onclick="modalAddArtist()"><i class="fa fa-plus-circle color-red"
-                                                                                                                                       style="font-size: 20px;"></i></span></label>
-                                                    <div>
-                                                        <select id="albumArtist" class="albumArtist form-control" name="albumArtist" class="select2_multiple form-control search_select" 
-                                                                data-show-subtext="true" 
-                                                                data-live-search="true"
-                                                                data-size="5" data-container="body">
-                                                        </select>  
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label >Artist <span class="color-red">*</span> <span onclick="modalAddArtist()"><i class="fa fa-plus-circle color-red"
+                                                                                                                                               style="font-size: 20px;"></i></span></label>
+                                                            <div>
+                                                                <select id="albumArtist" name="albumArtist" class="albumArtist select2_multiple form-control search_select" 
+                                                                        data-show-subtext="true" 
+                                                                        data-live-search="true"
+                                                                        data-size="5" data-container="body">
+                                                                </select>  
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                        <label >Instrument </label>
+                                                        <div>
+                                                            <select id="instruments"
+                                                                    multiple=""
+                                        
+                                                                    name="instruments" 
+                                                                    class="select2_multiple form-control search_select" 
+                                                                    data-show-subtext="true" 
+                                                                    data-live-search="true"
+                                                                    data-size="5" data-container="body">
+                                                                <!--<option value="" selected disabled>Select instrument</option>-->
+                                                                <option value="Guitar">Guitar</option>
+                                                                <option value="Electric Guitar">Electric Guitar</option>
+                                                                <option value="Acoustic Guitar">Acoustic Guitar</option>
+                                                                <option value="Bass Guitar">Bass Guitar</option>
+                                                                <option value="Double Bass">Double Bass</option>
+                                                                <option value="Violin">Violin</option>
+                                                                <option value="Viola">Viola</option>
+                                                                <option value="Cello">Cello</option>
+                                                                <option value="Harp">Harp</option>
+                                                                <option value="Ukulele">Ukulele</option>
+                                                                <option value="Piano">Piano</option>
+                                                                <option value="Electric Piano">Electric Piano</option>
+                                                                <option value="Keyboard">Keyboard</option>
+                                                                <option value="Synthesizer">Synthesizer</option>
+                                                                <option value="Organ">Organ</option>
+                                                                <option value="Harpsichord">Harpsichord</option>
+                                                                <option value="Flute">Flute</option>
+                                                                <option value="Clarinet">Clarinet</option>
+                                                                <option value="Saxophone">Saxophone</option>
+                                                                <option value="Oboe">Oboe</option>
+                                                                <option value="Bassoon">Bassoon</option>
+                                                                <option value="Trumpet">Trumpet</option>
+                                                                <option value="Trombone">Trombone</option>
+                                                                <option value="French Horn">French Horn</option>
+                                                                <option value="Tuba">Tuba</option>
+                                                                <option value="Cornet">Cornet</option>
+                                                                <option value="Drums">Drums</option>
+                                                                <option value="Snare Drum">Snare Drum</option>
+                                                                <option value="Bass Drum">Bass Drum</option>
+                                                                <option value="Cymbals">Cymbals</option>
+                                                                <option value="Tambourine">Tambourine</option>
+                                                                <option value="Bongos">Bongos</option>
+                                                                <option value="Cajon">Cajon</option>
+                                                                <option value="Congas">Congas</option>
+                                                                <option value="Djembe">Djembe</option>
+                                                                <option value="Timpani">Timpani</option>
+                                                                <option value="Drum Machine">Drum Machine</option>
+                                                                <option value="Sampler">Sampler</option>
+                                                                <option value="Synth Bass">Synth Bass</option>
+                                                                <option value="Modular Synth">Modular Synth</option>
+                                                                <option value="Turntables">Turntables</option>
+                                                                <option value="Vocoder">Vocoder</option>
+                                                                <option value="Loop Station">Loop Station</option>
+                                                                <option value="Sequencer">Sequencer</option>
+                                                                <option value="Theremin">Theremin</option>
+                                                                <option value="Sound Effects">Sound Effects</option>
+                                                                <option value="Lead Vocals">Lead Vocals</option>
+                                                                <option value="Background Vocals">Background Vocals</option>
+                                                                <option value="Harmony Vocals">Harmony Vocals</option>
+                                                                <option value="Rap">Rap</option>
+                                                                <option value="DJ">DJ</option>
+                                                                <option value="Electronic Instrument">Electronic Instrument</option>
+                                                                <option value="Electronic Music Ensemble">Electronic Music Ensemble</option>
+                                                                <option value="Beatbox">Beatbox</option>
+                                                                <option value="Pipa">Pipa</option>
+                                                                <option value="Đàn Tranh">Đàn Tranh</option>
+                                                                <option value="Erhu">Erhu</option>
+                                                                <option value="Dizi">Dizi</option>
+                                                                <option value="Shakuhachi">Shakuhachi</option>
+                                                                <option value="Koto">Koto</option>
+                                                                <option value="Sarangi">Sarangi</option>
+                                                                <option value="Sitar">Sitar</option>
+                                                                <option value="Tabla">Tabla</option>
+                                                                <option value="Kora">Kora</option>
+                                                            </select>  
+                                                        </div>
+                                                </div>
                                                     </div>
                                                 </div>
-
-
-<!--                                                <div class="form-group">
-                                                    <label for="albumDescription">Description</label>
-                                                    <textarea class="form-control" id="albumDescription" name='albumDescription' rows="3" placeholder="Enter album description"></textarea>
-                                                </div>-->
-
+  
                                                 <div class="row">
                                                     <div class="col-md-6">
                                                         <div class="form-group">

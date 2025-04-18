@@ -2007,6 +2007,10 @@ $listCampignid=[];
                 $("#btn-reload-claim").attr("onclick",`editCampaign(${id},0)`);
                 $(".btn-check-claim").attr("onclick",`checkclaim(${id})`);
                 console.log(data);
+                if(data.moonshots!=null){
+                    $(".btn-login-channel").html(`<a href="${data.moonshots}" target="_blank"><i class="fas fa-sign-in-alt"></i></a>`);
+                    
+                }
                 if(data.short_text!=null){
                     var shortText = JSON.parse(data.short_text);
                     $("#yt_artist").val(JSON.stringify(shortText.artists));
@@ -2016,6 +2020,7 @@ $listCampignid=[];
                         $(".btn-video-remove").html(`<i class="fa fa-refresh color-red" onclick="checkclaim(${id},1)"></i>`);
                         $(".btn-video-checked").html(`<a href="https://www.youtube.com/watch?v=${shortText.video_id}" target="_blank"><i class="fa fa-share"></i></a>`);
                     }
+                    
 
                 }
                 $("#asset_id").val(data.asset_id);

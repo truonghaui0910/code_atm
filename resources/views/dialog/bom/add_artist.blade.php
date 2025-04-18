@@ -27,6 +27,8 @@
             <div id="content-dialog" class="modal-body">
                 <form id="form-add-artist" method="POST">
                     {{ csrf_field() }}
+                    <input type="hidden" id="edit_album_id" name="edit_album_id" value="">
+                    <input type="hidden" id="artist_id" name="artist_id" value="">
                     <div class="add_new_group_list  fadeInDown">
                         <div class="col-md-12">
                             <div class="form-group row">
@@ -35,16 +37,17 @@
                                     <input id="artist_name" class="form-control" type="text" name="artist_name" value="">
                                 </div>
                             </div>
-<!--                            <div class="form-group row">
-                                <label class="col-8 col-form-label">Description</label>
-                                <div class="col-12">
-                                    <textarea id="group_des" class="form-control" rows="5" name="group_des" spellcheck="false" placeholder=""
-                                        style="line-height: 1.25;height: 100px"></textarea>
+                            <div class="form-group row">
+                                <div class="col-12 d-flex">
+                                    <button type="button" id="check-artist-name-btn" class="btn btn-secondary btn-sm mr-2">
+                                        <i class="fas fa-check"></i> Check
+                                    </button>
+                                    <div id="artist-validation-feedback" class="ml-2 d-flex align-items-center"></div>
                                 </div>
-                            </div>-->
+                            </div>
 
                             <button data-toggle="tooltip" data-placement="top" data-original-title="" type="button"
-                                class="btn float-right" onclick="addArtist()"><i class="fa fa-save"></i> Save</button>
+                                class="btn float-right btn-save-artist" onclick="addArtist()"><i class="fa fa-save"></i> Save</button>
                         </div>
                     </div>
                    

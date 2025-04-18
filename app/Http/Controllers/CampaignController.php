@@ -1846,6 +1846,16 @@ class CampaignController extends Controller {
         }
         $data->number_comment = $numberComment;
         $data->number_comment_finish = $numberFinishedComment;
+
+        //lấy thông tin kênh để đăng nhâp moonshots trên editcampaign
+        $data->moonshots = null;
+        if (!empty($data->short_text)) {
+            $shortText = json_decode($data->short_text);
+            if (!empty($shortText->gmail)) {
+                $acc = AccountInfo::where("note", $shortText->gmail)->first();
+                $data->moonshots = "AutoProfile://profile/login/?id=$acc->gologin&gmail=$acc->note&hash_id=$acc->hash_pass";
+            }
+        }
         return $data;
     }
 
@@ -3564,7 +3574,7 @@ class CampaignController extends Controller {
                             "views_mix" => $views_mix,
                             "views_short" => $views_short,
                             "views_money_total" => $views_money_total,
-                            "money" => round($moneyForBass,1),
+                            "money" => round($moneyForBass, 1),
                             "genre" => $campaign->genre,
                             "type" => $camType["$campaign->type"],
                 ];

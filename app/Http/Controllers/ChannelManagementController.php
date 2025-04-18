@@ -1656,9 +1656,9 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         $data = AccountInfo::where("id", $request->id)->first();
         if ($data) {
             $thumbItem = ProxyHelper::get("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$data->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyB0QH1MoohfCLR746NU5hNffzGPMDMAAxQ");
-            Log::info($thumbItem);
+//            Log::info($thumbItem);
             $items = json_decode($thumbItem);
-            Log::info($items->items[0]->snippet->thumbnails->medium->url);
+//            Log::info($items->items[0]->snippet->thumbnails->medium->url);
             if (!empty($items->items[0]->snippet->thumbnails->medium->url)) {
                 $thumb = $items->items[0]->snippet->thumbnails->medium->url;
                 Log::info($thumb);

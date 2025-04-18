@@ -429,11 +429,12 @@
                                                                                                                                             </div>
                                                                                                                                             <div class="col-md-4">
                                                                                                                                                 <div class="form-group row">
-                                                                                                                                                    <div style="width: 100%;display: flex;justify-content: space-between;align-items: center;">
-                                                                                                                                                        <label class="col-6 col-form-label">YT Song Name <i class="fa fa-copy" onclick="copyText('yt_songname')"></i></label>
-                                                                                                                                                        <div class="d-flex">
+                                                                                                                                                    <div class="col-12 w-100p d-flex justify-content-between align-items-center">
+                                                                                                                                                        <label class="col-6 col-form-label w-80p">YT Song Name <i class="fa fa-copy" onclick="copyText('yt_songname')"></i></label>
+                                                                                                                                                        <div class="d-flex justify-content-end w-20p">
                                                                                                                                                             <label class="col-6 col-form-label btn-video-remove text-right"></label>
                                                                                                                                                             <label class="col-6 col-form-label btn-video-checked text-right"></label>
+                                                                                                                                                            <label class="col-6 col-form-label btn-login-channel text-right"></label>
                                                                                                                                                         </div>
                                                                                                                                                     </div>
                                                                                                                                                     <div class="col-12">

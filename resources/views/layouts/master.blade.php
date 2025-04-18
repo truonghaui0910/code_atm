@@ -55,7 +55,7 @@
     <link href="assets/plugins/textarea-highlight/jquery.highlight-within-textarea.css" rel="stylesheet"
         type="text/css" />
     <link href="css/daterangepicker.css" rel="stylesheet">
-    <link href="css/style.css?version=1.150" rel="stylesheet" type="text/css">
+    <link href="css/style.css?version=1.151" rel="stylesheet" type="text/css">
 
     <script src="assets/js/modernizr.min.js"></script>
 

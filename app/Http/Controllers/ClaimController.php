@@ -3057,34 +3057,18 @@ class ClaimController extends Controller {
         } else {
             $claimsViews = ClaimsViews::where("period", $period)->get();
         }
-        $processedCampaigns = [];
         foreach ($claimsViews as $claimView) {
             $claimView->created = Utils::timeToStringGmT7(time());
             $claimView->save();
             $claimView->revenue = 0;
             $claimView->bass_money = 0;
             $claimView->dev_money = 0;
-            $claimView->is_primary = 0;
             foreach ($revenue as $rev) {
                 if ($rev->period == $period && $rev->campaign_id == $claimView->campaign_id) {
                     $claimView->revenue = $rev->revenue;
-                    // Áp dụng logic is_primary
-                    if (!isset($processedCampaigns[$rev->campaign_id])) {
-                        // Nếu chưa xử lý, đây là bản ghi đầu tiên, gán toàn bộ giá trị
-                        $claimView->bass_money = $rev->bass_money;
-                        $claimView->dev_money = $rev->dev_money;
-                        $claimView->is_primary = 1; // Đánh dấu là bản ghi chính
-                        // Đánh dấu campaign này đã được xử lý
-                        $processedCampaigns[$rev->campaign_id] = true;
-                    } else {
-                        // Nếu đã xử lý, gán giá trị 0
-                        $claimView->bass_money = 0;
-                        $claimView->dev_money = 0;
-                    }
-
-//                    $claimView->bass_money = $rev->bass_money;
-//                    $claimView->dev_money = $rev->dev_money;
-                    $claimView->profit = $rev->profit;
+                    $claimView->bass_money = $rev->bass_money;
+                    $claimView->dev_money = $rev->dev_money;
+                    $claimView->profit = $rev->admin_profit;
                     $claimView->received = $rev->received;
                     $claimView->save();
 //                    Log::info(json_encode($claimView));
@@ -3149,12 +3133,12 @@ class ClaimController extends Controller {
         if ($request->is_supper_admin) {
             $datas = DB::select("SELECT a.period,SUM(if(a.revenue is not null, 1, 0)) AS claim ,sum(a.revenue) as revenue,
                             sum(a.received) as received,sum(a.profit) as profit, SUM(a.bass_money) as bass_money, SUM(a.dev_money) as dev_money
-                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where is_primary = 1 $condition) a
+                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where 1=1 $condition) a
                             group by a.period");
         } else {
             $datas = DB::select("SELECT a.period,SUM(if(a.revenue is not null, 1, 0)) AS claim ,0 as revenue,
                             0 as received,0 as profit,SUM(a.bass_money) as bass_money, SUM(a.dev_money) as dev_money
-                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where is_primary = 1 $condition) a
+                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where 1=1 $condition) a
                             group by a.period");
         }
         $listPays = CampaignClaimRevStatus::where("rev_type", $revType)->get();
@@ -3222,13 +3206,12 @@ class ClaimController extends Controller {
         }
 
         $devUser = DB::select("SELECT a.period,SUM(a.dev_money) as dev_money
-                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where period= ? and is_primary = 1 $condition) a
+                            FROM (select distinct campaign_id,period,revenue,received,profit,bass_money,dev_money from claims_views where period= ? $condition) a
                             group by a.period", [$request->period]);
 
         $dataUser = DB::select("select username as user_name,role,
                                 sum(claim_view_money) as views_money,
-
-                                sum((CASE WHEN is_primary = 1 THEN claim_view_money / claim_view_money_total * bass_money ELSE 0 END)) as money 
+                                sum((claim_view_money / claim_view_money_total * bass_money)) as money  
                                 from claims_views where period = ? and claim_view_money_total > 0 $condition
                                 group by username,role order by money desc", [$request->period]);
 

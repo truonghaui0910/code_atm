@@ -344,7 +344,7 @@ class UserController extends Controller {
     }
     
     public function listUser(){
-        $user = User::where("status",1)->where("role","like","%16%")->pluck("user_name");
+        $user = User::where("status",1)->where("role","like","%26%")->pluck("user_name");
         return response()->json($user);
     }
 

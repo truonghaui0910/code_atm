@@ -19,11 +19,10 @@ use TheSeer\Tokenizer\Exception;
 
 class BomController extends Controller {
 
-    protected $bomService;
-
-    public function __construct(BomService $bomService) {
-        $this->bomService = $bomService;
-    }
+//    protected $bomService;
+//    public function __construct(BomService $bomService) {
+//        $this->bomService = $bomService;
+//    }
 
     public function index(Request $request) {
         DB::enableQueryLog();
@@ -173,6 +172,343 @@ class BomController extends Controller {
         $user = Auth::user();
         Log::info($user->user_name . '|BomController.store|request=' . json_encode($request->all()));
         $curr = gmdate("Y/m/d H:i:s", time() + 7 * 3600);
+
+        if ($request->genre == '-1') {
+            return response()->json(array("status" => "error", "message" => "Please select the Genre"));
+        }
+        if ($request->deezerId == null && $request->localId == null) {
+            return response()->json(array("status" => "error", "message" => "Enter Deezer Link/Id or Local Id"));
+        }
+        if ($request->deezerId != null && $request->localId != null) {
+            return response()->json(array("status" => "error", "message" => "You can only enter the Deezer Link/Id or the Local Id"));
+        }
+
+        $listAllSong = [];
+        $localId = null;
+        $isrc = null;
+        $deezerId = null;
+        $results = [];
+
+        // Thêm mới
+        if ($request->bom_id == null) {
+            if ($request->deezerId != null) {
+                $listDeezerId = explode("@;@", str_replace(array("\r\n", "\n"), "@;@", trim($request->deezerId)));
+                $fail = 0;
+                $success = 0;
+
+                foreach ($listDeezerId as $dzid) {
+                    $result = (object) [
+                                "status" => 2,
+                                "deezer" => $dzid,
+                                "song_name" => "",
+                                "artist" => "",
+                                "is_lyric" => 0
+                    ];
+
+                    $deezerId = null;
+                    if (is_numeric($dzid)) {
+                        $deezerId = $dzid;
+                    } else {
+                        if (!Utils::containString($dzid, "deezer.com")) {
+                            $fail++;
+                            $result->status = 3;
+                            $results[] = $result;
+                            continue;
+                        }
+                        preg_match("/track\/(\d+)/", $dzid, $matches);
+                        if (count($matches) == 2) {
+                            $deezerId = $matches[1];
+                        }
+                        if ($deezerId == null) {
+                            $result->status = 3;
+                            $results[] = $result;
+                            $fail++;
+                            continue;
+                        }
+                    }
+
+                    // Kiểm tra xem bài hát đã tồn tại chưa
+                    $check = Bom::where("deezer_id", $deezerId)->where("status", 1)->first();
+                    if ($check) {
+                        $listAllSong[] = $check->id;
+                        $fail++;
+                        $result->status = 2;
+                        $result->bom_id = $check->id;
+                        $results[] = $result;
+                        continue;
+                    }
+
+                    // Lấy thông tin cơ bản từ API
+                    $trackInfo = $this->getBasicTrackInfo($deezerId);
+
+                    // Tạo bản ghi Bom mới với giá trị mặc định
+                    $bom = new Bom();
+                    $bom->username = $user->user_name;
+                    $bom->genre = $request->genre;
+                    $bom->song_name = $trackInfo['song_name'] ?? "";
+                    $bom->deezer_id = $deezerId;
+                    $bom->local_id = $localId;
+                    $bom->artist = $trackInfo['artist'] ?? "";
+                    $bom->social = $request->social;
+                    $bom->deezer_artist_id = $request->deezerArtistId;
+                    $bom->created = $curr;
+                    $bom->created_timestamp = time();
+                    $bom->count = 0;
+                    $bom->lyric = $trackInfo['lyric'] ?? 0;
+                    $bom->sync = $trackInfo['sync'] ?? 0;
+                    $bom->isrc = $trackInfo['isrc'] ?? null;
+                    $bom->status = 1;
+                    $bom->log = "$curr $user->user_name added to the system";
+                    $bom->save();
+
+
+                    $success++;
+                    $result->status = 1;
+                    $result->bom_id = $bom->id;
+                    $result->song_name = $bom->song_name;
+                    $result->artist = $bom->artist;
+                    $result->is_lyric = $bom->lyric;
+                    $results[] = $result;
+                    $listAllSong[] = $bom->id;
+                }
+
+                // Thêm vào các nhóm
+                $bomGroups = BomGroups::whereIn("id", $request->local_group)->get();
+                foreach ($bomGroups as $bGroup) {
+                    $listSong = [];
+                    if ($bGroup->list_song != null) {
+                        $listSong = json_decode($bGroup->list_song);
+                    }
+                    $mergedArray = array_merge($listSong, $listAllSong);
+                    $uniqueArray = array_unique($mergedArray);
+                    $uniqueArray = array_values($uniqueArray);
+                    $bGroup->list_song = json_encode($uniqueArray);
+                    $bGroup->save();
+                }
+
+                return response()->json(array("status" => "success", "message" => "Success $success", "results" => $results));
+            } else if ($request->localId != null) {
+                // Xử lý thêm bài hát local (giữ nguyên code)
+                if ($request->songName == null) {
+                    return response()->json(array("status" => "error", "message" => "Song Name is invalid"));
+                }
+                if ($request->artist == null) {
+                    return response()->json(array("status" => "error", "message" => "Artist is invalid"));
+                }
+                $isLyric = 1;
+                $isSync = 1;
+                $localId = trim($request->localId);
+                $check = Bom::where("local_id", $localId)->first();
+                if (!$check) {
+                    $bom = new Bom();
+                    $bom->username = $user->user_name;
+                    $bom->genre = $request->genre;
+                    $bom->song_name = $request->songName;
+                    $bom->deezer_id = $deezerId;
+                    $bom->local_id = $localId;
+                    $bom->artist = $request->artist;
+                    $bom->social = $request->social;
+                    $bom->deezer_artist_id = $request->deezerArtistId;
+                    $bom->created = $curr;
+                    $bom->created_timestamp = time();
+                    $bom->count = 0;
+                    $bom->lyric = $isLyric;
+                    $bom->sync = $isSync;
+                    $bom->isrc = $isrc;
+                    $bom->status = 1;
+                    $bom->log = "$curr $user->user_name added to the system";
+                    $bom->save();
+                    $listAllSong[] = $bom->id;
+                } else {
+                    return response()->json(array("status" => "error", "message" => "The song " . ($deezerId != null ? $deezerId : $localId) . " was added to the system by $check->username at $check->created"));
+                }
+                // Thêm vào group 
+                $bomGroups = BomGroups::whereIn("id", $request->local_group)->get();
+                foreach ($bomGroups as $bGroup) {
+                    $listSong = [];
+                    if ($bGroup->list_song != null) {
+                        $listSong = json_decode($bGroup->list_song);
+                    }
+                    $mergedArray = array_merge($listSong, $listAllSong);
+                    $uniqueArray = array_unique($mergedArray);
+                    $uniqueArray = array_values($uniqueArray);
+                    $bGroup->list_song = json_encode($uniqueArray);
+                    $bGroup->save();
+                }
+            }
+        } else {
+            // Xử lý chỉnh sửa (giữ nguyên code cũ)
+            $bom = Bom::find($request->bom_id);
+            if (!$bom) {
+                return response()->json(array("status" => "error", "message" => "Not found Bom Id $request->bom_id"));
+            }
+            if ($bom->album_id != null) {
+                return response()->json(array("status" => "error", "message" => "This song has been distributed, you cannot edit it."));
+            }
+            $deezerId = null;
+            if ($request->deezerId != null) {
+                if (is_numeric($request->deezerId)) {
+                    $deezerId = $request->deezerId;
+                } else {
+                    if (!Utils::containString($request->deezerId, "deezer.com")) {
+                        return response()->json(array("status" => "error", "message" => "You must enter deezer link"));
+                    }
+                    preg_match("/track\/(\d+)/", $request->deezerId, $matches);
+                    if (count($matches) == 2) {
+                        $deezerId = $matches[1];
+                    }
+                    if ($deezerId == null) {
+                        return response()->json(array("status" => "error", "message" => "Deezer link is invalid"));
+                    }
+                }
+            }
+            if ($request->songName == null) {
+                return response()->json(array("status" => "error", "message" => "Song Name is invalid"));
+            }
+            if ($request->artist == null) {
+                return response()->json(array("status" => "error", "message" => "Artist is invalid"));
+            }
+            $songName = trim($request->songName);
+            $artist = trim($request->artist);
+            $localId = trim($request->localId);
+            //2024/11/15 update bài hát mà có localid hoăc deezerid thì set lyric ok, sync ok
+            if (isset($request->localId) || isset($request->deezerId)) {
+                if (trim($request->localId) != $bom->local_id || $bom->deezer_id != $deezerId) {
+                    $bom->sync = 1;
+                    $bom->lyric = 1;
+                }
+            }
+            $bom->local_id = $localId;
+            $bom->deezer_id = $deezerId;
+            $bom->genre = $request->genre;
+            $bom->song_name = $songName;
+            $bom->artist = $artist;
+            $bom->social = $request->social;
+            $bom->log = $bom->log . PHP_EOL . "$curr $user->user_name update to the system";
+            //2024/12/05 update thông tin lên timestamp
+            $header = array(
+                'Authorization: Token 783667efd4d78e99c9b38de66eca82c5246cf6ee',
+                'Content-Type: application/json'
+            );
+
+            if (isset($request->deezerId)) {
+                //lấy thông tin bài deezer trên hệ thống timestamp
+                $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$deezerId");
+                if ($trackRes != null && $trackRes != "") {
+                    $track = json_decode($trackRes);
+                    if ($track->count > 0) {
+                        if (!empty($track->results[0])) {
+                            $timestampId = $track->results[0]->id;
+                            $data = (object) [
+                                        "title" => $songName,
+                                        "title_short" => $songName,
+                                        "artist" => $artist,
+                                        "deezer_id" => $deezerId,
+                                        "id" => $timestampId
+                            ];
+                            RequestHelper::callAPI2("PUT", "http://54.39.49.17:6132/api/tracks/$timestampId/", $data, $header);
+                        }
+                    }
+                }
+            }
+            if (isset($request->localId)) {
+                $data = (object) [
+                            "title" => $songName,
+                            "artist" => $artist,
+                            "id" => $localId
+                ];
+                RequestHelper::callAPI2("PUT", "https://cdn.soundhex.com/api/v1/timestamp/$localId/", $data, array('Content-Type: application/json'));
+            }
+            $bom->save();
+        }
+        return response()->json(array("status" => "success", "message" => "Success"));
+    }
+
+    // Hàm mới để lấy thông tin cơ bản của track
+    private function getBasicTrackInfo($deezerId) {
+        $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$deezerId");
+        $trackInfo = [
+            'isrc' => null,
+            'song_name' => null,
+            'artist' => null,
+            'lyric' => 0,
+            'sync' => 0
+        ];
+
+        if ($trackRes != null && $trackRes != "") {
+            $track = json_decode($trackRes);
+            if ($track->count > 0 && !empty($track->results[0])) {
+                $trackInfo['isrc'] = $track->results[0]->isrc;
+                $trackInfo['song_name'] = $track->results[0]->title;
+                $trackInfo['artist'] = $track->results[0]->artist;
+                if ($track->results[0]->lyric_sync != "" && $track->results[0]->lyric_sync != "null" && $track->results[0]->lyric_sync != null) {
+                    $trackInfo['lyric'] = 1;
+                }
+                if ($track->results[0]->url_128 != "") {
+                    $trackInfo['sync'] = 1;
+                }
+            }
+        }
+
+        return $trackInfo;
+    }
+
+    // Thêm hàm mới để xử lý tải xuống trong background
+    public function processDeezerDownload(Bom $bom) {
+        $deezerId = $bom->deezer_id;
+
+        if (empty($deezerId)) {
+            error_log("noclaimSync Cannot process download for Bom ID: {$bom->id} - No Deezer ID");
+            return ['success' => false, 'message' => 'No Deezer ID'];
+        }
+        $curr = gmdate("Y/m/d H:i:s", time() + 7 * 3600);
+
+        // Kiểm tra nếu đã đồng bộ rồi thì không cần thực hiện lại
+        if ($bom->sync == 1) {
+            return ['success' => true, 'message' => 'Already synced'];
+        }
+
+        // Thực hiện tải xuống
+        error_log("noclaimSync Downloading Deezer track: http://source.automusic.win/deezer/track/get/$deezerId");
+        $res = RequestHelper::getRequest("http://source.automusic.win/deezer/track/get/$deezerId");
+        error_log("noclaimSync Download result: $res");
+
+        // Lấy thông tin bài hát sau khi tải xuống
+        $trackInfo = $this->getBasicTrackInfo($deezerId);
+
+        // Cập nhật thông tin bài hát trong database nếu có dữ liệu
+        if ($trackInfo['song_name'] !== null) {
+            $bom->isrc = $trackInfo['isrc'];
+            $bom->song_name = $trackInfo['song_name'];
+            $bom->artist = $trackInfo['artist'];
+            $bom->lyric = $trackInfo['lyric'];
+            $bom->sync = $trackInfo['sync'];
+            $bom->log = $bom->log . PHP_EOL . "$curr Downloaded and synced";
+            $bom->save();
+            return [
+                'success' => true,
+                'message' => 'Synced successfully',
+                'track_info' => $trackInfo
+            ];
+        } else {
+            // Cập nhật số lần thử lại nếu không lấy được thông tin
+            $bom->retry = ($bom->retry ?? 0) + 1;
+            $bom->log = $bom->log . PHP_EOL . "$curr Download attempt failed - retry count: {$bom->retry}";
+            $bom->save();
+
+            error_log("noclaimSync Failed download for Bom ID: {$bom->id}, Deezer ID: $deezerId");
+            return [
+                'success' => false,
+                'message' => 'Failed to get track information',
+                'retry_count' => $bom->retry
+            ];
+        }
+    }
+
+    public function store1(Request $request) {
+        $user = Auth::user();
+        Log::info($user->user_name . '|BomController.store|request=' . json_encode($request->all()));
+        $curr = gmdate("Y/m/d H:i:s", time() + 7 * 3600);
         if ($request->genre == '-1') {
             return response()->json(array("status" => "error", "message" => "Please select the Genre"));
         }
@@ -237,7 +573,6 @@ class BomController extends Controller {
                         Log::info("http://source.automusic.win/deezer/track/get/$deezerId");
                         $res = RequestHelper::getRequest("http://source.automusic.win/deezer/track/get/$deezerId");
                         Log::info("download $res");
-
                     }
 
                     $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$deezerId");
@@ -1664,10 +1999,29 @@ class BomController extends Controller {
             $data->save();
             error_log("noclaimSync $data->id finish");
         }
+
+        $deezerTracks = Bom::where("status", 1)
+                ->where("sync", 0)
+                ->whereNotNull("deezer_id")
+                ->where("retry", "<=", 3)
+                ->get();
+
+        error_log("noclaimSync: Processing Deezer tracks = " . count($deezerTracks));
+
+        foreach ($deezerTracks as $bom) {
+            // Sử dụng hàm processDeezerDownload để xử lý
+            $result = $this->processDeezerDownload($bom);
+            error_log("noclaimSync: Processed Deezer track for Bom ID {$bom->id}, result: " . ($result['success'] ? 'success' : 'failed'));
+
+            // Thêm delay giữa các request để tránh quá tải server
+            usleep(200000); // 200ms
+        }
+
         ProcessUtils::unLockProcess($processName);
     }
 
     public function convertWav() {
+        $curr = gmdate("Y/m/d H:i:s", time() + 7 * 3600);
         $boms = Bom::where("status", 1)->where("sync", 1)->whereNotNull("direct_link")->whereNull("direct_wav")->where("is_releasable", 1)->get();
         $total = count($boms);
         foreach ($boms as $index => $bom) {
@@ -1677,6 +2031,17 @@ class BomController extends Controller {
             error_log("convertWav $index/$total $cmdConvert");
             shell_exec($cmdConvert);
             if (count(glob($saved_converted)) > 0) {
+                //kiểm tra trên shazam
+                $shazam = $this->recognizeSong($saved_converted);
+                error_log("convertWav $index/$total shazam".json_encode($shazam));
+                if($shazam["exists"]==1){
+                    $bom->log .= PHP_EOL . "$curr this song exists ".json_encode($shazam);
+                    $bom->is_releasable = 2;
+                    $bom->save();
+                    unlink($saved_converted);
+                    continue;
+                }
+
                 $cdnCmd = "gbak upload-r2 --input $saved_converted --server automusic-audio";
                 error_log("convertWav $index/$total $bom->id upload cdn cmd $cdnCmd");
                 $ul = shell_exec($cdnCmd);
@@ -1690,6 +2055,48 @@ class BomController extends Controller {
                 error_log("noclaimSync $index/$total $bom->id finish");
             }
         }
+    }
+
+    function recognizeSong($mp3FilePath) {
+        $pythonScript = '/home/tools/shazam_recognizer.py';
+        $cmd = escapeshellcmd("python3.9 $pythonScript " . escapeshellarg($mp3FilePath));
+        $output = shell_exec($cmd);
+        $result = json_decode($output, true);
+        // Kết quả mặc định
+        $response = [
+            "exists" => 0,
+            "title" => "",
+            "artist" => "",
+            "album" => "",
+            "label" => "",
+            "release_date" => "",
+            "genre" => ""
+        ];
+
+        if (!empty($result['matches']) && isset($result['track'])) {
+            $track = $result['track'];
+
+            $meta = [];
+            if (isset($track['sections'])) {
+                foreach ($track['sections'] as $section) {
+                    if ($section['type'] === 'SONG' && isset($section['metadata'])) {
+                        foreach ($section['metadata'] as $item) {
+                            $meta[$item['title']] = $item['text'];
+                        }
+                    }
+                }
+            }
+
+            $response['exists'] = 1;
+            $response['title'] = $track['title'] ?? '';
+            $response['artist'] = $track['subtitle'] ?? '';
+            $response['album'] = $meta['Album'] ?? '';
+            $response['label'] = $meta['Label'] ?? '';
+            $response['release_date'] = $meta['Released'] ?? '';
+            $response['genre'] = $track['genres']['primary'] ?? '';
+        }
+
+        return $response;
     }
 
     public function getUniversalSongId($playlist) {

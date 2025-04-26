@@ -195,7 +195,7 @@ class GroupChannelController extends Controller {
         if ($request->is_admin_music) {
             $datas = GroupChannel::all();
         } else {
-            $datas = GroupChannel::where("user_name", $user->user_name)->orderByRaw('ISNULL(order_id), order_id asc')->get();
+            $datas = GroupChannel::whereRaw("user_name = '$user->user_name' or user_name = ''")->orderByRaw('ISNULL(order_id), order_id asc')->get();
         }
         $grId = [];
         foreach ($datas as $data) {

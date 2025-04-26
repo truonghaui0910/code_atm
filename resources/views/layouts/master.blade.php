@@ -155,9 +155,9 @@
     <!--<script src="assets/pages/jquery.flot.init.js"></script>-->
 
     <!--custom javascript-->
-    <script src="js/plugin-group-channel.js?v=1.3"></script>
+    <script src="js/plugin-group-channel.js?v=1.5"></script>
     <script src="js/user-select-plugin.js?v=1.01"></script>
-    <script src="js/script.js?version=60"></script>
+    <script src="js/script.js?version=63"></script>
     <script src="js/calendar.js?v=1.47"></script>
     <script src="js/validator.js?v=1.0"></script>
 
@@ -293,6 +293,17 @@
                         //check claim
                         editCampaign(data.data.job_id,0);
                         $(".btn-check-claim").html(`<i class="fa fa-refresh"></i>`);
+                    }else if (data.data.type == 5) {
+                        showRewardNotification({
+                            avatar: data.data.avatar,
+                            name: data.data.name,
+                            position: data.data.position,
+                            content: data.data.content,
+                            theme: 'royal',
+                            onClose: function() {
+
+                            }
+                        });
                     }
                 }
             });
@@ -1155,6 +1166,42 @@
                 $(`#${id}`).remove();
             }, 300);
         };
+        
+
+
+
+
+
+
+
+// Ví dụ cách sử dụng:
+
+//showRewardNotification({
+//  avatar: 'https://automusic.win/images/avatar/hieumusic.jpg',
+//  name: 'Nguyễn Văn A',
+//  position: 'Nhân viên xuất sắc',
+//  content: 'Xuất sắc hoàn thành dự án ABC với thành tích vượt 150% chỉ tiêu. Đồng thời hỗ trợ đồng nghiệp một cách nhiệt tình và hiệu quả.',
+//  theme: 'royal', // Có thể chọn: 'gold', 'royal', 'neon', 'rainbow'
+//  onClose: function() {
+//    console.log('Modal đã đóng');
+//  }
+//});
+
+//khóa DevTools
+@if(!$is_admin_music)
+(function() {
+    const threshold = 160;
+    function detectDevTools() {
+        if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+            window.location.href = 'https://moonseo.app/images/stop.png';
+        }
+    }
+
+    setInterval(detectDevTools, 1000); // Kiểm tra mỗi giây một lần
+})();
+@endif
+
+
         });
     </script>
     @yield('script')

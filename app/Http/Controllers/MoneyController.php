@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\Utils;
+use App\Events\ChatEvent;
 use App\Http\Models\AccountInfo;
 use App\Http\Models\CampaignClaimRevStatus;
 use App\Http\Models\MooncoinContent;
@@ -500,11 +502,11 @@ class MoneyController extends Controller {
         $user = Auth::user();
         $datas = DB::select("select owner as user_name,campaign_id as channel_id,revenue * 0.2 as money,revenue as rev,view as views from campaign_claim_rev where type = 4 and period = ? and owner = ? order by revenue desc ", [$request->period, $request->username]);
         foreach ($datas as $data) {
-            $account = AccountInfo::where("chanel_id",$data->channel_id)->first();
-            $data->channel_name = $account->chanel_name; 
+            $account = AccountInfo::where("chanel_id", $data->channel_id)->first();
+            $data->channel_name = $account->chanel_name;
             $data->rpm = 0;
             if ($data->views > 0) {
-                $data->rpm = round($data->rev / $data->views * 2 * 1000,2);
+                $data->rpm = round($data->rev / $data->views * 2 * 1000, 2);
             }
         }
         //2025/03/03 epid không cho xem deltail của người khác
@@ -593,13 +595,14 @@ class MoneyController extends Controller {
         $monthlyData = DB::table('mooncoin_values')
                 ->join('mooncoin_content', 'mooncoin_values.content_id', '=', 'mooncoin_content.id')
                 ->select(
-                        'mooncoin_values.username', 'mooncoin_values.mooncoin_value', 'mooncoin_values.month', 'mooncoin_values.year', 'mooncoin_content.content_description'
+                        'mooncoin_values.username', 'mooncoin_values.mooncoin_value', 'mooncoin_values.month', 'mooncoin_values.year','mooncoin_values.created', 'mooncoin_content.content_description'
                 )
                 ->when($year, function ($query) use ($year) {
                     return $query->where('mooncoin_values.year', $year);
                 })
                 ->orderByDesc('mooncoin_values.year')
                 ->orderByDesc('mooncoin_values.month')
+                ->orderByDesc('mooncoin_values.id')
                 ->get()
                 ->map(function ($item) {
             // Chuyển đổi số tháng thành tên tháng
@@ -690,15 +693,18 @@ class MoneyController extends Controller {
         if (!$request->is_supper_admin) {
             return response()->json(['status' => "error", 'message' => "You are not an admin"]);
         }
-        $data = MooncoinValues::where("month", $request->moon_month)->where("year", $request->moon_year)->where("content_id", $request->moon_desc)->where("status", 1)->first();
-        if ($data) {
-            return response()->json(['status' => "error", 'message' => "This mooncoin has been released for $data->username"]);
-        }
+
         if (!isset($request->user)) {
             return response()->json(['status' => "error", 'message' => "You must select user"]);
         }
         $moon = MooncoinContent::where("id", $request->moon_desc)->first();
         if ($moon) {
+            if ($moon->multiple == 0) {
+                $mValue = MooncoinValues::where("month", $request->moon_month)->where("year", $request->moon_year)->where("content_id", $request->moon_desc)->where("status", 1)->first();
+                if ($mValue) {
+                    return response()->json(['status' => "error", 'message' => "This mooncoin has been released for $mValue->username"]);
+                }
+            }
             $data = new MooncoinValues();
             $data->created_by = $user->user_name;
             $data->username = $request->user;
@@ -706,7 +712,25 @@ class MoneyController extends Controller {
             $data->content_id = $request->moon_desc;
             $data->month = $request->moon_month;
             $data->year = $request->moon_year;
+            $data->created = Utils::timeToStringGmT7(time());
             $data->save();
+            $rewardUser = User::where("user_name", $request->user)->first();
+            $mess = "$moon->content_description";
+            $noti = (object) [
+                        "type" => 5,
+                        "job_id" => $data->id,
+                        "title" => "$rewardUser->name được thưởng $moon->moon_value mooncoin",
+                        "message" => $mess,
+                        "comment" => null,
+                        "redirect" => "",
+                        "noti_id" => uniqid(),
+                        "name" => $rewardUser->name,
+                        "position" => "Được tặng thưởng $moon->moon_value mooncoin",
+                        "content" => $mess,
+                        "avatar" => "https://automusic.win/images/avatar/$rewardUser->user_name.jpg",
+            ];
+            $activeUser = User::where("status",1)->where("role","like","%26%")->pluck("user_name");
+            event(new ChatEvent($user, ["truongpv"], $noti));
             return response()->json(['status' => "success", 'message' => "Success"]);
         }
         return response()->json(['status' => "error", 'message' => "Not found Moon Description"]);

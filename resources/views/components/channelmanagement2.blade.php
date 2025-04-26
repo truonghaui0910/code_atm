@@ -1442,6 +1442,15 @@
         .error-container:hover .error-text {
             font-weight: 500;
         }
+        
+        .error-actions {
+            display: flex;
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+        .error-container:hover .error-actions {
+            opacity: 1;
+        }        
 
         .error-details {
             position: absolute;
@@ -1470,8 +1479,10 @@
             border-color: transparent transparent #333 transparent;
         }
 
-        .btn-remove-error {
-            opacity: 0;
+        .btn-remove-error,
+        .btn-resolve-error,
+        .btn-check-error{
+            opacity: 1;
             background: none;
             border: none;
             color: #dc3545;
@@ -1487,11 +1498,11 @@
             padding: 0;
         }
 
-        .error-container:hover .btn-remove-error {
+/*        .error-container:hover .btn-remove-error {
             opacity: 1;
-        }
+        }*/
 
-        .btn-remove-error:hover {
+/*        .btn-remove-error:hover {
             background-color: rgba(220, 53, 69, 0.1);
             transform: scale(1.1);
         }
@@ -1499,7 +1510,33 @@
         .btn-remove-error:active {
             background-color: rgba(220, 53, 69, 0.2);
             transform: scale(0.95);
-        }
+        }*/
+
+.btn-remove-error {
+    color: #dc3545;
+    font-size: 14px;
+}
+
+.btn-resolve-error {
+    color: #28a745;
+    font-size: 14px;
+}
+
+.btn-remove-error:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.btn-resolve-error:hover {
+    background-color: rgba(40, 167, 69, 0.1);
+}
+.btn-check-error {
+    color: #007bff;
+}
+
+.btn-check-error:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    transform: scale(1.1);
+}
 
 
 
@@ -1906,23 +1943,81 @@
     object-fit: cover;
 }
 
-        /* Responsive adjustments */
-        @media (max-width: 767px) {
-            #modal_multi_chart_realtime .channel-stats {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
-            }
+/* Responsive adjustments */
+@media (max-width: 767px) {
+    #modal_multi_chart_realtime .channel-stats {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
 
-            #modal_multi_chart_realtime .channel-avatar {
-                width: 50px;
-                height: 50px;
-            }
+    #modal_multi_chart_realtime .channel-avatar {
+        width: 50px;
+        height: 50px;
+    }
 
-            #modal_multi_chart_realtime .channel-name {
-                font-size: 16px;
-            }
-        }
+    #modal_multi_chart_realtime .channel-name {
+        font-size: 16px;
+    }
+}
+
+/*    .btn-finish-recovery {
+        width: 30px; 
+        height: 30px; 
+        border-radius: 50%; 
+        border: none; 
+        background: linear-gradient(45deg, #45AF49, #7ce17c); 
+        color: white; 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        box-shadow: 0 3px 8px rgba(69, 175, 73, 0.5); 
+        transition: all 0.3s ease; 
+        vertical-align: middle;
+        outline: none;
+        position: relative;
+        z-index: 10;
+        margin-left: 8px;
+    }
+    
+    .btn-finish-recovery:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(69, 175, 73, 0.7);
+    }*/
+
+    .btn-finish-recovery {
+        width: 30px; 
+        height: 30px; 
+        border-radius: 50%; 
+        border: none; 
+        background: linear-gradient(45deg, #45AF49, #7ce17c); 
+        color: white; 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        box-shadow: 0 3px 8px rgba(69, 175, 73, 0.5); 
+        transition: all 0.3s ease; 
+        vertical-align: middle;
+        outline: none;
+        position: relative;
+        z-index: 10;
+        margin-left: 8px;
+    }
+    
+    .btn-finish-recovery:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(69, 175, 73, 0.7);
+    }
+    
+    .recovery-email-container {
+        display: inline-flex;
+        align-items: center;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin-left: 12px;
+        border: 1px solid #e9ecef;
+    }
     </style>
 
     <div id="filterPanel" class="filter-panel">
@@ -1941,6 +2036,7 @@
 
         <form id="form-search" action="/channelmanagement/v2">
             <input type="hidden" name="limit" id="limit" value="{{ $limit }}">
+            <input id="is_change_info_error" type="hidden" name="is_change_info_error" value="{{$request->is_change_info_error}}"/>
             <div class="filter-groups-row">
                 <!-- Left Column -->
                 <div class="col-md-6 filter-group-wrapper">
@@ -2006,7 +2102,7 @@
                                 </div>
                                 <div class="col-md-12 mt-3">
                                     <label for="gmail_log">Log</label>
-                                    <input id="gmail_log" class="form-control" type="text" name="gmail_log"
+                                    <input id="gmail_log" class="form-control" type="text" name="gmail_log" value="{{$request->gmail_log}}"
                                         placeholder="Enter log information...">
                                 </div>
                             </div>
@@ -2629,10 +2725,10 @@
                             <button class="btn btn-sm btn-outline-secondary action-btn" data-value="23">Boom VIP
                                 Inactive</button>
                             @if ($is_admin_music)
-                                <button class="btn btn-sm btn-outline-secondary action-btn" data-value="33">YT Device
-                                    OAuth</button>
-                                <button class="btn btn-sm btn-outline-secondary action-btn" data-value="34">Add to
-                                    Social</button>
+                                <button class="btn btn-sm btn-outline-secondary action-btn" data-value="33">YT Device OAuth</button>
+                                <button class="btn btn-sm btn-outline-secondary action-btn" data-value="34">Add to Social</button>
+                                <button class="btn btn-sm btn-outline-secondary action-btn" data-value="39">Set Cant Resolved Change Info</button>
+                                <button class="btn btn-sm btn-outline-secondary action-btn" data-value="40">Set Sent user to check Change Info</button>
                             @endif
                         </div>
                     </div>
@@ -2693,12 +2789,14 @@
                                     <i class="fas fa-chart-line"></i> Chart
                                 </button>
                             
-                            <button type="button" id="errorChangeInfoBtn" onclick="filterError()"
-                                class="btn btn-outline-warning mr-2 btn-100 position-relative" style="overflow: visible"
+                            <button type="button" id="errorChangeInfoBtn" onclick="filterError(this)"
+                                class="btn btn-outline-warning mr-2 btn-100 position-relative <?php echo $request->is_change_info_error==1?"active":""; ?>" style="overflow: visible"
                                 data-toggle="tooltip" data-placement="top"
                                 data-original-title="Error change info channel">
-                                <i class="fas fa-exclamation-triangle"></i> Error <span
-                                    class="filter-badge ">{{ $errorCountChangeInfo }}</span>
+                                <i class="fas fa-exclamation-triangle"></i> Error 
+                                @if($errorCountChangeInfo>0)
+                                    <span class="filter-badge ">{{ $errorCountChangeInfo }}</span>
+                                @endif    
                             </button>
                             <button type="button" id="showFilterBtn"
                                 class="btn btn-outline-primary mr-2 btn-100 position-relative" style="overflow: visible">
@@ -2818,10 +2916,25 @@
                                                                 class="copyable-text"
                                                                 data-copy="{{ $data->id }}">{{ $data->id }}</span>
                                                         </div>
-                                                        <div class="detail-item mr-3">
+                                                        <div class="detail-item mr-3"  id="email-container-{{ $data->id }}">
                                                             <i class="fas fa-user fa-fw text-muted mr-2"></i> <span
                                                                 class="copyable-text"
                                                                 data-copy="{{ substr($data->user_name, 0, strripos($data->user_name, '_')) }}">{{ substr($data->user_name, 0, strripos($data->user_name, '_')) }}</span>
+                                                        
+                                                            @if($data->reco_email != null)
+                                                                <div class="recovery-email-container detail-item ml-2" data-id="{{$data->id}}">
+                                                                    <i class="fas fa-shield-alt text-muted mr-2"></i>
+                                                                    <span class="copyable-text" data-copy="{{$data->reco_email}}">{{$data->reco_email}}</span>
+                                                                </div>
+                                                                <button type="button" 
+                                                                        class="btn-finish-recovery cur-poiter" 
+                                                                        data-id="{{ $data->id }}"
+                                                                        onclick="handleFinishRecovery({{ $data->id }})"
+                                                                        data-toggle="tooltip" 
+                                                                        title="Change Recovery Email to {{ $data->reco_email }} completed">
+                                                                    <i class="fas fa-rocket"></i>
+                                                                </button>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                     <div class="detail-row d-flex text-muted">
@@ -2844,6 +2957,7 @@
                                                                 class="copyable-text"
                                                                 data-copy="{{ $data->note }}">{{ $data->note }}</span>
                                                             {!! $gCountText !!}
+
                                                         </div>
                                                     </div>
                                                     <div class="detail-row d-flex text-muted">
@@ -2879,6 +2993,7 @@
                                                         title="Commit Moonshots">
                                                         <i class="fas fa-rocket"></i> Commit
                                                     </a>
+
                                                     @if ($data->otp_key != null)
                                                         <button type="button" data-toggle="tooltip"
                                                             title="Get login code"
@@ -2930,6 +3045,19 @@
                                                                         class="fas fa-music mr-2"></i> Submit
                                                                     Epidemic</button>
                                                             @endif
+                                                             @if ($data->reco_email == null && 
+                                                                    ($data->last_change_pass==4 || $data->last_change_pass==6 || $data->last_change_pass==7))
+                                                                <button type="button" class="dropdown-item cur-poiter btn-get-recovery-email" value="{{ $data->hash_pass }}" data-id="{{ $data->id }}">
+                                                                <i class="fas fa-envelope mr-2"></i> New Recovery Email
+                                                                </button>
+                                                             @endif
+                                                             @if ($data->reco_email != null)
+                                                                <button type="button" class="dropdown-item cur-poiter btn-getcode-change-recovery" 
+                                                                        value="{{ $data->hash_pass }}" data-id="{{ $data->id }}"
+                                                                        onclick="getCodeRecoveryForChangeRecovery(this)">
+                                                                <i class="fas fa-code mr-2"></i> Code to Change Recovery
+                                                                </button>
+                                                             @endif
                                                             @if ($data->otp_key != null)
                                                                 <button type="button"
                                                                     class="dropdown-item btn-getcode-recovery cur-poiter"
@@ -2998,38 +3126,49 @@
                                         <?php
                                         echo $data->chanel_create_date != null ? '<div>' . gmdate('Y/m/d', $data->chanel_create_date + $user_login->timezone * 3600) . '</div>' : '';
                                         ?>
-                                        @if ($data->last_change_pass > 4)
-                                            <div class="small text-muted">
-                                                {{ $data->message == null ? 'Change pass' : $data->message }}</div>
-                                            <div class="small text-muted">
-                                                {{ App\Common\Utils::calcTimeText($data->last_change_pass) }}</div>
-                                        @elseif($data->last_change_pass == 4)
+                                        <?php
+                                            //4: lỗi, 6: không thể giải quyết,7:cần bassteam giải quyết
+//                                            $errorMessage = $data->message;
+//
+//                                            // Split the error message into lines
+//                                            $errorLines = preg_split('/\r\n|\r|\n/', $errorMessage);
+//
+//                                            // First line is the title/header, rest is the detail
+//                                            $errorTitle = isset($errorLines[0]) ? $errorLines[0] : 'Error';
+//
+//                                            // Combine remaining lines as details (if any)
+//                                            $errorDetail = '';
+//                                            if (count($errorLines) > 1) {
+//                                                unset($errorLines[0]);
+//                                                $errorDetail = implode("\n", $errorLines);
+//                                            }
+                                        ?>
+                                        @if ($data->last_change_pass > 7)
+                                            <div class="small text-muted">{{ $data->message == null ? 'Change pass' : $data->message }}</div>
+                                            <div class="small text-muted">{{ App\Common\Utils::calcTimeText($data->last_change_pass) }}</div>
+                      
+                                        @elseif($data->last_change_pass == 4 || $data->last_change_pass == 6 || $data->last_change_pass == 7)
                                             <div class="error-container position-relative" data-id="{{ $data->id }}">
-                                                <?php
-                                                $errorMessage = $data->message;
-                                                
-                                                // Split the error message into lines
-                                                $errorLines = preg_split('/\r\n|\r|\n/', $errorMessage);
-                                                
-                                                // First line is the title/header, rest is the detail
-                                                $errorTitle = isset($errorLines[0]) ? $errorLines[0] : 'Error';
-                                                
-                                                // Combine remaining lines as details (if any)
-                                                $errorDetail = '';
-                                                if (count($errorLines) > 1) {
-                                                    unset($errorLines[0]);
-                                                    $errorDetail = implode("\n", $errorLines);
-                                                }
-                                                ?>
+                                                    <div class="error-actions ml-auto">
+                                                        <button class="error-action-btn btn-resolve-error" data-action-type="resolve" title="Mark as resolved">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                        @if($is_admin_music && $data->last_change_pass != 7)
+                                                            <button class="error-action-btn btn-check-error" data-action-type="check" title="Send user to check">
+                                                                <i class="fas fa-user-check"></i>
+                                                            </button>
+                                                        @endif
+                                                        @if($data->last_change_pass != 6)
+                                                            <button class="error-action-btn btn-remove-error" data-action-type="not_resolve" title="Mark as cant resolved">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        @endif
+                                                    </div>
                                                 <div class="error-display d-flex align-items-center">
-                                                    <span class="error-text text-danger">{{ $errorDetail }}</span>
-                                                    <button type="button" class="btn-remove-error ml-auto"
-                                                        title="Remove error message">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
+                                                    <span class="error-text text-danger">{{ $data->message }}</span>
                                                 </div>
-                                                @if (!empty($errorDetail))
-                                                    <div class="error-details d-none">{{ $errorDetail }}</div>
+                                                @if (!empty($data->message))
+                                                    <div class="error-details d-none">{{ $data->message }}</div>
                                                 @endif
                                             </div>
                                         @endif
@@ -3086,6 +3225,155 @@
 
 @section('script')
     <script type="text/javascript">
+        
+    function handleFinishRecovery(channelId) {
+        var button = $('.btn-finish-recovery[data-id="' + channelId + '"]');
+
+        button.tooltip('hide');
+        button.html('<i class="fa fa-circle-o-notch fa-spin"></i>');
+        button.prop('disabled', true);
+
+        $.ajax({
+            type: "POST",
+            url: "finishRecoveryEmail",
+            data: {
+                "_token": "{{ csrf_token() }}",
+                "id": channelId
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.status == "success") {
+                    button.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                    showNotification("Recovery email has been confirmed", "success");
+                    location.reload();
+                } else {
+                    button.html('<i class="fas fa-shield-alt"></i>');
+                    button.prop('disabled', false);
+                    showNotification(data.message || "Failed to confirm recovery email", "error");
+                }
+            },
+            error: function(data) {
+                button.html('<i class="fas fa-shield-alt"></i>');
+                button.prop('disabled', false);
+                showNotification("Error confirming recovery email", "error");
+                console.log('Error:', data);
+            }
+        });
+    }        
+        $('.btn-get-recovery-email').click(function(e) {
+            e.preventDefault();
+            var $this = $(this);
+            var hashPass = $(this).val();
+            var channelId = $(this).data('id');
+            var loadingText = '<i class="fa fa-circle-o-notch fa-spin"></i> Loading...';
+
+            if ($(this).html() !== loadingText) {
+                $this.data('original-text', $(this).html());
+                $this.html(loadingText);
+            }
+
+            $.ajax({
+                type: "GET",
+                url: "getRecoveryEmail",
+                data: {
+                    "id": channelId,
+                    "hash": hashPass
+                },
+                dataType: 'json',
+                success: function(data) {
+                    $this.html($this.data('original-text'));
+
+                    if (data.status == "success") {
+                        // Copy email to clipboard
+                        copyToClipboard2(data.email);
+                        showNotification("Recovery email copied: " + data.email, "success");
+
+                        // Add Finish button after the email container
+                        var emailContainer = $('#email-container-' + channelId);
+
+                        $('.recovery-email-container[data-id="' + channelId + '"]').remove();
+                        $('.btn-finish-recovery[data-id="' + channelId + '"]').remove();
+                        emailContainer.append(
+                             `<div class="recovery-email-container detail-item ml-2" data-id="${channelId}">
+                                 <i class="fas fa-shield-alt text-muted mr-2"></i>
+                                 <span class="copyable-text" data-copy="${data.email}">${data.email}</span>
+                              </div>`
+                         );
+                        emailContainer.append(
+                            `<button type="button" 
+                             class="btn-finish-recovery cur-poiter" 
+                             data-id="${channelId}" 
+                             onclick="handleFinishRecovery(${channelId})"
+                             data-toggle="tooltip" 
+                             title="Change Recovery Email to ${data.email} completed ">
+                                <i class="fas fa-rocket"></i>
+                             </button>`
+                        );
+                 
+                        $('.btn-finish-recovery[data-id="' + channelId + '"]').tooltip(); 
+
+                        var changeRecoveryButton = $('.btn-getcode-change-recovery[data-id="' + channelId + '"]');
+                        if (changeRecoveryButton.length === 0) {
+                            // Thêm nút mới vào sau nút hiện tại trong dropdown
+                            $this.after(
+                                `<button type="button" class="dropdown-item cur-poiter btn-getcode-change-recovery" 
+                                    value="${hashPass}" data-id="${channelId}" 
+                                    onclick="getCodeRecoveryForChangeRecovery(this)">
+                                    <i class="fas fa-code mr-2"></i> Code to Change Recovery
+                                </button>`
+                            );
+                        }
+                    } else {
+                        showNotification(data.message || "Failed to get recovery email", "error");
+                    }
+                },
+                error: function(data) {
+                    $this.html($this.data('original-text'));
+                    showNotification("Error getting recovery email", "error");
+                    console.log('Error:', data);
+                }
+            });
+        }); 
+        function getCodeRecoveryForChangeRecovery(button) {
+            var $button = $(button);
+            var hashPass = $button.val();
+            var channelId = $button.data('id');
+            var loadingText = '<i class="fa fa-circle-o-notch fa-spin"></i> Loading...';
+
+            if ($button.html() !== loadingText) {
+                $button.data('original-text', $button.html());
+                $button.html(loadingText);
+            }
+
+            $.ajax({
+                type: "GET",
+                url: "getCodeRecoveryForChangeRecovery",
+                data: {
+                    "id": channelId,
+                    "hash": hashPass
+                },
+                dataType: 'json',
+                success: function(data) {
+                    $button.html($button.data('original-text'));
+
+                    if (data.status == "success") {
+                        // Copy code to clipboard
+                        copyToClipboard2(data.code);
+                        showNotification(`Code ${data.code} copied to clipboard`, "success");
+                    } else {
+                        showNotification(data.message || "Failed to get recovery change code", "error");
+                    }
+                },
+                error: function(data) {
+                    $button.html($button.data('original-text'));
+                    showNotification("Error getting recovery change code", "error");
+                    console.log('Error:', data);
+                }
+            });
+        }
+        
         // Handle hover effect for error container
         $(document).on('mouseenter', '.error-container', function() {
             $(this).find('.error-details').removeClass('d-none');
@@ -3093,54 +3381,128 @@
             $(this).find('.error-details').addClass('d-none');
         });
 
-        // Handle click on remove button
-        $(document).on('click', '.btn-remove-error', function(e) {
+        $(document).on('click', '.error-action-btn', function(e) {
             e.stopPropagation();
             e.preventDefault();
+
             var $this = $(this);
             const channelId = $(this).closest('.error-container').data('id');
             const errorContainer = $(this).closest('.error-container');
+            const actionType = $(this).data('action-type');
 
+            // Get current error details (if any)
+            const errorDetail = errorContainer.find('.error-details').text().trim();
+
+            // Show input dialog for not_resolve and check actions
+            if (actionType === 'not_resolve' || actionType === 'check') {
+                // Configure dialog based on action type
+                let title = actionType === 'not_resolve' ? 
+                    'Mark Error as Cannot Be Resolved' : 
+                    'Send to User for Checking';
+
+                // Use $.confirm to display input dialog
+                $.confirm({
+                    title: title,
+                    content: '' +
+                    '<form action="" class="formName">' +
+                    '<div class="form-group">' +
+                    '<label>Enter message</label>' +
+                    '<textarea class="message form-control" style="line-height:1.25" rows="5">' + errorDetail + '</textarea>' +
+                    '</div>' +
+                    '</form>',
+                    buttons: {
+                        confirm: {
+                            text: 'Confirm',
+                            btnClass: 'btn-blue',
+                            action: function () {
+                                var message = this.$content.find('.message').val();
+                                processErrorAction($this, channelId, errorContainer, actionType, message);
+                            }
+                        },
+                        cancel: {
+                            text: 'Cancel'
+                        }
+                    }
+                });
+            } else {
+                // For 'resolve' action, proceed immediately without dialog
+                processErrorAction($this, channelId, errorContainer, actionType, errorDetail);
+            }
+        });
+
+        // Function to process action after input is provided
+        function processErrorAction($button, channelId, errorContainer, actionType, message) {
             // Show loading state
-            $this.html('<i class="fas fa-spinner fa-spin"></i>');
+            $button.html('<i class="fas fa-spinner fa-spin"></i>');
 
-            // Call API to delete message
+            // Call API to handle the message
             $.ajax({
                 url: '/ajaxChannel',
                 type: 'POST',
-
                 data: {
                     _token: '{{ csrf_token() }}',
                     action: 17,
-                    remove_error: 1,
-                    chkChannelAll: [channelId]
+                    action_type: actionType,
+                    chkChannelAll: [channelId],
+                    message: message 
                 },
                 success: function(response) {
-                    $this.html('<i class="fas fa-times"></i>');
+                    if (actionType === 'resolve') {
+                        $button.html('<i class="fas fa-check"></i>');
+                    } else if (actionType === 'check') {
+                        $button.html('<i class="fas fa-user-check"></i>');
+                        showNotification("Success", "success");
+                        return;
+                    } else if (actionType === 'not_resolve') {
+                        $button.html('<i class="fas fa-times"></i>');
+                    }
+
+                    // Remove error container with effect (only for resolve and not_resolve)
                     errorContainer.fadeOut(300, function() {
                         $(this).remove();
                     });
-                    showNotification("Error message removed successfully", "success");
+
+                    showNotification("Success", "success");
+                    location.reload();
                 },
                 error: function(xhr) {
-                    console.error('Error deleting message:', xhr.responseText);
-                    showNotification("Failed to remove error message", "error");
-                    $this.html('<i class="fas fa-times"></i>');
+                    console.error('Error processing message:', xhr.responseText);
+
+                    // Restore icon based on action type
+                    if (actionType === 'resolve') {
+                        $button.html('<i class="fas fa-check"></i>');
+                    } else if (actionType === 'check') {
+                        $button.html('<i class="fas fa-user-check"></i>');
+                    } else if (actionType === 'not_resolve') {
+                        $button.html('<i class="fas fa-times"></i>');
+                    }
+
+                    showNotification("Failed to process error message", "error");
                 }
             });
-        });
+        }
 
-        function filterError() {
-            // Lấy URL hiện tại
-            var currentUrl = window.location.href;
+        function filterError($this) {
 
-            // Kiểm tra xem URL đã có dấu ? chưa
-            var newUrl = currentUrl.includes('?') ?
-                currentUrl + '&is_change_info_error=1' :
-                currentUrl + '?is_change_info_error=1';
+            if($($this).hasClass("active")){
+                $("#is_change_info_error").val(null);
+            }else{
+                $("#is_change_info_error").val(1);
+            }
+             $('#btnSearch').click();
 
-            // Chuyển hướng đến URL mới
-            window.location.href = newUrl;
+//            // Lấy URL hiện tại
+//            var currentUrl = window.location.href;
+//
+//            // Kiểm tra xem URL đã có dấu ? chưa
+//            var newUrl = currentUrl.includes('?') ?
+//                currentUrl + '&is_change_info_error=1' :
+//                currentUrl + '?is_change_info_error=1';
+//
+//            // Chuyển hướng đến URL mới
+//            window.location.href = newUrl;
+
+               
         }
 
         function submitEpid(id) {
@@ -3666,7 +4028,7 @@
                 isPanelCollapsed = false;
             } else {
                 // Collapse panel
-                $('#actionPanel').css('right', '-280px');
+                $('#actionPanel').css('right', '-365px');
                 $(this).find('i').removeClass('fa-chevron-right').addClass('fa-chevron-left');
                 isPanelCollapsed = true;
             }
@@ -4057,6 +4419,9 @@
                 if ($element.attr('type') === 'hidden' && $element.attr('name') === 'limit') {
                     return;
                 }
+                if ($element.attr('type') === 'hidden' && $element.attr('name') === 'is_change_info_error') {
+                    return;
+                }
                 // Xử lý đặc biệt cho #tags - bỏ qua nếu không có tags được chọn
                 if (elementId === 'tags') {
                     //                    const selectedTags = $element.val();
@@ -4092,7 +4457,9 @@
                 $showFilterBtn.append($badge);
 
                 // Show filter panel if there are filled filters
-                $filterPanel.addClass('show');
+//                $filterPanel.addClass('show');
+                //không hiện advance filter sau khi filter
+                $filterPanel.removeClass('show');
             } else {
                 // Hide filter panel by default if no filters are applied
                 $filterPanel.removeClass('show');
@@ -4419,7 +4786,6 @@
             //            }
             var id = $(this).val();
             $.get('getCodeRecovery?hash=' + id, function(data) {
-                $this.html($this.data('original-text'));
                 if (data.status == "error") {
                     $.Notification.notify("error", 'top center', '', "Got error");
                 } else {

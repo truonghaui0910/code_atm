@@ -11,7 +11,7 @@
                         {!!$status!!}
                     </select>
                 </form>
-                <button data-toggle="tooltip" data-placement="top" data-original-title="Add New Claim" type="button" class="btn btn-outline-info btn-import-campaign m-r-5"><i class="fa fa-plus"></i></button>
+                <!--<button data-toggle="tooltip" data-placement="top" data-original-title="Add New Claim" type="button" class="btn btn-outline-info btn-import-campaign m-r-5"><i class="fa fa-plus"></i></button>-->
                 <input id="dzid" type="text" name="dzid" class="form-control m-l-5" placeholder="Deezer Id">
                 <button data-toggle="tooltip" data-placement="top" data-original-title="Download by Deezer Id" type="button" class=" m-l-5 btn btn-outline-info btn-download-dz"><i class="fa fa-download"></i></button>
                 <input id="handle" type="text" name="handle" class="form-control m-l-5" placeholder="Handle link">

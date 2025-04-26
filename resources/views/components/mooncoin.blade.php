@@ -41,6 +41,7 @@
                     <div class="form-group">
                         <label for="yearFilter">Select Year:</label>
                         <select id="yearFilter" class="form-control" style="width: 200px;">
+                            <option value="2025">2025</option>
                             <option value="2024">2024</option>
                             <option value="2023">2023</option>
                         </select>
@@ -56,6 +57,7 @@
                                         <th>Month</th>
                                         <th>Year</th>
                                         <th>Content Description</th>
+                                        <th>Created</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -144,7 +146,8 @@
             {data: 'mooncoin_value', name: 'mooncoin_value',className: 'text-center'},
             {data: 'month', name: 'month'},
             {data: 'year', name: 'year'},
-            {data: 'content_description', name: 'content_description'}
+            {data: 'content_description', name: 'content_description'},
+            {data: 'created', name: 'created'}
         ],
         initComplete: function () {
             // Hiển thị ô tìm kiếm sau khi dữ liệu được load

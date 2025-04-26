@@ -470,13 +470,13 @@
                                                     style="margin-bottom: 1rem"></label>
                                             </div>
                                         </th>
-                                        <th style="width: 5%;text-align: center">@sortablelink('id', 'ID')</th>
+                                        <th style="width: 6%;text-align: center">@sortablelink('id', 'ID')</th>
                                         <th style="width: 7%;text-align: center">Genre</th>
                                         <th style="width: 7%;text-align: left">Username</th>
                                         <th style="width: 15%;text-align: left">Song Name</th>
                                         <th style="width: 7%;text-align: center">Deezer/Local ID</th>
                                         <th style="width: 10%;text-align: left">Artist</th>
-                                        <th style="width: 13%;text-align: left">Album</th>
+                                        <th style="width: 10%;text-align: left">Album</th>
                                         <th style="width: 10%;text-align: center">Created</th>
                                         <!--<th style="width: 10%;text-align: center">Last used</th>-->
                                         <!--<th style="width: 10%;text-align: center">User use</th>-->
@@ -495,7 +495,14 @@
                                                     <label class="m-b-18 p-l-0" for="ck-video<?php echo $data->id; ?>"></label>
                                                 </div>
                                             </td>
-                                            <td>{{ $data->id }}</td>
+                                            <td>{{ $data->id }}<br>
+                                                @if($data->direct_wav!=null)
+                                                    <span class="badge badge-success">.wav</span>
+                                                @endif
+                                                @if($data->is_releasable==2)
+                                                    <span class="badge badge-danger">duplicate</span>
+                                                @endif
+                                            </td>
                                             <td>{{ $data->genre }}</td>
                                             <td style="text-align: left">{{ $data->username }}</td>
                                             <td style="text-align: left" class="text-ellipsis">
@@ -510,10 +517,8 @@
                                                             data-song-id="{{ $data->id }}">
                                                             <i class="fa fa-play"></i>
                                                         </button>
+
                                                         <span class="song-name">{{ $data->song_name }}</span>
-                                                        @if($data->direct_wav!=null)
-                                                            <span class="badge badge-success">.wav</span>
-                                                        @endif
                                                     </div>
                                                 @else
                                                     {{ $data->song_name }}

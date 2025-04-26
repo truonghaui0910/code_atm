@@ -61,7 +61,12 @@ class ChannelManagementController extends Controller {
         $queries = [];
 
         $errorCountTmp = clone $datas;
-        $errorCountChangeInfo = $errorCountTmp->where("last_change_pass", 4)->count();
+        $errStatus = 7;
+        if ($request->is_admin_music) {
+            $errStatus = 4;
+        }
+
+        $errorCountChangeInfo = $errorCountTmp->where("last_change_pass", $errStatus)->count();
 
         $limit = 30;
         if (isset($request->limit)) {
@@ -180,12 +185,24 @@ class ChannelManagementController extends Controller {
             $datas = $datas->where('sub_tracking', $request->sub_tracking);
             $queries['sub_tracking'] = $request->sub_tracking;
         }
+
+        if (isset($request->is_change_info_error)) {
+            $datas = $datas->where('last_change_pass', $errStatus);
+            $queries['is_change_info_error'] = $request->is_change_info_error;
+        }
+
         if (isset($request->is_changeinfo) && $request->is_changeinfo != '-1') {
-            $text = "change info fail";
             if ($request->is_changeinfo == 1) {
-                $text = "change info success";
+                $datas = $datas->where('last_change_pass', '>', 7);
+            } elseif ($request->is_changeinfo == 2) {
+                $datas = $datas->whereNull('last_change_pass');
+            } elseif ($request->is_changeinfo == 6) {
+                $datas = $datas->where('last_change_pass', 6);
+            } elseif ($request->is_changeinfo == 7) {
+                $datas = $datas->where('last_change_pass', 7);
+            } elseif ($request->is_changeinfo == 4) {
+                $datas = $datas->where('last_change_pass', 4);
             }
-            $datas = $datas->where('log', 'like', "%$text%");
             $queries['is_changeinfo'] = $request->is_changeinfo;
         }
 
@@ -202,17 +219,14 @@ class ChannelManagementController extends Controller {
         }
 
         if (isset($request->gmail_log) && $request->gmail_log != '') {
-            $datas = $datas->where('log', 'like', "%$request->gmail_log%");
+            $datas = $datas->where('message', 'like', "%$request->gmail_log%");
             $queries['gmail_log'] = $request->gmail_log;
         }
         if (isset($request->status_cmt) && $request->status_cmt != '-1') {
             $datas = $datas->where('status_cmt', $request->status_cmt);
             $queries['status_cmt'] = $request->status_cmt;
         }
-        if (isset($request->is_change_info_error)) {
-            $datas = $datas->where('last_change_pass', 4);
-            $queries['is_change_info_error'] = $request->is_change_info_error;
-        }
+
         if (isset($request->sort)) {
             $queries['sort'] = $request->sort;
             if (isset($request->direction)) {
@@ -605,10 +619,11 @@ class ChannelManagementController extends Controller {
                 }
                 return array('status' => "success", 'content' => $content, "reload" => 1);
             } else if ($request->action == 3) {
+                //check views
                 $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name check views";
                 $channels = AccountInfo::whereIn("id", $listChannelIds)->get();
                 foreach ($channels as $channel) {
-                    $channel->log = $channel->log . $log;
+//                    $channel->log = $channel->log . $log;
                     $dataInfo = YoutubeHelper::getChannelInfoV2($channel->chanel_id);
                     if ($dataInfo["status"] == 1) {
                         $channel->status = 1;
@@ -837,17 +852,29 @@ class ChannelManagementController extends Controller {
                         "log" => DB::raw("CONCAT(log,'$log')")]);
                     array_push($content, str_replace(':values', $result, "Set success :values channels"));
                 }
-                if (isset($request->remove_error) && $request->remove_error) {
+                if (isset($request->action_type) && $request->action_type) {
                     $dataChannels = AccountInfo::whereIn('id', $listChannelIds)->get();
                     $count = 0;
-                    $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name remove error log";
+                    $message = null;
+                    if ($request->action_type == "resolve") {
+                        $lastChangePass = time();
+                        $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve last_change_pass=time()";
+                    } else if ($request->action_type == "not_resolve") {
+                        $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name not resolve last_change_pass=6";
+                        $lastChangePass = 6;
+                        $message = $request->message;
+                    } else {
+                        $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name sent user to check last_change_pass=7";
+                        $lastChangePass = 7;
+                        $message = $request->message;
+                    }
                     foreach ($dataChannels as $account) {
                         $count++;
                         $currentLog = $account->log;
                         $newLog = preg_replace('/.*change info fail.*\n?/', '', $currentLog);
                         $newLog = $newLog . $log;
-                        $account->message = null;
-                        $account->last_change_pass = 0;
+                        $account->message = $message;
+                        $account->last_change_pass = $lastChangePass;
                         $account->log = $newLog;
                         $account->save();
                     }
@@ -1167,7 +1194,6 @@ class ChannelManagementController extends Controller {
                 foreach ($channels as $channel) {
                     //đã đổi pass 30 ngày rồi
                     if ($channel->last_change_pass == null || $channel->last_change_pass < $thirtyDaysAgo) {
-
                         $this->sendCommandChangePass($channel, $time);
                         $time = (60 * 30) + $time;
                         $count++;
@@ -1202,7 +1228,7 @@ class ChannelManagementController extends Controller {
                 }
                 array_push($content, str_replace(':values', $count, "Success add :values channels"));
             } else if ($request->action == 35) {
-                //đổi info
+                //change info
                 $thirtyDaysAgo = time() - (30 * 24 * 60 * 60);
                 $count = 0;
                 $index = 0;
@@ -1236,6 +1262,18 @@ class ChannelManagementController extends Controller {
                 $channels = AccountInfo::whereIn('id', $listChannelIds)->get();
                 $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name set del_status=1";
                 $result = AccountInfo::whereIn('id', $listChannelIds)->update(['del_status' => 1, "log" => DB::raw("CONCAT(log,'$log')")]);
+                array_push($content, str_replace(':values', $result, "Success :values channels"));
+            } else if ($request->action == 39) {
+                //mark channel is cant resolved change pass
+                $channels = AccountInfo::whereIn('id', $listChannelIds)->get();
+                $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name set last_change_pass=6";
+                $result = AccountInfo::whereIn('id', $listChannelIds)->update(['last_change_pass' => 6, "log" => DB::raw("CONCAT(log,'$log')")]);
+                array_push($content, str_replace(':values', $result, "Success :values channels"));
+            } else if ($request->action == 40) {
+                //mark channel is cant resolved change pass
+                $channels = AccountInfo::whereIn('id', $listChannelIds)->get();
+                $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name set last_change_pass=7";
+                $result = AccountInfo::whereIn('id', $listChannelIds)->update(['last_change_pass' => 7, "log" => DB::raw("CONCAT(log,'$log')")]);
                 array_push($content, str_replace(':values', $result, "Success :values channels"));
             }
 //            Log::info(DB::getQueryLog());
@@ -1526,6 +1564,140 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         }
     }
 
+    //lấy recovery email mới
+    public function getRecoveryEmail(Request $request) {
+        $user = Auth::user();
+        Log::info("$user->user_name|getRecoveryEmail|request=" . json_encode($request->all()));
+        $id = $request->input('id');
+
+        try {
+            // Check if account already has a recovery email
+            $account = Accountinfo::find($id);
+
+            if (!$account) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Account not found'
+                ]);
+            }
+
+            // If recovery email already exists, return it
+            if ($account->reco_email != null) {
+                return response()->json([
+                            'status' => 'success',
+                            'email' => $account->reco_email
+                ]);
+            }
+
+            // If not, get a new one from API
+            $data = RequestHelper::callAPI2("GET", "http://gmail.69hot.info/manager/email/new/googlereco", []);
+
+            if (isset($data->status) && $data->status == 'success' && isset($data->email)) {
+                $str = $data->email;
+                if (isset($str[0]) && $str[0] === '.') {
+                    return response()->json([
+                                'status' => 'error',
+                                'email' => 'Failed to get recovery email from service, please try again'
+                    ]);
+                }
+                // Update the Accountinfo table with the new recovery email
+                $account->reco_email = $data->email;
+                $account->save();
+
+                return response()->json([
+                            'status' => 'success',
+                            'email' => $data->email
+                ]);
+            } else {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Failed to get recovery email from service'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    //hàm lấy code để đổi recovery email, truyền vào recovery email mới
+    function getCodeRecoveryForChangeRecovery(Request $request) {
+        $account = AccountInfo::where("hash_pass", $request->hash)->first();
+        if (!$account) {
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'Not found info'
+            ]);
+        }
+        $data = RequestHelper::callAPI2("GET", "http://gmail.69hot.info/manager/google-reco/verify/$account->reco_email/$account->note", []);
+        Log::info(json_encode($data));
+        if ($data->status == "success") {
+            return response()->json([
+                        'status' => 'success',
+                        'message' => 'success',
+                        'code' => $data->code
+            ]);
+        }
+        return response()->json([
+                    'status' => 'error',
+                    'message' => "Haven't received code yet, try again"
+        ]);
+    }
+
+    //cập nhật trạng thái đã hoàn thành update revovery bằng tay
+    public function finishRecoveryEmail(Request $request) {
+        $user = Auth::user();
+        $id = $request->input('id');
+
+        try {
+            // Get account info to get reco_email
+            $account = Accountinfo::find($id);
+
+            if (!$account) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Account not found'
+                ]);
+            }
+
+            if ($account->reco_email == null) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'No recovery email found for this account'
+                ]);
+            }
+
+            $gmail = $account->note;
+            $recoveryEmail = $account->reco_email;
+
+            $input2 = array("gmail" => $gmail);
+            $mail = RequestHelper::callAPI2("POST", "http://165.22.105.138/automail/api/mail/get/", $input2);
+            $reco = $mail->recovery_email;
+            Log::info("mail: $gmail old recovery:$reco new recovery: $recoveryEmail");
+
+            // Call API to update recovery email
+            $input = array("gmail" => $gmail, "recoveryEmail" => $recoveryEmail);
+
+            RequestHelper::callAPI2("POST", "http://165.22.105.138/automail/api/mail/update/", $input);
+            $account->log = $account->log . PHP_EOL . Utils::timeToStringGmT7(time()) . " $user->user_name change recovery old recovery:$reco new recovery: $recoveryEmail";
+            $account->reco_email = null;
+            $account->last_change_pass = time();
+            $account->message = null;
+            $account->save();
+            return response()->json([
+                        'status' => 'success',
+                        'message' => 'Recovery email has been confirmed'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     //lấy code từ mail recovery
     function getCodeRecovery(Request $request) {
         $user = Auth::user();
@@ -1548,10 +1720,13 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $data = RequestHelper::callAPI2("GET", "http://gmail.69hot.info/manager/google-reco/verify-mess/$reco/$accountInfo->note", []);
             Log::info(json_encode($data));
             $code = "Not Found";
-            if (preg_match('/>(\d{6})</', $data->body, $match)) {
-                $code = $match[1];
+            $status = "error";
+            if (isset($data->body)) {
+                if (preg_match('/>(\d{6})</', $data->body, $match)) {
+                    $code = $match[1];
+                }
             }
-            return array("status" => "success", "data" => $code);
+            return array("status" => $status, "data" => $code);
         } else {
             return array("status" => "error");
         }
@@ -2596,6 +2771,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         DB::enableQueryLog();
         $thirtyDaysAgo = time() - (30 * 24 * 60 * 60);
         $channels = AccountInfo::whereNotNull("note")->whereNotNull("gologin")->whereNotNull("otp_key")
+                        ->where("del_status", 0)
                         ->where("status", 1)->whereRaw("(last_change_pass is null or (last_change_pass <> 0 and last_change_pass < $thirtyDaysAgo))")->take(500)->get();
 //        Log::info(DB::getQueryLog());
         $time = time();
@@ -3220,7 +3396,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                 Log::error('Error decoding channel IDs: ' . $e->getMessage());
             }
         }
-        
+
         if (empty($channelIds)) {
             return response()->json([
                         'status' => 'error',
@@ -3239,7 +3415,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         ob_start();
         if ($request->is_admin_music) {
             $channels = AccountInfo::whereIn("id", $channelIds)->take(10)
-                    ->orderByRaw('FIELD(id, ' . implode(',', $channelIds) . ')')->get();
+                            ->orderByRaw('FIELD(id, ' . implode(',', $channelIds) . ')')->get();
         } else {
             $channels = AccountInfo::whereIn("id", $channelIds)
                     ->where("user_name", $user->user_code)

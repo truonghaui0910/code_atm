@@ -1212,7 +1212,369 @@
 .reset-filters-btn{
     border-radius: 16px;
 }
+
+.instruments-container {
+    display: flex;
+    align-items: flex-start;
+}
+
+.instruments-list {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: 5px;
+    gap: 5px;
+}
+
+.instrument-badge {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+    margin-bottom: 5px;
+    transition: all 0.2s ease;
+}
+
+.instrument-badge:hover {
+    background-color: #007bff;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Điều chỉnh CSS cho toàn bộ trang quản lý album trên mobile */
+@media (max-width: 767px) {
+    /* Container chính */
+    .container {
+        margin-left: 0;
+        width: 100%;
+        padding: 10px;
+    }
     
+    /* Navbar */
+    .navbar {
+        padding: 10px;
+    }
+    
+    /* Grid hiển thị album */
+    #albums-list .col-md-3 {
+        width: 100%;
+    }
+    
+    /* Album card */
+    .album-card {
+        margin-bottom: 15px;
+    }
+    
+    /* Album detail view */
+    .album-detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .album-detail-title {
+        margin-bottom: 10px;
+        width: 100%;
+    }
+    
+    .album-action-buttons {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    
+    .btn-action {
+        padding: 0 10px;
+        font-size: 12px;
+    }
+    
+    /* Album info panel */
+    .album-info-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    /* Song list section */
+    .songs-container {
+        margin-top: 20px;
+    }
+    
+    .song-item {
+        padding: 8px 10px;
+    }
+    
+    .song-duration {
+        display: none; /* Hide duration on mobile to save space */
+    }
+    
+    /* Add songs modal */
+    .modal-filter-container {
+        padding: 10px;
+    }
+    
+    #genre-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .genre-filter-btn {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    
+    /* Song controls */
+    .modal-song-controls {
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Search box */
+    .search-container {
+        width: 100%;
+        max-width: none;
+    }
+    
+    /* Buttons */
+    .btn-create-album {
+        margin-top: 10px;
+        width: 100%;
+    }
+    
+    /* Fix album filter buttons */
+    .filter-buttons {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    
+    .filter-btn {
+        padding: 5px 10px;
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+    
+    /* Fix audio player */
+    .audio-player {
+        padding: 10px;
+    }
+    
+    #player-time {
+        font-size: 12px;
+    }
+    
+    /* Fix album detail layout */
+    .album-detail-title h5 {
+        font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+    
+    /* Fix status badges */
+    .album-status-badge {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+    
+    /* Fix instrument badges */
+    .instruments-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .instruments-list {
+        width: 100%;
+        margin-top: 5px;
+        margin-left: 0;
+    }
+    
+    .instrument-badge {
+        padding: 3px 8px;
+        font-size: 12px;
+    }
+    .search-container,
+    #album-search-container,
+    .modern-search-container {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 15px;
+    }
+    
+    .search-input,
+    .modern-search-input,
+    #album-search,
+    #album-songs-search,
+    #song-search {
+        width: 100%;
+        font-size: 14px;
+        height: 40px;
+        padding-left: 35px;
+    }
+    
+    .search-icon,
+    .modern-search-icon {
+        left: 10px;
+    }
+    
+    .search-clear,
+    .modern-search-clear {
+        right: 10px;
+    }
+    
+    /* Filter container */
+    .filter-container {
+        padding: 10px;
+        margin-bottom: 15px;
+        width: 100%;
+        overflow-x: auto; /* Cho phép cuộn ngang nếu cần */
+    }
+    
+    .d-flex.justify-content-between.align-items-center.mb-4 {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        width: 100%;
+        overflow-x: auto; /* Cho phép cuộn ngang nếu cần */
+        padding-bottom: 5px; /* Tạo không gian cho thanh cuộn */
+        justify-content: flex-start;
+    }
+    
+    .filter-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+        margin-right: 0;
+        flex-shrink: 0;
+    }
+    
+    /* Đảm bảo không bị tràn khỏi viewport */
+    .filter-container::-webkit-scrollbar {
+        height: 3px;
+    }
+    
+    .filter-container::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+    }
+    
+    /* Sắp xếp lại layout của header phần albums */
+    .d-flex.justify-content-between.align-items-center.mb-4 #album-search-container {
+        order: 2;
+        width: 100%;
+    }
+    
+    .filter-container {
+        order: 3;
+        width: 100%;
+    }
+    
+    /* Form search trong modal */
+    #modal-songs-search-form,
+    #album-songs-search-form {
+        width: 100%;
+    }
+    
+    .input-group {
+        width: 100%;
+    }
+    
+    .input-group-append {
+        display: flex;
+    }
+    
+    /* Hiệu ứng hover cho filter button trên mobile */
+    .filter-btn:active {
+        transform: scale(0.95);
+    }
+    
+    /* Đảm bảo filter button không quá nhỏ */
+    .filter-btn {
+        min-width: 70px;
+        text-align: center;
+    }
+}
+
+/* Add more responsive fixes for extra small devices */
+@media (max-width: 480px) {
+    .album-action-buttons {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .btn-action {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    
+    .song-item .d-flex {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .song-info {
+        margin-left: 0;
+        margin-top: 5px;
+    }
+    
+    .btn-play-song {
+        margin-bottom: 5px;
+    }
+    
+    /* Make sure album title is visible */
+    .album-title {
+        font-size: 16px;
+        line-height: 1.2;
+    }
+    
+    /* Fix song item layout */
+    .song-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .song-item .d-flex:last-child {
+        margin-top: 8px;
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    /* Better hamburger menu */
+    .navbar-toggler {
+        padding: 5px;
+    }
+    .filter-buttons {
+        justify-content: space-between;
+    }
+    
+    .filter-btn {
+        min-width: auto;
+        flex: 1;
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+    
+    /* Đặt search box ở trên cùng */
+    .d-flex.justify-content-between.align-items-center.mb-4 {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Tăng khoảng cách giữa các phần */
+    .filter-container {
+        margin-top: 10px;
+    }
+}
 </style>
 <div class="container">
     <!-- Navbar -->
@@ -1453,44 +1815,44 @@
 
     }
 
-function addArtist() {
-    var form = $("#form-add-artist").serialize();
-    const saveBtn = $(".btn-save-artist");
-    saveBtn.html('<i class="fas fa-spinner fa-spin"></i> Saving...').prop('disabled', true);
-    
-    $.ajax({
-        type: "POST",
-        url: "/albumAddArtist",
-        data: form,
-        dataType: 'json',
-        success: function(data) {
-            logger('addArtist', data);
-            showNotification(data.message, data.status);
-            saveBtn.html('<i class="fa fa-save"></i> Save').prop('disabled', false);
-            
-            if (data.status == "success") {
-                // If this was an edit operation (album_id was provided)
-                const albumId = $('#edit_album_id').val();
-                if (albumId) {
-                    // Update the album artist UI
-                    const newArtistName = $('#artist_name').val();
-                    updateArtistNameUI(albumId, newArtistName);
-                } else {
-                    // Original functionality - refresh artist list
-                    artistList();
+    function addArtist() {
+        var form = $("#form-add-artist").serialize();
+        const saveBtn = $(".btn-save-artist");
+        saveBtn.html('<i class="fas fa-spinner fa-spin"></i> Saving...').prop('disabled', true);
+
+        $.ajax({
+            type: "POST",
+            url: "/albumAddArtist",
+            data: form,
+            dataType: 'json',
+            success: function(data) {
+                logger('addArtist', data);
+                showNotification(data.message, data.status);
+                saveBtn.html('<i class="fa fa-save"></i> Save').prop('disabled', false);
+
+                if (data.status == "success") {
+                    // If this was an edit operation (album_id was provided)
+                    const albumId = $('#edit_album_id').val();
+                    if (albumId) {
+                        // Update the album artist UI
+                        const newArtistName = $('#artist_name').val();
+                        updateArtistNameUI(albumId, newArtistName);
+                    } else {
+                        // Original functionality - refresh artist list
+                        artistList();
+                    }
+
+                    // Reset form and close modal
+                    $("#form-add-artist")[0].reset();
+                    $("#dialog_add_artist").modal("hide");
                 }
-                
-                // Reset form and close modal
-                $("#form-add-artist")[0].reset();
-                $("#dialog_add_artist").modal("hide");
+            },
+            error: function(data) {
+                console.log('Error:', data);
+                saveBtn.html('<i class="fa fa-save"></i> Save').prop('disabled', false);
             }
-        },
-        error: function(data) {
-            console.log('Error:', data);
-            saveBtn.html('<i class="fa fa-save"></i> Save').prop('disabled', false);
-        }
-    });
-}
+        });
+    }
 
     function artistList() {
         $.ajax({
@@ -1651,6 +2013,19 @@ function addArtist() {
                 .then(([albumData, songsResponse]) => {
                     if (albumData && albumData.id) {
                         // Chuyển đổi dữ liệu từ API getAlbum sang định dạng cần thiết
+                
+                        let instruments = [];
+                        if (albumData.instruments) {
+                            try {
+                                // If instruments are stored as a JSON string, parse them
+                                instruments = typeof albumData.instruments === 'string' 
+                                    ? JSON.parse(albumData.instruments) 
+                                    : albumData.instruments;
+                            } catch (e) {
+                                console.error('Error parsing instruments:', e);
+                                instruments = [];
+                            }
+                        }
                         const processedAlbum = {
                             id: albumData.id,
                             name: albumData.album_name,
@@ -1664,6 +2039,7 @@ function addArtist() {
                             status: albumData.status,
                             distroReleaseDate: albumData.distro_release_date,
                             username: albumData.username,
+                            instruments: instruments,
                             spotify_info: JSON.parse(albumData.spotify_info)
                         };
 
@@ -2176,8 +2552,22 @@ function addArtist() {
             month: 'long',
             day: 'numeric'
         });
+        let instrumentsHTML = '';
+        if (album.instruments && album.instruments.length > 0) {
+            instrumentsHTML = `
+                <div class="album-info-item">
+                    <div class="album-info-label">Instruments</div>
+                    <div class="album-info-value instruments-container">
+                        <div class="instruments-list">
+                            ${album.instruments.map(instrument => 
+                                `<span class="album-genre-badge">${instrument}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
 
-        // Chuẩn bị phần Spotify links nếu có dữ liệu
         let spotifyLinksHTML = '';
 
         if (album.spotify_info) {
@@ -2255,6 +2645,8 @@ function addArtist() {
                         </span>
                     </div>
                 </div>
+
+                ${instrumentsHTML}
 
                 <div class="album-info-item">
                     <div class="album-info-label">Songs</div>
@@ -3734,7 +4126,7 @@ function applyFilters() {
             const isArtist = $(this).find('i').hasClass('fa-user');
             showNotification(`Spotify ${isArtist ? 'artist' : 'album'} link copied to clipboard`, "success");
         });
-
+        
     });
 </script>
 @endsection

@@ -1018,7 +1018,7 @@ class CallbackController extends Controller {
                     $rs = explode(";;", $temp->result);
                     if (count($rs) == 2) {
                         $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change pass success job_id=$request->id oldpass: " . $rs[0] . " newpass: " . $rs[1];
-                        $accountInfo = AccountInfo::where("note", $request->gmail)->update(['last_change_pass' => time(),"message"=>"Change pass success", "log" => DB::raw("CONCAT(log,'$log')")]);
+                        $accountInfo = AccountInfo::where("note", $request->gmail)->update(['last_change_pass' => time(), "message" => "Change pass success", "log" => DB::raw("CONCAT(log,'$log')")]);
                         $input = array("gmail" => $request->gmail, "passWord" => $rs[1]);
                         RequestHelper::callAPI2("POST", "http://165.22.105.138/automail/api/mail/update/", $input);
                         $message = "success $message";
@@ -1027,9 +1027,9 @@ class CallbackController extends Controller {
                     }
                 }
             }
-        } else if($request->status == 4){
+        } else if ($request->status == 4) {
             $error = $this->extractBASErrors($request->result);
-            $logMessage = "Change Pass Error\n" . $error[0]["error_message"];
+            $logMessage = $error[0]["error_message"] . "\nChange Pass Error";
             $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change fail fail job_id=$request->id";
             $accountInfo = AccountInfo::where("note", $request->gmail)->update(['last_change_pass' => 4, "message" => $logMessage, "log" => DB::raw("CONCAT(log,'$log')")]);
             $message = "fail $message";
@@ -1044,15 +1044,32 @@ class CallbackController extends Controller {
         $message = "callbackInfoChange|job_id=$request->id,ref_id=$request->studio_id,gmail= $request->gmail ,status=$request->status";
 
         if ($request->status == 5) {
-            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change info success job_id=$request->id";
+            $newPass = null;
+            $newRecovery = null;
+            $results = explode("@;@", str_replace(array("\r\n", "\n"), "@;@", trim($request->result)));
+            foreach ($results as $result) {
+                $temp = json_decode($result);
+                if (Utils::containString($result, "change_info")) {
+                    $rs = explode(":", $temp->result);
+                    if (count($rs) == 2) {
+                        $newRecovery = $rs[0];
+                        $newPass = $rs[1];
+                    }
+                }
+            }
+            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change info success job_id=$request->id,newpass=$newPass,newRecove=$newRecovery";
             AccountInfo::where("note", $request->gmail)->update(['last_change_pass' => time(), "log" => DB::raw("CONCAT(log,'$log')")]);
             //đổi text từ change info fail thành fail change info để search những trường hợp fail  = từ khóa change info fail
-            AccountInfo::where("note", $request->gmail)->update(['last_change_pass' => time(), "message" => "Change info success",'log' => DB::raw("REPLACE(log, 'change info fail', 'fail change info')")]);
+            AccountInfo::where("note", $request->gmail)->update(['last_change_pass' => time(), "message" => "Change info success", 'log' => DB::raw("REPLACE(log, 'change info fail', 'fail change info')")]);
             RequestHelper::callAPI("GET", $tele . urlencode($message), []);
+            if ($newPass != null) {
+                $input = array("gmail" => $request->gmail, "passWord" => $newPass);
+                RequestHelper::callAPI2("POST", "http://165.22.105.138/automail/api/mail/update/", $input);
+            }
             return 1;
-        } else if($request->status == 4) {
+        } else if ($request->status == 4) {
             $error = $this->extractBASErrors($request->result);
-            $logMessage = "Change Info Error\n" . $error[0]["error_message"];
+            $logMessage = $error[0]["error_message"] . "\nChange Info Error";
             $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change info fail job_id=$request->id";
             $accountInfo = AccountInfo::where("note", $request->gmail)->update(['last_change_pass' => 4, "message" => $logMessage, "log" => DB::raw("CONCAT(log,'$log')")]);
             $message = "fail $message";

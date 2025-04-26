@@ -1340,8 +1340,8 @@ class Controller extends BaseController {
     }
 
     protected function genIsChangeInfo(Request $request) {
-        $value = array('-1', '0', '1');
-        $label = array(trans('label.value.select'), "Change Info Fail", "Change Info Success");
+        $value = array('-1', '4', '1','2','6','7');
+        $label = array(trans('label.value.select'), "Change Info Fail", "Change Info Success","Not Change info yet","Cant resolve","User need to check");
         $option = "";
         for ($i = 0; $i < count($value); $i++) {
             if ($value[$i] == $request->is_changeinfo) {

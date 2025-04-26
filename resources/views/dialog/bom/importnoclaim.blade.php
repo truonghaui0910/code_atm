@@ -90,6 +90,8 @@
                                 <span class="col-12 font-13 text-muted">https://www.universalmusicforcreators.com/library/playlists/<b>playlist_id</b>/ for universal</span>
                                 <span class="col-12 font-13 text-muted">https://www.epidemicsound.com/saved/<b>playlist_id</b>/ for epidemicsound</span>
                                 <span class="col-12 font-13 text-muted">https://www.youtube.com/watch?v=<b>video_id</b>/ for youtube</span>
+                                <span class="col-12 font-13 text-muted">https://suno.com/playlist/<b>playlist_id</b>/ for Suno</span>
+                                <span class="col-12 font-13 text-muted">https://www.udio.com/playlists/<b>playlist_id</b>/ for Udio</span>
                             </div>
                         </div>
                     </div>
@@ -118,6 +120,15 @@
                                        <input id="chk_keep_name" name="chk_keep_name" class="" type="checkbox" onchange="showCustomName(this)" value="1">
                                        <label for="chk_keep_name" class="m-b-18 m-l-15"></label>
                                        <span>Custom Artist Name and Song Name</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="div_check_udio disp-none">
+                            <div class="col-md-12">
+                                <div class="checkbox-radius checkbox-circle d-flex">
+                                       <input id="chk_lyric_later" name="chk_lyric_later" class="" type="checkbox"  value="1">
+                                       <label for="chk_lyric_later" class="m-b-18 m-l-15"></label>
+                                       <span>Update lyric later</span>
                                 </div>
                             </div>
                         </div>

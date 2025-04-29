@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Log;
 use TheSeer\Tokenizer\Exception;
+use Validator;
+use function Symfony\Component\Debug\header;
 
 class BomController extends Controller {
 
@@ -2781,7 +2783,7 @@ class BomController extends Controller {
             return response()->json(['status' => "error", 'message' => 'Not found album']);
         }
         $year = $year = substr($albumDb->release_date, 0, 4);
-        $bomTracks = Bom::where("album_id", $request->id)->get();
+        $bomTracks = Bom::where("album_id", $request->id)->orderBy("order_id")->get();
         $format = "Album";
         if (count($bomTracks) == 0) {
             return response()->json(['status' => "error", 'message' => 'You need to add songs to the album before releasing it']);
@@ -3022,7 +3024,8 @@ class BomController extends Controller {
                 ->where("status", 1)
                 ->where("sync", 1)
                 ->where("album_id", $request->id)
-                ->whereNotNull("direct_wav");
+                ->whereNotNull("direct_wav")
+                ->orderBy("order_id");
         $songs = $songs->get([
             "id",
             "genre",
@@ -3036,6 +3039,82 @@ class BomController extends Controller {
         return response()->json($songs);
     }
 
+    public function updateSongOrder(Request $request) {
+        // Validate the request data
+        $validator = Validator::make($request->all(), [
+                    'album_id' => 'required|integer',
+                    'song_order' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                        'status' => 'error',
+                        'message' => $validator->errors()->first()
+            ]);
+        }
+
+        // Parse the song order JSON
+        $songOrder = json_decode($request->song_order, true);
+
+        if (!is_array($songOrder) || empty($songOrder)) {
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'Invalid song order data'
+            ]);
+        }
+
+        try {
+            // Get the album
+            $album = DB::table('bom_albums')->where('id', $request->album_id)->first();
+
+            // Check if album exists
+            if (!$album) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Album not found'
+                ]);
+            }
+
+            // Check if the album is already distributed
+            if ($album->is_released == 1) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Cannot update song order for a distributed album'
+                ]);
+            }
+
+            // Begin transaction
+            DB::beginTransaction();
+
+            // Update each song's order
+            foreach ($songOrder as $item) {
+                if (isset($item['song_id']) && isset($item['order_id'])) {
+                    // Update the order_id in the song_album table
+                    DB::table('bom')
+                            ->where('id', $item['song_id'])
+                            ->where('album_id', $request->album_id)
+                            ->update(['order_id' => $item['order_id']]);
+                }
+            }
+
+            // Commit transaction
+            DB::commit();
+
+            return response()->json([
+                        'status' => 'success',
+                        'message' => 'Song order updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            // Rollback transaction in case of error
+            DB::rollBack();
+
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'An error occurred while updating song order: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     public function addSongToAlbum(Request $request) {
         $user = Auth::user();
         Log::info("$user->user_name|BomController.addSongToAlbum|request=" . json_encode($request->all()));
@@ -3047,6 +3126,15 @@ class BomController extends Controller {
         if (!$album) {
             return response()->json(["status" => "error", "message" => "Album is not exists"]);
         }
+
+        $allArtistAlbum = BomAlbum::where("artist_id", $album->artist_id)->pluck("id");
+        $boms = Bom::whereIn("album_id", $allArtistAlbum)->get();
+        foreach ($boms as $b) {
+            if ($b->song_name == $song->song_name) {
+                return response()->json(["status" => "error", "message" => "Song name $song->song_name exists. Please choose another song or rename the song"]);
+            }
+        }
+
         $song->artist = $album->artist;
         $song->album_id = $request->album_id;
         $song->save();

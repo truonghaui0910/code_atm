@@ -1988,47 +1988,47 @@ class DashboardController extends Controller {
         return array("status" => "success", "message" => "Success");
     }
 
-    //update video promo dùng wakeup happy hay không
-    public function promoWake(Request $request) {
-        $user = Auth::user();
-        Log::info('|' . $user->user_name . '|DashboardController.promoWake|request=' . json_encode($request->all()));
-        $campaign = Campaign::find($request->id);
-        if ($campaign) {
-            $campaign->is_wakeup = $request->status;
-            $log = $campaign->log;
-            $log .= PHP_EOL . gmdate("Y/m/d H:i:s", time() + 7 * 3600) . " $user->user_name channge is_wakeup to $request->status";
-            $campaign->log = $log;
-            $campaign->save();
-            $accountInfo = AccountInfo::where("chanel_id", $campaign->channel_id)->first();
-            if ($accountInfo) {
-                $promoVideo = $accountInfo->promo_videos;
-                if ($promoVideo != null) {
-                    $array = explode(",", $promoVideo);
-                    //thêm mới promos wakeup
-                    if ($request->status == 1) {
-                        array_push($array, $campaign->video_id);
-                    } else {
-                        //xóa promo_wakeup
-                        foreach ($array as $index => $data) {
-                            if ($data == $campaign->video_id) {
-                                unset($array[$index]);
-                                continue;
-                            }
-                        }
-                    }
-                    $temp = array_unique($array);
-                    $accountInfo->promo_videos = implode(",", $temp);
-                } else {
-                    $accountInfo->promo_videos = $campaign->video_id;
-                }
-                $accountInfo->save();
-            }
-
-            return array("status" => "success", "message" => "Success");
-        } else {
-            return array("status" => "success", "message" => "Not found $request->id");
-        }
-    }
+//    //update video promo dùng wakeup happy hay không
+//    public function promoWake(Request $request) {
+//        $user = Auth::user();
+//        Log::info('|' . $user->user_name . '|DashboardController.promoWake|request=' . json_encode($request->all()));
+//        $campaign = Campaign::find($request->id);
+//        if ($campaign) {
+//            $campaign->is_wakeup = $request->status;
+//            $log = $campaign->log;
+//            $log .= PHP_EOL . gmdate("Y/m/d H:i:s", time() + 7 * 3600) . " $user->user_name channge is_wakeup to $request->status";
+//            $campaign->log = $log;
+//            $campaign->save();
+//            $accountInfo = AccountInfo::where("chanel_id", $campaign->channel_id)->first();
+//            if ($accountInfo) {
+//                $promoVideo = $accountInfo->promo_videos;
+//                if ($promoVideo != null) {
+//                    $array = explode(",", $promoVideo);
+//                    //thêm mới promos wakeup
+//                    if ($request->status == 1) {
+//                        array_push($array, $campaign->video_id);
+//                    } else {
+//                        //xóa promo_wakeup
+//                        foreach ($array as $index => $data) {
+//                            if ($data == $campaign->video_id) {
+//                                unset($array[$index]);
+//                                continue;
+//                            }
+//                        }
+//                    }
+//                    $temp = array_unique($array);
+//                    $accountInfo->promo_videos = implode(",", $temp);
+//                } else {
+//                    $accountInfo->promo_videos = $campaign->video_id;
+//                }
+//                $accountInfo->save();
+//            }
+//
+//            return array("status" => "success", "message" => "Success");
+//        } else {
+//            return array("status" => "success", "message" => "Not found $request->id");
+//        }
+//    }
 
     //chay lai autowakeup bị lỗi
     public function refreshAutoWake(Request $request) {

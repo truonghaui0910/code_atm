@@ -2037,6 +2037,7 @@
         <form id="form-search" action="/channelmanagement/v2">
             <input type="hidden" name="limit" id="limit" value="{{ $limit }}">
             <input id="is_change_info_error" type="hidden" name="is_change_info_error" value="{{$request->is_change_info_error}}"/>
+            <input id="is_upload_error" type="hidden" name="is_upload_error" value="{{$request->is_upload_error}}"/>
             <div class="filter-groups-row">
                 <!-- Left Column -->
                 <div class="col-md-6 filter-group-wrapper">
@@ -2789,6 +2790,15 @@
                                     <i class="fas fa-chart-line"></i> Chart
                                 </button>
                             
+                            <button type="button"  onclick="filterUploadError(this)"
+                                class="btn btn-outline-warning mr-2 btn-100 position-relative <?php echo $request->is_upload_error==1?"active":""; ?>" style="overflow: visible"
+                                data-toggle="tooltip" data-placement="top"
+                                data-original-title="Error upload">
+                                <i class="fas fa-exclamation-triangle"></i> Upload 
+                                @if($errorCountUpload>0)
+                                    <span class="filter-badge ">{{ $errorCountUpload }}</span>
+                                @endif    
+                            </button>
                             <button type="button" id="errorChangeInfoBtn" onclick="filterError(this)"
                                 class="btn btn-outline-warning mr-2 btn-100 position-relative <?php echo $request->is_change_info_error==1?"active":""; ?>" style="overflow: visible"
                                 data-toggle="tooltip" data-placement="top"
@@ -2800,7 +2810,7 @@
                             </button>
                             <button type="button" id="showFilterBtn"
                                 class="btn btn-outline-primary mr-2 btn-100 position-relative" style="overflow: visible">
-                                <i class="fas fa-filter mr-1"></i> Advanced Filters
+                                <i class="fas fa-filter mr-1"></i> Advanced
                             </button>
                             <button type="button" class="btn btn-outline-success btn-add-channel mr-2 btn-100"
                                 data-toggle="tooltip" data-placement="top" data-original-title="Add Channel">
@@ -3488,6 +3498,28 @@
                 $("#is_change_info_error").val(null);
             }else{
                 $("#is_change_info_error").val(1);
+            }
+             $('#btnSearch').click();
+
+//            // Lấy URL hiện tại
+//            var currentUrl = window.location.href;
+//
+//            // Kiểm tra xem URL đã có dấu ? chưa
+//            var newUrl = currentUrl.includes('?') ?
+//                currentUrl + '&is_change_info_error=1' :
+//                currentUrl + '?is_change_info_error=1';
+//
+//            // Chuyển hướng đến URL mới
+//            window.location.href = newUrl;
+
+               
+        }
+        function filterUploadError($this) {
+
+            if($($this).hasClass("active")){
+                $("#is_upload_error").val(null);
+            }else{
+                $("#is_upload_error").val(1);
             }
              $('#btnSearch').click();
 

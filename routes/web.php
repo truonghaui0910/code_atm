@@ -502,6 +502,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/updateAlbumReleaseDate', 'BomController@updateAlbumReleaseDate')->name('updateAlbumReleaseDate');
         Route::get('/scanAlbum', 'BomController@scanAlbum')->name('scanAlbum');
         Route::get('/album/check/artist', 'BomController@checkAlbumArtist')->name('checkAlbumArtist');
+        Route::post('/updateSongOrder', 'BomController@updateSongOrder')->name('updateSongOrder');
 
         Route::get('/intros', 'IntroController@index')->name('intros');
         Route::post('/introsStore', 'IntroController@store')->name('introsStore');
@@ -561,6 +562,9 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/goLogin', 'ChannelManagementController@goLogin')->name('goLogin');
         Route::get('/getCodeLogin', 'ChannelManagementController@getCodeLogin')->name('getCodeLogin');
         Route::get('/getCodeRecovery', 'ChannelManagementController@getCodeRecovery')->name('getCodeRecovery');
+        Route::get('/getRecoveryEmail', 'ChannelManagementController@getRecoveryEmail')->name('getRecoveryEmail');
+        Route::get('/getCodeRecoveryForChangeRecovery', 'ChannelManagementController@getCodeRecoveryForChangeRecovery')->name('getCodeRecoveryForChangeRecovery');
+        Route::post('/finishRecoveryEmail', 'ChannelManagementController@finishRecoveryEmail')->name('finishRecoveryEmail');
         Route::get('/getDataChart', 'ChannelManagementController@getDataChart')->name('getDataChart');
         Route::get('/getDataCharts', 'ChannelManagementController@getDataCharts')->name('getDataCharts');
 

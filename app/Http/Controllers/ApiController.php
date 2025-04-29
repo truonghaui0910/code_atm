@@ -2308,86 +2308,86 @@ class ApiController extends Controller {
         }
     }
 
-    //thêm promo_videos vào accountinfo để check vị trí wakeup và đồng thời thêm vào campaign
-    public function addPromosByList() {
-        $videos = ["MVAdUS6DIgk"];
-        $promos = CampaignStatistics::where("type", 1)->where("status", 1)->whereNotNull("artist")->whereNotNull("song_name")->get();
-        foreach ($videos as $videoId) {
-
-            for ($t = 0; $t < 15; $t++) {
-                error_log("addPromosByList Retry $videoId");
-                $videoInfo = YoutubeHelper::getVideoInfoHtmlDesktop($videoId);
-                error_log(json_encode($videoInfo));
-                if ($videoInfo["status"] == 1) {
-                    $channelId = $videoInfo["channelId"];
-                    $accountInfo = AccountInfo::where("chanel_id", $channelId)->first();
-                    if ($accountInfo) {
-                        $promoVideo = $accountInfo->promo_videos;
-                        if ($promoVideo != null) {
-                            $array = explode(",", $promoVideo);
-                            array_push($array, $videoId);
-                            $temp = array_unique($array);
-                            $accountInfo->promo_videos = implode(",", $temp);
-                        } else {
-                            $accountInfo->promo_videos = $videoId;
-                        }
-                        $accountInfo->save();
-                        error_log("addPromosByList $promoVideo => $accountInfo->promo_videos");
-
-                        //check video mới nhất xem có video nào thuộc campaign mà chưa được add thì add vào
-
-                        $pos = strripos($accountInfo->user_name, '_');
-                        $manager = substr($accountInfo->user_name, 0, $pos);
-                        $listSongName = json_decode($videoInfo["song_name"]);
-                        $listArtist = json_decode($videoInfo["artists"]);
-                        $listLicenses = json_decode($videoInfo["license"]);
-                        $duration = intval($videoInfo["length"]);
-                        $curr = time();
-                        $videoType = 2;
-                        if ($duration <= 90) {
-                            $videoType = 6;
-                        } else if ($duration > 90 && $duration <= 8 * 60) {
-                            $videoType = 2;
-                        } else {
-                            $videoType = 5;
-                        }
-                        foreach ($promos as $promo) {
-                            $checkCam = Campaign::where("video_id", $videoId)->where("campaign_id", $promo->id)->first();
-                            if (!$checkCam) {
-                                if (in_array($promo->song_name, $listSongName) && in_array($promo->artist, $listArtist)) {
-                                    $campaign = new Campaign();
-                                    $campaign->username = $manager;
-                                    $campaign->campaign_id = $promo->id;
-                                    $campaign->campaign_name = $promo->campaign_name;
-                                    $campaign->channel_id = $videoInfo["channelId"];
-                                    $campaign->channel_name = $videoInfo["channelName"];
-                                    $campaign->video_type = $videoType;
-                                    $campaign->video_id = $videoId;
-                                    $campaign->video_title = $videoInfo["title"];
-                                    $campaign->views_detail = '[]';
-                                    $campaign->status = $videoInfo["status"];
-                                    $campaign->create_time = gmdate("m/d/Y H:i:s", $curr + 7 * 3600);
-                                    $campaign->update_time = gmdate("m/d/Y H:i:s", $curr + 7 * 3600);
-                                    $campaign->publish_date = $videoInfo["publish_date"];
-                                    $campaign->insert_date = gmdate("Ymd", $curr + 7 * 3600);
-                                    $campaign->insert_time = gmdate("H:i:s", $curr + 7 * 3600);
-                                    $campaign->log = "$campaign->create_time System added";
-                                    $campaign->status_confirm = 1;
-                                    $campaign->save();
-                                    error_log("addPromosByList auto add campaign $videoId to campaign $promo->id");
-                                }
-                            } else {
-                                error_log("addPromosByList $videoId exists on campaign $checkCam->id");
-                            }
-                        }
-                    } else {
-                        error_log("addPromosByList $videoId is not belong any channel");
-                    }
-                    break;
-                }
-            }
-        }
-    }
+//    //thêm promo_videos vào accountinfo để check vị trí wakeup và đồng thời thêm vào campaign
+//    public function addPromosByList() {
+//        $videos = ["MVAdUS6DIgk"];
+//        $promos = CampaignStatistics::where("type", 1)->where("status", 1)->whereNotNull("artist")->whereNotNull("song_name")->get();
+//        foreach ($videos as $videoId) {
+//
+//            for ($t = 0; $t < 15; $t++) {
+//                error_log("addPromosByList Retry $videoId");
+//                $videoInfo = YoutubeHelper::getVideoInfoHtmlDesktop($videoId);
+//                error_log(json_encode($videoInfo));
+//                if ($videoInfo["status"] == 1) {
+//                    $channelId = $videoInfo["channelId"];
+//                    $accountInfo = AccountInfo::where("chanel_id", $channelId)->first();
+//                    if ($accountInfo) {
+//                        $promoVideo = $accountInfo->promo_videos;
+//                        if ($promoVideo != null) {
+//                            $array = explode(",", $promoVideo);
+//                            array_push($array, $videoId);
+//                            $temp = array_unique($array);
+//                            $accountInfo->promo_videos = implode(",", $temp);
+//                        } else {
+//                            $accountInfo->promo_videos = $videoId;
+//                        }
+//                        $accountInfo->save();
+//                        error_log("addPromosByList $promoVideo => $accountInfo->promo_videos");
+//
+//                        //check video mới nhất xem có video nào thuộc campaign mà chưa được add thì add vào
+//
+//                        $pos = strripos($accountInfo->user_name, '_');
+//                        $manager = substr($accountInfo->user_name, 0, $pos);
+//                        $listSongName = json_decode($videoInfo["song_name"]);
+//                        $listArtist = json_decode($videoInfo["artists"]);
+//                        $listLicenses = json_decode($videoInfo["license"]);
+//                        $duration = intval($videoInfo["length"]);
+//                        $curr = time();
+//                        $videoType = 2;
+//                        if ($duration <= 90) {
+//                            $videoType = 6;
+//                        } else if ($duration > 90 && $duration <= 8 * 60) {
+//                            $videoType = 2;
+//                        } else {
+//                            $videoType = 5;
+//                        }
+//                        foreach ($promos as $promo) {
+//                            $checkCam = Campaign::where("video_id", $videoId)->where("campaign_id", $promo->id)->first();
+//                            if (!$checkCam) {
+//                                if (in_array($promo->song_name, $listSongName) && in_array($promo->artist, $listArtist)) {
+//                                    $campaign = new Campaign();
+//                                    $campaign->username = $manager;
+//                                    $campaign->campaign_id = $promo->id;
+//                                    $campaign->campaign_name = $promo->campaign_name;
+//                                    $campaign->channel_id = $videoInfo["channelId"];
+//                                    $campaign->channel_name = $videoInfo["channelName"];
+//                                    $campaign->video_type = $videoType;
+//                                    $campaign->video_id = $videoId;
+//                                    $campaign->video_title = $videoInfo["title"];
+//                                    $campaign->views_detail = '[]';
+//                                    $campaign->status = $videoInfo["status"];
+//                                    $campaign->create_time = gmdate("m/d/Y H:i:s", $curr + 7 * 3600);
+//                                    $campaign->update_time = gmdate("m/d/Y H:i:s", $curr + 7 * 3600);
+//                                    $campaign->publish_date = $videoInfo["publish_date"];
+//                                    $campaign->insert_date = gmdate("Ymd", $curr + 7 * 3600);
+//                                    $campaign->insert_time = gmdate("H:i:s", $curr + 7 * 3600);
+//                                    $campaign->log = "$campaign->create_time System added";
+//                                    $campaign->status_confirm = 1;
+//                                    $campaign->save();
+//                                    error_log("addPromosByList auto add campaign $videoId to campaign $promo->id");
+//                                }
+//                            } else {
+//                                error_log("addPromosByList $videoId exists on campaign $checkCam->id");
+//                            }
+//                        }
+//                    } else {
+//                        error_log("addPromosByList $videoId is not belong any channel");
+//                    }
+//                    break;
+//                }
+//            }
+//        }
+//    }
 
     //check xem da brand xong chưa
     public function checkMakeBrand() {

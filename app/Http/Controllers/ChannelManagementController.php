@@ -68,6 +68,9 @@ class ChannelManagementController extends Controller {
 
         $errorCountChangeInfo = $errorCountTmp->where("last_change_pass", $errStatus)->count();
 
+        $uploadCountTmp = clone $datas;
+        $errorCountUpload = $uploadCountTmp->where("status_upload", ">=",3)->count();
+        
         $limit = 30;
         if (isset($request->limit)) {
             if ($request->limit <= 1000 && $request->limit > 0) {
@@ -190,6 +193,10 @@ class ChannelManagementController extends Controller {
             $datas = $datas->where('last_change_pass', $errStatus);
             $queries['is_change_info_error'] = $request->is_change_info_error;
         }
+        if (isset($request->is_upload_error)) {
+            $datas = $datas->where('status_upload','>=',3);
+            $queries['is_upload_error'] = $request->is_upload_error;
+        }
 
         if (isset($request->is_changeinfo) && $request->is_changeinfo != '-1') {
             if ($request->is_changeinfo == 1) {
@@ -303,6 +310,7 @@ class ChannelManagementController extends Controller {
             'stats' => $stats,
             'gmailCounts' => $gmailCounts,
             'errorCountChangeInfo' => $errorCountChangeInfo,
+            'errorCountUpload' => $errorCountUpload
         ]);
     }
 

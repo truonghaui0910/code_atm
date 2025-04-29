@@ -1244,8 +1244,149 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.song-item {
+    cursor: move;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    background-color: #fff;
+    border-radius: 8px;
+}
 
-/* Điều chỉnh CSS cho toàn bộ trang quản lý album trên mobile */
+.drag-handle {
+    cursor: grab;
+    padding: 8px;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drag-handle:hover {
+    color: #495057;
+}
+
+/* Placeholder/ghost style - where the item will be dropped */
+.song-item-ghost {
+    opacity: 0.4;
+    background: #f0f8ff !important;
+    border: 2px dashed #007bff !important;
+    border-radius: 8px;
+}
+
+/* Style for the item being dragged */
+.song-item-drag {
+    background-color: #ffffff !important;
+    border: 1px solid #007bff !important;
+    box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3) !important;
+    transform: scale(1.02) !important;
+    z-index: 1000 !important;
+    opacity: 0.9 !important;
+    color: #212529 !important;
+}
+
+/* Style for the chosen item (before drag starts) */
+.song-item-chosen {
+    background-color: #e3f2fd !important;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.2);
+    color: #0056b3 !important;
+    border-left: 3px solid #007bff !important;
+}
+
+/* Add a subtle visual cue to indicate items are draggable */
+.song-item:hover .drag-handle {
+    color: #007bff;
+    /*animation: wiggle 1s infinite;*/
+}
+
+@keyframes wiggle {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+/* Hide drag handles when album is distributed */
+.album-distributed .drag-handle {
+    display: none;
+}
+
+/* Add more visible indication that an item is being dragged */
+.sortable-drag-active .song-item:not(.song-item-drag):not(.song-item-ghost) {
+    opacity: 0.6;
+}
+
+/* Make the drag handle more prominent */
+.drag-handle {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 8px 6px;
+    margin-right: 10px;
+}
+
+.drag-handle i {
+    font-size: 18px;
+}
+
+#artist-chart-container {
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+}
+
+#artist-chart-container .chart-header h6 {
+    font-weight: 600;
+    color: #343a40;
+    font-size: 16px;
+}
+
+#artist-chart-iframe {
+    border: none;
+    width: 100%;
+    /*height: 500px;*/
+    margin-top: 10px;
+}
+
+/* Style for the artist stats button to match spotify links */
+.view-stats-link {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: 1px solid #e9ecef;
+}
+
+.view-stats-link:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.view-stats-link i {
+    color: #007bff;
+    font-size: 18px;
+    margin-right: 10px;
+}
+
+.view-stats-link span {
+    color: #495057;
+    font-weight: 500;
+}
+
+#close-artist-chart {
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 @media (max-width: 767px) {
     /* Container chính */
     .container {
@@ -1503,6 +1644,14 @@
         min-width: 70px;
         text-align: center;
     }
+    
+    #artist-chart-iframe {
+        height: 400px;
+    }
+    
+    #artist-chart-container {
+        padding: 12px 15px;
+    }
 }
 
 /* Add more responsive fixes for extra small devices */
@@ -1573,6 +1722,14 @@
     /* Tăng khoảng cách giữa các phần */
     .filter-container {
         margin-top: 10px;
+    }
+    
+    #artist-chart-iframe {
+        height: 300px;
+    }
+    
+    #artist-chart-container {
+        padding: 10px;
     }
 }
 </style>
@@ -2291,8 +2448,7 @@
         // Phần code hiển thị danh sách albums (chỉ chạy khi có ít nhất 1 album)
         albums.forEach(album => {
             const songCount = album.songs.length;
-            const distributeStatus = album.distributed == 1 ?
-                    `<span class="badge badge-success album-status-badge">Distributed</span>` :
+            const distributeStatus = album.distributed == 1 ? `<span class="badge badge-success album-status-badge">Distributed</span>` :
                     (album.distributed == 2 ?
                             `<span class="badge badge-warning album-status-badge">Pending Distribution</span>` :
                             `<span class="badge badge-secondary album-status-badge">Not Yet Distributed</span>`);
@@ -2663,7 +2819,7 @@
                             ${album.distributed == 1 ? 'Distributed' : album.distributed == 2 ? 'Pending Distribution' : 'Not Yet Distributed'}
                         </span>
                     </div>
-                </div>
+                </div>                              
             </div>
                                 ${spotifyLinksHTML}
         </div>
@@ -2671,6 +2827,148 @@
 
         return albumInfoHTML;
     }
+    
+    // Function to add the artist chart button after Spotify links
+    function addArtistChartButton(album) {
+        // Check if the album-spotify-links section exists
+        if ($('.album-spotify-links').length > 0) {
+            // Add the artist stats button after the album-spotify-links
+            $('.album-spotify-links').after(`
+                <div class="album-artist-stats mt-3">
+                    <div class="view-stats-link" id="show-artist-chart" data-artist="${encodeURIComponent(album.artist)}">
+                        <i class="fas fa-chart-line" style="color: #007bff;"></i>
+                        <span>View Artist Stats</span>
+                    </div>
+                </div>
+            `);
+        } else {
+            // If spotify links don't exist, add after the album info grid
+            $('.album-info-grid').after(`
+                <div class="album-artist-stats mt-3">
+                    <div class="view-stats-link" id="show-artist-chart" data-artist="${encodeURIComponent(album.artist)}">
+                        <i class="fas fa-chart-line" style="color: #007bff;"></i>
+                        <span>View Artist Stats</span>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Add the chart container at the bottom of the card-body without card wrapper
+        $('#album-details .card-body').append(`
+            <div class="row">
+                <div class="col-12">        
+                <div id="artist-chart-container" class="col-md-12 mt-3 album-info-panel" style="display: none;">
+                    <div class="chart-header d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chart-line mr-1"></i> ${album.artist} Statistics
+                        </h6>
+                        <button id="close-artist-chart" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="chart-body">
+                        <iframe id="artist-chart-iframe" src="about:blank" width="100%" frameborder="0" style="min-height: 800px;"></iframe>
+                    </div>
+                </div>
+                </div>
+            </div>
+        `);
+    }
+
+    // Function to set up event handlers for artist chart
+    function setupArtistChartHandlers() {
+        // Toggle chart visibility when button is clicked
+        $(document).off('click', '#show-artist-chart').on('click', '#show-artist-chart', function() {
+            const artistName = $(this).data('artist');
+            const chartUrl = `https://966d-2402-800-62d1-60f9-cc4c-ff42-12e6-9874.ngrok-free.app/iframe/charts/${artistName}`;
+
+            // Update iframe src
+            $('#artist-chart-iframe').attr('src', chartUrl);
+
+            // Show chart container
+            $('#artist-chart-container').slideDown();
+
+            // Scroll to the chart
+            $('html, body').animate({
+                scrollTop: $('#artist-chart-container').offset().top - 100
+            }, 500);
+
+            // Change button text
+            $(this).find('span').text('Hide Artist Stats');
+            $(this).attr('id', 'hide-artist-chart');
+
+            // Listen for messages from the iframe to adjust height if needed
+            window.addEventListener('message', function(e) {
+                if (e.data && e.data.type === 'resize' && e.data.height) {
+                    $('#artist-chart-iframe').css('height', e.data.height + 'px');
+                }
+            });
+        });
+
+        // Hide chart when hide button is clicked
+        $(document).off('click', '#hide-artist-chart').on('click', '#hide-artist-chart', function() {
+            // Hide chart container
+            $('#artist-chart-container').slideUp();
+
+            // Change button text back
+            $(this).find('span').text('View Artist Stats');
+            $(this).attr('id', 'show-artist-chart');
+        });
+
+        // Close button functionality
+        $(document).off('click', '#close-artist-chart').on('click', '#close-artist-chart', function() {
+            // Hide chart container
+            $('#artist-chart-container').slideUp();
+
+            // Update button
+            $('#hide-artist-chart').find('span').text('View Artist Stats');
+            $('#hide-artist-chart').attr('id', 'show-artist-chart');
+        });
+    }
+
+//    // Function to set up event handlers for artist chart
+//    function setupArtistChartHandlers() {
+//        // Toggle chart visibility when button is clicked
+//        $(document).off('click', '#show-artist-chart').on('click', '#show-artist-chart', function() {
+//            const artistName = $(this).data('artist');
+//            const chartUrl = `https://966d-2402-800-62d1-60f9-cc4c-ff42-12e6-9874.ngrok-free.app/iframe/charts/${artistName}`;
+//
+//            // Update iframe src
+//            $('#artist-chart-iframe').attr('src', chartUrl);
+//
+//            // Show chart container
+//            $('#artist-chart-container').slideDown();
+//
+//            // Scroll to the chart
+//            $('html, body').animate({
+//                scrollTop: $('#artist-chart-container').offset().top - 100
+//            }, 500);
+//
+//            // Change button text
+//            $(this).find('span').text('Hide Artist Stats');
+//            $(this).attr('id', 'hide-artist-chart');
+//        });
+//
+//        // Hide chart when hide button is clicked
+//        $(document).off('click', '#hide-artist-chart').on('click', '#hide-artist-chart', function() {
+//            // Hide chart container
+//            $('#artist-chart-container').slideUp();
+//
+//            // Change button text back
+//            $(this).find('span').text('View Artist Stats');
+//            $(this).attr('id', 'show-artist-chart');
+//        });
+//
+//        // Close button functionality
+//        $(document).off('click', '#close-artist-chart').on('click', '#close-artist-chart', function() {
+//            // Hide chart container
+//            $('#artist-chart-container').slideUp();
+//
+//            // Update button
+//            $('#hide-artist-chart').find('span').text('View Artist Stats');
+//            $('#hide-artist-chart').attr('id', 'show-artist-chart');
+//        });
+//    }
 
     function showAlbumDetails(albumId) {
         currentAlbumId = albumId;
@@ -2786,6 +3084,10 @@
 
             // Render danh sách bài hát
             renderAlbumSongs(album);
+            if(album.distributed === 1 && album.distroReleaseDate){
+                addArtistChartButton(album);
+                setupArtistChartHandlers();
+            }
 
             // Thiết lập sự kiện cho nút Back
             $('#back-to-albums').off('click').on('click', function () {
@@ -2807,93 +3109,286 @@
         });
     }
 
-    function renderAlbumSongs(album) {
-        const songsContainer = $('#album-songs-list');
-        songsContainer.empty();
+//    function renderAlbumSongs(album) {
+//        const songsContainer = $('#album-songs-list');
+//        songsContainer.empty();
+//
+//        if (!album.songs || !album.songs.length) {
+//            songsContainer.html(`
+//        <div class="text-center py-5 text-muted" id="empty-album-message">
+//            <i class="fas fa-music fa-3x mb-3"></i>
+//            <p class="w-100">This album has no songs yet</p>
+//            ${!album.distributed ?
+//                    `<button class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#addSongsModal">
+//                            Add Songs Now
+//                        </button>` : ''}
+//        </div>
+//    `);
+//            $('#audio-player').addClass('d-none');
+//            return;
+//        }
+//
+//        album.songs.forEach(song => {
+////                const spotifyButton = song.spotify_id ? 
+////                    `<a href="https://open.spotify.com/track/${song.spotify_id}" target="_blank" class="spotify-link mr-2" title="Listen on Spotify">
+////                        <i class="fab fa-spotify"></i>
+////                    </a>` : '';   
+//            const spotifyButton = song.spotify_id ?
+//                    `<div class="spotify-link mr-2 cur-poiter" title="Copy Spotify link" data-spotify-id="${song.spotify_id}">
+//                <i class="fab fa-spotify"></i>
+//            </div>` : '';
+//            const songItem = `
+//        <div class="song-item d-flex justify-content-between align-items-center searchable-song-item" data-song-id="${song.id}">
+//            <div class="d-flex align-items-center">
+//                <button class="btn-play-song play-song-btn mr-2" data-song-id="${song.id}" type="button">
+//                    <i class="fas fa-play"></i>
+//                </button>
+//                <div>
+//                    <div class="song-title searchable-title">${song.title}</div>
+//                    <div class="song-artist searchable-artist">${song.artist}</div>
+//                </div>
+//            </div>
+//            <div class="d-flex align-items-center">
+//                ${spotifyButton}        
+//                <span class="song-duration mr-3">${song.duration || '00:00'}</span>
+//                ${!album.distributed ?
+//                    `<button class="btn btn-sm btn-outline-danger remove-song-btn btn-remove-song" data-song-id="${song.id}" title="Remove song" type="button">
+//                                <i class="fas fa-times"></i>
+//                            </button>` : ''}
+//            </div>
+//        </div>
+//    `;
+//            songsContainer.append(songItem);
+//        });
+//
+//        // Add click event to play song buttons
+//        $('.play-song-btn').click(function (e) {
+//            e.stopPropagation();
+//            const songId = $(this).data('song-id');
+//            const song = album.songs.find(s => s.id == songId); // Use == instead of === for type coercion
+//            if (song) {
+//                playSong(song);
+//            }
+//        });
+//
+//        // Only add click events for remove buttons if they exist (for non-distributed albums)
+//        if (!album.distributed) {
+//            // Add click event to remove song buttons
+//            $('.remove-song-btn').click(function (e) {
+//                e.stopPropagation();
+//                const songId = $(this).data('song-id');
+//                handleRemoveSongFromAlbum(songId, album.id);
+//            });
+//        }
+//
+//        $('.spotify-link').click(function (e) {
+//            e.stopPropagation();
+//            const spotifyId = $(this).data('spotify-id');
+//            const spotifyUrl = `https://open.spotify.com/track/${spotifyId}`;
+//
+//            // Copy to clipboard
+//            copyToClipboard2(spotifyUrl);
+//
+//            // Show copied effect
+//            showCopiedEffect($(this));
+//
+//            // Optional: show notification
+//            showNotification("Spotify link copied to clipboard", "success");
+//        });
+//    }
 
-        if (!album.songs || !album.songs.length) {
-            songsContainer.html(`
-        <div class="text-center py-5 text-muted" id="empty-album-message">
-            <i class="fas fa-music fa-3x mb-3"></i>
-            <p class="w-100">This album has no songs yet</p>
-            ${!album.distributed ?
+function renderAlbumSongs(album) {
+    const songsContainer = $('#album-songs-list');
+    songsContainer.empty();
+    
+    // Add class to songs container if album is distributed
+    songsContainer.parent().toggleClass('album-distributed', album.distributed == 1);
+
+    if (!album.songs || !album.songs.length) {
+        songsContainer.html(`
+            <div class="text-center py-5 text-muted" id="empty-album-message">
+                <i class="fas fa-music fa-3x mb-3"></i>
+                <p class="w-100">This album has no songs yet</p>
+                ${!album.distributed ?
                     `<button class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#addSongsModal">
-                            Add Songs Now
-                        </button>` : ''}
-        </div>
-    `);
-            $('#audio-player').addClass('d-none');
-            return;
+                        Add Songs Now
+                    </button>` : ''}
+            </div>
+        `);
+        $('#audio-player').addClass('d-none');
+        return;
+    }
+    
+    // Sort songs by order_id if available
+    let sortedSongs = [...album.songs];
+    sortedSongs.sort((a, b) => {
+        if (a.order_id && b.order_id) {
+            return a.order_id - b.order_id;
         }
+        return 0; // Keep original order if order_id is not available
+    });
 
-        album.songs.forEach(song => {
-//                const spotifyButton = song.spotify_id ? 
-//                    `<a href="https://open.spotify.com/track/${song.spotify_id}" target="_blank" class="spotify-link mr-2" title="Listen on Spotify">
-//                        <i class="fab fa-spotify"></i>
-//                    </a>` : '';   
-            const spotifyButton = song.spotify_id ?
-                    `<div class="spotify-link mr-2 cur-poiter" title="Copy Spotify link" data-spotify-id="${song.spotify_id}">
+    sortedSongs.forEach(song => {
+        const spotifyButton = song.spotify_id ?
+            `<div class="spotify-link mr-2 cur-poiter" title="Copy Spotify link" data-spotify-id="${song.spotify_id}">
                 <i class="fab fa-spotify"></i>
             </div>` : '';
-            const songItem = `
-        <div class="song-item d-flex justify-content-between align-items-center searchable-song-item" data-song-id="${song.id}">
-            <div class="d-flex align-items-center">
-                <button class="btn-play-song play-song-btn mr-2" data-song-id="${song.id}" type="button">
-                    <i class="fas fa-play"></i>
-                </button>
-                <div>
-                    <div class="song-title searchable-title">${song.title}</div>
-                    <div class="song-artist searchable-artist">${song.artist}</div>
+        
+        // Add drag handle - only shown if album is not distributed
+        const dragHandle = !album.distributed ? 
+            `<div class="drag-handle mr-2">
+                <i class="fas fa-grip-vertical"></i>
+            </div>` : '';
+            
+        const songItem = `
+            <div class="song-item d-flex justify-content-between align-items-center searchable-song-item" data-song-id="${song.id}" data-order="${song.order_id || 0}">
+                <div class="d-flex align-items-center">
+                    ${dragHandle}
+                    <button class="btn-play-song play-song-btn mr-2" data-song-id="${song.id}" type="button">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <div>
+                        <div class="song-title searchable-title">${song.title}</div>
+                        <div class="song-artist searchable-artist">${song.artist}</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    ${spotifyButton}        
+                    <span class="song-duration mr-3">${song.duration || '00:00'}</span>
+                    ${!album.distributed ?
+                        `<button class="btn btn-sm btn-outline-danger remove-song-btn btn-remove-song" data-song-id="${song.id}" title="Remove song" type="button">
+                            <i class="fas fa-times"></i>
+                        </button>` : ''}
                 </div>
             </div>
-            <div class="d-flex align-items-center">
-                ${spotifyButton}        
-                <span class="song-duration mr-3">${song.duration || '00:00'}</span>
-                ${!album.distributed ?
-                    `<button class="btn btn-sm btn-outline-danger remove-song-btn btn-remove-song" data-song-id="${song.id}" title="Remove song" type="button">
-                                <i class="fas fa-times"></i>
-                            </button>` : ''}
-            </div>
-        </div>
-    `;
-            songsContainer.append(songItem);
-        });
+        `;
+        songsContainer.append(songItem);
+    });
 
-        // Add click event to play song buttons
-        $('.play-song-btn').click(function (e) {
+    // Add click event to play song buttons
+    $('.play-song-btn').click(function (e) {
+        e.stopPropagation();
+        const songId = $(this).data('song-id');
+        const song = album.songs.find(s => s.id == songId); // Use == instead of === for type coercion
+        if (song) {
+            playSong(song);
+        }
+    });
+
+    // Only add click events for remove buttons if they exist (for non-distributed albums)
+    if (!album.distributed) {
+        // Add click event to remove song buttons
+        $('.remove-song-btn').click(function (e) {
             e.stopPropagation();
             const songId = $(this).data('song-id');
-            const song = album.songs.find(s => s.id == songId); // Use == instead of === for type coercion
-            if (song) {
-                playSong(song);
+            handleRemoveSongFromAlbum(songId, album.id);
+        });
+        
+        // Initialize sortable for undistributed albums
+        initSortable();
+    }
+
+    $('.spotify-link').click(function (e) {
+        e.stopPropagation();
+        const spotifyId = $(this).data('spotify-id');
+        const spotifyUrl = `https://open.spotify.com/track/${spotifyId}`;
+
+        // Copy to clipboard
+        copyToClipboard2(spotifyUrl);
+
+        // Show copied effect
+        showCopiedEffect($(this));
+
+        // Optional: show notification
+        showNotification("Spotify link copied to clipboard", "success");
+    });
+}
+
+// Initialize Sortable.js for the songs list
+function initSortable() {
+    const songsList = document.getElementById('album-songs-list');
+    
+    if (songsList && typeof Sortable !== 'undefined') {
+        // Create a Sortable instance for the songs list
+        const sortable = new Sortable(songsList, {
+            animation: 150,
+            ghostClass: 'song-item-ghost',
+            chosenClass: 'song-item-chosen',
+            dragClass: 'song-item-drag',
+            handle: '.drag-handle',
+            onEnd: function(evt) {
+                // When dragging ends, save the new order
+                saveSongOrder();
             }
         });
-
-        // Only add click events for remove buttons if they exist (for non-distributed albums)
-        if (!album.distributed) {
-            // Add click event to remove song buttons
-            $('.remove-song-btn').click(function (e) {
-                e.stopPropagation();
-                const songId = $(this).data('song-id');
-                handleRemoveSongFromAlbum(songId, album.id);
-            });
-        }
-
-        $('.spotify-link').click(function (e) {
-            e.stopPropagation();
-            const spotifyId = $(this).data('spotify-id');
-            const spotifyUrl = `https://open.spotify.com/track/${spotifyId}`;
-
-            // Copy to clipboard
-            copyToClipboard2(spotifyUrl);
-
-            // Show copied effect
-            showCopiedEffect($(this));
-
-            // Optional: show notification
-            showNotification("Spotify link copied to clipboard", "success");
-        });
+    } else {
+        console.warn('Could not initialize Sortable.js. Make sure the library is loaded and the songs list exists.');
     }
+}
+
+// Save the new song order to the server
+function saveSongOrder() {
+    // Get all song items
+    const songItems = document.querySelectorAll('#album-songs-list .song-item');
+    const albumId = currentAlbumId;
+    
+    if (!albumId || songItems.length === 0) {
+        return;
+    }
+    
+    // Create an array of song IDs in the new order
+    const songOrder = [];
+    songItems.forEach((item, index) => {
+        const songId = item.getAttribute('data-song-id');
+        songOrder.push({
+            song_id: songId,
+            order_id: index + 1 // Order starts from 1
+        });
+    });
+    
+    // Show saving indication
+//    showNotification('Saving song order...', 'info');
+    
+    // Send the new order to the server
+    $.ajax({
+        url: '/updateSongOrder',
+        type: 'POST',
+        data: {
+            album_id: albumId,
+            song_order: JSON.stringify(songOrder),
+            _token: $('input[name="_token"]').attr('value')
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                showNotification('Song order updated successfully', 'success');
+                
+                // Update the order_id in the local album object
+                if (albums && albums.length) {
+                    const albumIndex = albums.findIndex(a => a.id === parseInt(albumId));
+                    if (albumIndex !== -1 && albums[albumIndex].songs) {
+                        songOrder.forEach(orderItem => {
+                            const songIndex = albums[albumIndex].songs.findIndex(
+                                s => s.id == orderItem.song_id
+                            );
+                            if (songIndex !== -1) {
+                                albums[albumIndex].songs[songIndex].order_id = orderItem.order_id;
+                            }
+                        });
+                    }
+                }
+            } else {
+                showNotification('Failed to update song order: ' + response.message, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error updating song order:', error);
+            showNotification('Failed to update song order. Please try again.', 'error');
+        }
+    });
+}
+
+
 
     function setupAlbumSongSearch() {
 
@@ -4126,6 +4621,8 @@ function applyFilters() {
             const isArtist = $(this).find('i').hasClass('fa-user');
             showNotification(`Spotify ${isArtist ? 'artist' : 'album'} link copied to clipboard`, "success");
         });
+        
+        setupArtistChartButton();
         
     });
 </script>

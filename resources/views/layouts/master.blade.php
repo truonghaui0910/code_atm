@@ -130,6 +130,7 @@
     <script src="assets/plugins/summernote/summernote.min.js?v=1.01"></script>
     
     <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 
     <!-- Notification js -->
     <script src="assets/plugins/notifyjs/dist/notify.min.js"></script>

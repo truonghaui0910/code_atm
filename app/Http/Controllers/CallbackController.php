@@ -504,6 +504,18 @@ class CallbackController extends Controller {
             ];
             RequestHelper::callAPI("POST", "http://api-magicframe.automusic.win/job/auto-upload/update", $req);
             Logger::logUpload("callbackUpload update to studio " . json_encode($req));
+
+            //kiểm tra xem nếu upload fail đếm. nếu 3 lần thì thông báo
+            if ($request->status != 5) {
+                $channel->status_upload = $channel->status_upload + 1;
+                $errorArr = $this->extractBASErrors(trim($request->result));
+                $errorArr[0]["job_id"] = $request->id;
+                $channel->last_upload = json_encode($errorArr);
+                $channel->save();
+            } else {
+                $channel->status_upload = 0;
+                $channel->save();
+            }
         }
         $upload->update_time = $currDate;
         $upload->save();

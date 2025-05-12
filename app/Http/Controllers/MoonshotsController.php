@@ -234,8 +234,8 @@ class MoonshotsController extends Controller {
             $description = $data->about_section;
             $listParams = ["language" => $language, "category" => $category, "country" => $country,
                 "keyword" => $keyword, "first_name" => $first_name, "last_name" => $last_name,
-                "link_profile" => $link_profile, "link_banner" => $link_banner, "description" => $description, 
-                "video_source" => $private,"handle"=> $channel->handle];
+                "link_profile" => $link_profile, "link_banner" => $link_banner, "description" => $description,
+                "video_source" => $private, "handle" => $channel->handle];
             $listLink = ['link_profile', 'link_banner'];
             $params = [];
 
@@ -320,11 +320,17 @@ class MoonshotsController extends Controller {
                     $meta = json_decode($res->reup_config);
                     $language = "en-US";
                     $category = "10";
-                    $link_video = "gdrive;;resource2@soundhex.com;;" . explode(";;", $res->result)[0];
-                    $link_thumbnail = "gdrive;;resource2@soundhex.com;;" . explode(";;", $res->result)[1];
-                    if (Utils::containString($res->result, "https")) {
-                        $link_video = explode(";;", $res->result)[0];
-                        $link_thumbnail = explode(";;", $res->result)[1];
+                    $files = explode(";;", $res->result);
+                    if ($res->success == 1 && count($files) >= 2) {
+                        $link_video = "gdrive;;resource2@soundhex.com;;" . $files[0];
+                        $link_thumbnail = "gdrive;;resource2@soundhex.com;;" . $files[1];
+                        if (Utils::containString($res->result, "https")) {
+                            $link_video = $files[0];
+                            $link_thumbnail = $files[1];
+                        }
+                    } else {
+                        //trường hợp render fail
+                        continue;
                     }
                     $title = !empty($meta->title) ? $meta->title : "";
                     $description = !empty($meta->description) ? $meta->description : "";

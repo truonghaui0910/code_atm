@@ -2018,6 +2018,34 @@
         margin-left: 12px;
         border: 1px solid #e9ecef;
     }
+    
+    .btn-gologin.locked {
+        opacity: 0.7;
+        cursor: not-allowed;
+        position: relative;
+    }
+
+    .btn-gologin.locked::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.2);
+        animation: btn-loading-animation 10s linear forwards;
+    }
+
+    .btn-gologin.highlighted {
+        box-shadow: 0 0 0 2px #ee43d9, 0 0 10px #ee434b;
+        transform: translateY(-1px);
+        background-color: #e9ecef;
+        transition: all 0.2s ease;
+    }
+
+    @keyframes btn-loading-animation {
+        from { width: 0; }
+        to { width: 100%; }
+    }    
     </style>
 
     <div id="filterPanel" class="filter-panel">
@@ -2793,7 +2821,7 @@
                             <button type="button"  onclick="filterUploadError(this)"
                                 class="btn btn-outline-warning mr-2 btn-100 position-relative <?php echo $request->is_upload_error==1?"active":""; ?>" style="overflow: visible"
                                 data-toggle="tooltip" data-placement="top"
-                                data-original-title="Error upload">
+                                data-original-title="Error upload, render">
                                 <i class="fas fa-exclamation-triangle"></i> Upload 
                                 @if($errorCountUpload>0)
                                     <span class="filter-badge ">{{ $errorCountUpload }}</span>
@@ -3154,7 +3182,7 @@
 //                                            }
                                         ?>
                                         @if ($data->last_change_pass > 7)
-                                            <div class="small text-muted">{{ $data->message == null ? 'Change pass' : $data->message }}</div>
+                                            <div class="small text-muted">{{ $data->message == null ? 'Change info' : $data->message }}</div>
                                             <div class="small text-muted">{{ App\Common\Utils::calcTimeText($data->last_change_pass) }}</div>
                       
                                         @elseif($data->last_change_pass == 4 || $data->last_change_pass == 6 || $data->last_change_pass == 7)
@@ -3181,6 +3209,31 @@
                                                     <div class="error-details d-none">{{ $data->message }}</div>
                                                 @endif
                                             </div>
+                                        @endif
+                                        @if ($data->last_upload !== null && $data->status_upload==3)
+                                            @php
+                                                $err = json_decode($data->last_upload);
+                                                $count = !empty($err[0]->count) ?  ("(".$err[0]->count.")") : "";
+                                            @endphp
+
+                                            @if (!empty($err[0]->error_message))
+                                                <div class="error-container position-relative" data-id="{{ $data->id }}">
+                                                    <div class="error-actions ml-auto">
+                                                        <button class="error-action-btn btn-resolve-error" data-action-type="resolve" data-error-type="upload" title="Mark as resolved">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                        @if($data->status_upload != 4)
+                                                            <button class="error-action-btn btn-remove-error" data-action-type="not_resolve" data-error-type="upload" title="Mark as cant resolved">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        @endif
+                                                    </div>
+                                                    <div class="error-display d-flex align-items-center">
+                                                        <span class="error-text text-danger">{{$count}} • {{ $err[0]->error_message }}</span>
+                                                    </div>
+                                                    <div class="error-details d-none">job {{$err[0]->job_id}} - {{  $err[0]->error_message }} {{$count}}</div>
+                                                </div>
+                                            @endif
                                         @endif
                                     </td>
                                     <td>{{ number_format($data->subscriber_count, 0, ',', '.') }}</td>
@@ -3257,7 +3310,7 @@
                         $(this).remove();
                     });
                     showNotification("Recovery email has been confirmed", "success");
-                    location.reload();
+//                    location.reload();
                 } else {
                     button.html('<i class="fas fa-shield-alt"></i>');
                     button.prop('disabled', false);
@@ -3399,6 +3452,7 @@
             const channelId = $(this).closest('.error-container').data('id');
             const errorContainer = $(this).closest('.error-container');
             const actionType = $(this).data('action-type');
+            const errorType = $(this).data('error-type');
 
             // Get current error details (if any)
             const errorDetail = errorContainer.find('.error-details').text().trim();
@@ -3426,7 +3480,7 @@
                             btnClass: 'btn-blue',
                             action: function () {
                                 var message = this.$content.find('.message').val();
-                                processErrorAction($this, channelId, errorContainer, actionType, message);
+                                processErrorAction($this, channelId, errorContainer, actionType, message,errorType);
                             }
                         },
                         cancel: {
@@ -3436,12 +3490,12 @@
                 });
             } else {
                 // For 'resolve' action, proceed immediately without dialog
-                processErrorAction($this, channelId, errorContainer, actionType, errorDetail);
+                processErrorAction($this, channelId, errorContainer, actionType, errorDetail,errorType);
             }
         });
 
         // Function to process action after input is provided
-        function processErrorAction($button, channelId, errorContainer, actionType, message) {
+        function processErrorAction($button, channelId, errorContainer, actionType, message,errorType="") {
             // Show loading state
             $button.html('<i class="fas fa-spinner fa-spin"></i>');
 
@@ -3453,6 +3507,7 @@
                     _token: '{{ csrf_token() }}',
                     action: 17,
                     action_type: actionType,
+                    error_type: errorType,
                     chkChannelAll: [channelId],
                     message: message 
                 },
@@ -4753,11 +4808,60 @@
             //        $("#content-dialog").html("");
 
         }
-
+        let currentHighlightedButton = null;
+        let buttonTimers = {};
         $('.btn-gologin').click(function(e) {
             e.preventDefault();
-            var id = $(this).val();
-            goLogin(id);
+//            var id = $(this).val();
+            var $this = $(this);
+            var id = $this.val();
+             // Kiểm tra nếu nút đang bị khóa
+            if ($this.hasClass('locked')) {
+                return; // Không làm gì nếu nút đang bị khóa
+            }
+
+            // Xóa highlight từ nút trước đó
+            if (currentHighlightedButton && !currentHighlightedButton.is($this)) {
+                currentHighlightedButton.removeClass('highlighted');
+            }
+
+            // Đặt nút hiện tại làm nút được highlight
+            currentHighlightedButton = $this;
+
+            // Thêm class highlighted và locked
+            $this.addClass('highlighted locked');
+
+            // Lưu trữ text gốc của nút
+            var originalText = $this.html();
+                    goLogin(id);
+                     // Đặt timer để đếm ngược 10 giây
+            var countdown = 10;
+
+            // Cập nhật text của nút để hiển thị đếm ngược
+            function updateButtonText() {
+                if (countdown > 0) {
+                    $this.html(`<i class="fas fa-hourglass-half"></i> ${countdown}s`);
+                } else {
+                    $this.html(originalText);
+                    $this.removeClass('locked');
+                    // Giữ trạng thái highlighted
+                }
+            }
+
+            // Bắt đầu đếm ngược
+            updateButtonText();
+
+            var countdownInterval = setInterval(() => {
+                countdown -= 1;
+
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    $this.html(originalText);
+                    $this.removeClass('locked');
+                } else {
+                    updateButtonText();
+                }
+            }, 1000);
         });
 
         function goLogin(id) {

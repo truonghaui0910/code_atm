@@ -1750,18 +1750,23 @@ class BomController extends Controller {
                     $playlistId = str_replace("https://suno.com/playlist/", "", trim($request->source_link));
                     $workIds = $this->fetchAllSunoSongs($playlistId);
                     $customsArtistName = [];
-
+                    $customSongNames = [];
                     if ($request->list_artist != null) {
                         $customsArtistName = explode("@;@", str_replace(array("\r\n", "\n"), "@;@", trim($request->list_artist)));
                     }
-
+                    if ($request->list_song_name != null) {
+                        $customSongNames = explode("@;@", str_replace(array("\r\n", "\n"), "@;@", trim($request->list_song_name)));
+                    }
                     if (isset($request->chk_keep_name)) {
                         if (count($customsArtistName) == 0) {
                             return response()->json(array("status" => "error", "message" => "List artist can not be empty"));
                         }
+                        if (count($customSongNames) < count($workIds)) {
+                            return response()->json(array("status" => "error", "message" => "Number of song name must be > or equal to " . count($workIds)));
+                        }
                     }
 
-                    foreach ($workIds as $work) {
+                    foreach ($workIds as $indx => $work) {
                         $random_artist = $work->clip->display_name;
                         $songName = $work->clip->title;
                         if (isset($work->clip->audio_url)) {
@@ -1769,6 +1774,9 @@ class BomController extends Controller {
                                 if (count($customsArtistName) > 0) {
                                     $random_key = array_rand($customsArtistName);
                                     $random_artist = $customsArtistName[$random_key];
+                                }
+                                if (count($customSongNames) > 0) {
+                                    $songName = $customSongNames[$indx];
                                 }
                             }
                             $videoIds[] = (object) [
@@ -1797,7 +1805,7 @@ class BomController extends Controller {
             $listAllSong = [];
             foreach ($videoIds as $data) {
                 $data->status = 0;
-                if ($sourceType == "OVERTONE" || $sourceType == "UDIO") {
+                if ($sourceType == "OVERTONE" || $sourceType == "UDIO" || $sourceType == "SUNO") {
                     $check = Bom::where("song_id", $data->song_id)->where("status", 1)->first();
                 } else {
                     $check = Bom::where("source_id", $data->source_id)->where("status", 1)->first();
@@ -1836,6 +1844,7 @@ class BomController extends Controller {
                 } else {
                     $fail++;
                     $check->log = $check->log . PHP_EOL . "$curr $user->user_name dupticate";
+//                    $check->song_name = $data->song_name;
                     $check->save();
                     $data->status = 2;
                     $data->user = $check->username;
@@ -2392,7 +2401,6 @@ class BomController extends Controller {
         ));
         $songIds = null;
         $response = curl_exec($curl);
-
         curl_close($curl);
         if ($response != null) {
             $songIds = json_decode($response);
@@ -2803,7 +2811,7 @@ class BomController extends Controller {
 
 
         if (!$request->is_admin_music) {
-            $albumDb->is_released = 2;
+            $albumDb->is_released = 1;
             $albumDb->updated = Utils::timeToStringGmT7(time());
             $albumDb->save();
             return response()->json(['status' => "success", 'message' => 'Request successful, please wait for admin confirmation']);
@@ -2936,7 +2944,7 @@ class BomController extends Controller {
         if (isset($res->data->id)) {
             $albumDb->distro_release_id = $res->data->id;
             $albumDb->updated = Utils::timeToStringGmT7(time());
-            $albumDb->is_released = 1;
+            $albumDb->is_released = 2;
             $albumDb->save();
             return response()->json(["status" => "success", "message" => "Success"]);
         } else {
@@ -3248,6 +3256,7 @@ class BomController extends Controller {
         $album->distro_log = $request->log;
         if ($request->status == 5) {
             $album->distro_release_date = gmdate("Y-m-d", time());
+            $album->is_released = 3;
         }
         $album->save();
         return response()->json(["status" => "success", "message" => "Updated successfully"]);
@@ -3320,6 +3329,8 @@ class BomController extends Controller {
                                         "album_id" => $spotifyInfo["album_id"],
                                         "artist_id" => $spotifyInfo["artist_id"]
                             ]);
+                            //có spotify thì chuyển trạng thái thành online
+                            $album->is_released = 5;
                             $album->save();
                         }
                     }

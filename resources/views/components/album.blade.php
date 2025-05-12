@@ -1732,6 +1732,79 @@
         padding: 10px;
     }
 }
+
+/* Filter buttons active states - Màu nền khi nút filter được chọn */
+.filter-btn-distributed.active {
+    background-color: #28a745;  /* success - xanh lá */
+    color: white;
+}
+.filter-btn-pending.active {
+    background-color: #ffc107;  /* warning - vàng */
+    color: #212529;  /* chữ màu đen để dễ đọc trên nền vàng */
+}
+.filter-btn-not-distributed.active {
+    background-color: #6c757d;  /* secondary - xám */
+    color: white;
+}
+.filter-btn-distributing.active {
+    background-color: #17a2b8;  /* info - xanh da trời */
+    color: white;
+}
+.filter-btn-error.active {
+    background-color: #dc3545;  /* danger - đỏ */
+    color: white;
+}
+.filter-btn-online.active {
+    background-color: #007bff;  /* primary - xanh dương */
+    color: white;
+}
+
+/* Album status badges to match - Đảm bảo màu badge trên card album khớp với màu filter */
+.album-status-badge.badge-secondary {
+    background-color: #6c757d;
+}
+.album-status-badge.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+.album-status-badge.badge-success {
+    background-color: #28a745;
+}
+.album-status-badge.badge-info {
+    background-color: #17a2b8;
+}
+.album-status-badge.badge-danger {
+    background-color: #dc3545;
+}
+.album-status-badge.badge-primary {
+    background-color: #007bff;
+}
+
+/* Detail status badge styles - Màu cho badge trạng thái trong trang chi tiết */
+.detail-status-badge.distributed {
+    background-color: #28a745;
+    color: white;
+}
+.detail-status-badge.not-distributed {
+    background-color: #6c757d;
+    color: white;
+}
+.detail-status-badge.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+.detail-status-badge.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}
+.detail-status-badge.badge-danger {
+    background-color: #dc3545;
+    color: white;
+}
+.detail-status-badge.badge-primary {
+    background-color: #007bff;
+    color: white;
+}
 </style>
 <div class="container">
     <!-- Navbar -->
@@ -2412,13 +2485,13 @@
 
     }
 
-    function renderAlbums() {
-        const albumsContainer = $('#albums-list');
-        albumsContainer.empty();
+function renderAlbums() {
+    const albumsContainer = $('#albums-list');
+    albumsContainer.empty();
 
-        // Kiểm tra nếu không có album nào
-        if (!albums.length) {
-            const emptyStateHTML = `
+    // Check if there are no albums
+    if (!albums.length) {
+        const emptyStateHTML = `
         <div class="col-12">
             <div class="empty-state-container">
                 <div class="empty-state-icon">
@@ -2435,42 +2508,72 @@
             </div>
         </div>
     `;
-            albumsContainer.html(emptyStateHTML);
+        albumsContainer.html(emptyStateHTML);
 
-            // Gán sự kiện cho nút tạo album
-            $('.btn-create-first-album').click(function () {
-                $('#addAlbumModal').modal('show');
-            });
+        // Assign event for the create album button
+        $('.btn-create-first-album').click(function () {
+            $('#addAlbumModal').modal('show');
+        });
 
-            return; // Không cần tiếp tục xử lý phần còn lại của hàm
+        return; // No need to process the rest of the function
+    }
+    console.log(albums);
+    
+    // Display albums list (only runs when there's at least 1 album)
+    albums.forEach(album => {
+        const songCount = album.songs.length;
+        
+        // Updated distributeStatus logic to reflect new is_released values
+        let distributeStatus = '';
+        let statusClass = '';
+        
+        switch(album.distributed) {
+            case 0: // not distribute
+                distributeStatus = `<span class="badge badge-secondary album-status-badge">Not Distributed</span>`;
+                statusClass = 'badge-secondary';
+                break;
+            case 1: // pending distribute
+                distributeStatus = `<span class="badge badge-warning album-status-badge">Pending Distribution</span>`;
+                statusClass = 'badge-warning';
+                break;
+            case 2: // distributing
+                distributeStatus = `<span class="badge badge-info album-status-badge">Distributing</span>`;
+                statusClass = 'badge-info';
+                break;
+            case 3: // distributed
+                distributeStatus = `<span class="badge badge-success album-status-badge">Distributed</span>`;
+                statusClass = 'badge-success';
+                break;
+            case 4: // error distribute
+                distributeStatus = `<span class="badge badge-danger album-status-badge">Distribution Error</span>`;
+                statusClass = 'badge-danger';
+                break;
+            case 5: // online
+                distributeStatus = `<span class="badge badge-primary album-status-badge">Online</span>`;
+                statusClass = 'badge-primary';
+                break;
+            default:
+                distributeStatus = `<span class="badge badge-secondary album-status-badge">Unknown Status</span>`;
+                statusClass = 'badge-secondary';
         }
-        console.log(albums);
-        // Phần code hiển thị danh sách albums (chỉ chạy khi có ít nhất 1 album)
-        albums.forEach(album => {
-            const songCount = album.songs.length;
-            const distributeStatus = album.distributed == 1 ? `<span class="badge badge-success album-status-badge">Distributed</span>` :
-                    (album.distributed == 2 ?
-                            `<span class="badge badge-warning album-status-badge">Pending Distribution</span>` :
-                            `<span class="badge badge-secondary album-status-badge">Not Yet Distributed</span>`);
 
+        // Format release date
+        const releaseDate = new Date(album.releaseDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
 
-            // Định dạng ngày phát hành
-            const releaseDate = new Date(album.releaseDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-
-            // Nút distribute đặt trên ảnh album
-            const distributeButton = !album.distributed ?
-                    `<button id="btn-quick-dis-${album.id}" class="distribute-button distribute-btn cur-poiter" data-album-id="${album.id}" title="Distribute this album">
-            <i class="fas fa-solid fa-rocket"></i>
-        </button>` : '';
+        // Distribute button on album image - only show for not distributed albums
+        const distributeButton = album.distributed === 0 ?
+                `<button id="btn-quick-dis-${album.id}" class="distribute-button distribute-btn cur-poiter" data-album-id="${album.id}" title="Distribute this album">
+                    <i class="fas fa-solid fa-rocket"></i>
+                </button>` : '';
                 
         const creatorInfo = `
                 <img src="/images/avatar/${album.username}.jpg" class="user-avatar creator-info" title="${album.username}" alt="${album.username}" style="position:absolute;top:10px;left:10px">
             `;                
-            let albumCard = `
+        let albumCard = `
         <div class="col-md-3 col-sm-6 mb-4">
             <div class="card album-card" data-album-id="${album.id}">
                 <div class="album-cover-wrapper">
@@ -2512,13 +2615,120 @@
         $('.distribute-btn').click(function (e) {
             e.stopPropagation();
             const albumId = $(this).data('album-id');
-            //                toggleDistribute(albumId);
             distribute(albumId);
         });
 
-        // Thiết lập chức năng tìm kiếm sau khi render album xong
+        // Setup album search functionality after rendering albums
         setupAlbumSearch();
     }
+
+//    function renderAlbums() {
+//        const albumsContainer = $('#albums-list');
+//        albumsContainer.empty();
+//
+//        // Kiểm tra nếu không có album nào
+//        if (!albums.length) {
+//            const emptyStateHTML = `
+//        <div class="col-12">
+//            <div class="empty-state-container">
+//                <div class="empty-state-icon">
+//                    <i class="fas fa-compact-disc"></i>
+//                </div>
+//                <h3 class="empty-state-title">Your album collection is empty</h3>
+//                <p class="empty-state-description">
+//                    Start building your music collection by creating your first album. 
+//                    You can add songs, set details, and distribute your albums to share your music with the world.
+//                </p>
+//                <button class="btn btn-create-first-album" data-toggle="modal" data-target="#addAlbumModal">
+//                    <i class="fas fa-plus-circle"></i> Create Your First Album
+//                </button>
+//            </div>
+//        </div>
+//    `;
+//            albumsContainer.html(emptyStateHTML);
+//
+//            // Gán sự kiện cho nút tạo album
+//            $('.btn-create-first-album').click(function () {
+//                $('#addAlbumModal').modal('show');
+//            });
+//
+//            return; // Không cần tiếp tục xử lý phần còn lại của hàm
+//        }
+//        console.log(albums);
+//        // Phần code hiển thị danh sách albums (chỉ chạy khi có ít nhất 1 album)
+//        albums.forEach(album => {
+//            const songCount = album.songs.length;
+//            const distributeStatus = album.distributed == 1 ? `<span class="badge badge-success album-status-badge">Distributed</span>` :
+//                    (album.distributed == 2 ?
+//                            `<span class="badge badge-warning album-status-badge">Pending Distribution</span>` :
+//                            `<span class="badge badge-secondary album-status-badge">Not Yet Distributed</span>`);
+//
+//
+//            // Định dạng ngày phát hành
+//            const releaseDate = new Date(album.releaseDate).toLocaleDateString('en-US', {
+//                year: 'numeric',
+//                month: 'short',
+//                day: 'numeric'
+//            });
+//
+//            // Nút distribute đặt trên ảnh album
+//            const distributeButton = !album.distributed ?
+//                    `<button id="btn-quick-dis-${album.id}" class="distribute-button distribute-btn cur-poiter" data-album-id="${album.id}" title="Distribute this album">
+//            <i class="fas fa-solid fa-rocket"></i>
+//        </button>` : '';
+//                
+//        const creatorInfo = `
+//                <img src="/images/avatar/${album.username}.jpg" class="user-avatar creator-info" title="${album.username}" alt="${album.username}" style="position:absolute;top:10px;left:10px">
+//            `;                
+//            let albumCard = `
+//        <div class="col-md-3 col-sm-6 mb-4">
+//            <div class="card album-card" data-album-id="${album.id}">
+//                <div class="album-cover-wrapper">
+//                    ${creatorInfo}
+//                    ${distributeStatus}
+//                    <img src="${album.coverImg}" class="card-img-top" alt="${album.name}">
+//                    ${distributeButton}
+//                </div>
+//                <div class="card-body">
+//                    <h6 class="album-title">${album.name}</h6>
+//                    
+//                    <div class="album-meta">
+//                        <div class="album-meta-item">
+//                            <i class="fas fa-user"></i> ${album.artist}
+//                        </div>
+//                        <div class="album-meta-item">
+//                            <i class="fas fa-calendar-alt"></i> ${releaseDate}
+//                        </div>
+//                        <div class="album-meta-item">
+//                            <i class="fas fa-music"></i> ${songCount} songs
+//                        </div>
+//                    </div>
+//                    <span class="album-genre">${album.genre}</span>
+//                        
+//            </div>
+//        </div>
+//    `;
+//            albumsContainer.append(albumCard);
+//        });
+//
+//        // Event handlers
+//        $('.album-card').click(function (e) {
+//            if (!$(e.target).hasClass('distribute-btn') && !$(e.target).parent().hasClass('distribute-btn')) {
+//                const albumId = $(this).data('album-id');
+//                showAlbumDetails(albumId);
+//            }
+//        });
+//
+//        $('.distribute-btn').click(function (e) {
+//            e.stopPropagation();
+//            const albumId = $(this).data('album-id');
+//            //                toggleDistribute(albumId);
+//            distribute(albumId);
+//        });
+//
+//        // Thiết lập chức năng tìm kiếm sau khi render album xong
+//        setupAlbumSearch();
+//    }
 
     function setupReleaseDateEdit() {
         // Use event delegation since the button is added dynamically
@@ -2700,133 +2910,301 @@
             `);
         }
     }
-
-    function updateAlbumInfoHTML(album) {
-        // Định dạng ngày phát hành
-        const releaseDate = new Date(album.releaseDate).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        let instrumentsHTML = '';
-        if (album.instruments && album.instruments.length > 0) {
-            instrumentsHTML = `
-                <div class="album-info-item">
-                    <div class="album-info-label">Instruments</div>
-                    <div class="album-info-value instruments-container">
-                        <div class="instruments-list">
-                            ${album.instruments.map(instrument => 
-                                `<span class="album-genre-badge">${instrument}</span>`
-                            ).join('')}
-                        </div>
+function updateAlbumInfoHTML(album) {
+    // Format release date
+    const releaseDate = new Date(album.releaseDate).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    let instrumentsHTML = '';
+    if (album.instruments && album.instruments.length > 0) {
+        instrumentsHTML = `
+            <div class="album-info-item">
+                <div class="album-info-label">Instruments</div>
+                <div class="album-info-value instruments-container">
+                    <div class="instruments-list">
+                        ${album.instruments.map(instrument => 
+                            `<span class="album-genre-badge">${instrument}</span>`
+                        ).join('')}
                     </div>
                 </div>
-            `;
-        }
+            </div>
+        `;
+    }
 
-        let spotifyLinksHTML = '';
+    let spotifyLinksHTML = '';
 
-        if (album.spotify_info) {
-            try {
-                // Parse spotify_info nếu nó là string
-                const spotifyInfo = typeof album.spotify_info === 'string'
-                        ? JSON.parse(album.spotify_info)
-                        : album.spotify_info;
+    if (album.spotify_info) {
+        try {
+            // Parse spotify_info if it's a string
+            const spotifyInfo = typeof album.spotify_info === 'string'
+                    ? JSON.parse(album.spotify_info)
+                    : album.spotify_info;
 
-                if (spotifyInfo) {
-                    spotifyLinksHTML = `
-                        <div class="album-spotify-links">
-                            ${spotifyInfo.album_id ? `
-                                <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/album/${spotifyInfo.album_id}">
-                                    <i class="fab fa-spotify"></i>
-                                    <span>Copy Album Link</span>
-                                </div>
-                            ` : ''}
+            if (spotifyInfo) {
+                spotifyLinksHTML = `
+                    <div class="album-spotify-links">
+                        ${spotifyInfo.album_id ? `
+                            <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/album/${spotifyInfo.album_id}">
+                                <i class="fab fa-spotify"></i>
+                                <span>Copy Album Link</span>
+                            </div>
+                        ` : ''}
 
-                            ${spotifyInfo.artist_id ? `
-                                <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/artist/${spotifyInfo.artist_id}">
-                                    <i class="fas fa-user"></i>
-                                    <span>Copy Artist Link</span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                }
-            } catch (e) {
-                console.error('Error parsing spotify_info:', e);
+                        ${spotifyInfo.artist_id ? `
+                            <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/artist/${spotifyInfo.artist_id}">
+                                <i class="fas fa-user"></i>
+                                <span>Copy Artist Link</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
             }
+        } catch (e) {
+            console.error('Error parsing spotify_info:', e);
         }
+    }
 
-        const albumInfoHTML = `
-        <div class="album-cover-container">
-            <img src="${album.coverImg}" class="album-cover-img" alt="${album.name}" id="current-album-cover">
+    // Generate status badge with appropriate CSS class and icon
+    let statusBadgeClass = '';
+    let statusIcon = '';
+    let statusText = '';
+    
+    switch(album.distributed) {
+        case 0:
+            statusBadgeClass = 'not-distributed';
+            statusIcon = 'fa-times-circle';
+            statusText = 'Not Distributed';
+            break;
+        case 1:
+            statusBadgeClass = 'badge-warning';
+            statusIcon = 'fa-clock';
+            statusText = 'Pending Distribution';
+            break;
+        case 2:
+            statusBadgeClass = 'badge-info';
+            statusIcon = 'fa-sync fa-spin';
+            statusText = 'Distributing';
+            break;
+        case 3:
+            statusBadgeClass = 'distributed';
+            statusIcon = 'fa-check-circle';
+            statusText = 'Distributed';
+            break;
+        case 4:
+            statusBadgeClass = 'badge-danger';
+            statusIcon = 'fa-exclamation-circle';
+            statusText = 'Distribution Error';
+            break;
+        case 5:
+            statusBadgeClass = 'badge-primary';
+            statusIcon = 'fa-globe';
+            statusText = 'Online';
+            break;
+        default:
+            statusBadgeClass = 'not-distributed';
+            statusIcon = 'fa-question-circle';
+            statusText = 'Unknown Status';
+    }
+
+    const albumInfoHTML = `
+    <div class="album-cover-container">
+        <img src="${album.coverImg}" class="album-cover-img" alt="${album.name}" id="current-album-cover">
+    </div>
+
+    <div class="album-info-panel">
+        <div class="album-creator">
+            <img src="/images/avatar/${album.username}.jpg" class="user-avatar" alt="Creator avatar">
+            <span>Created by ${album.username}</span>
         </div>
 
-        <div class="album-info-panel">
-            <div class="album-creator">
-                <img src="/images/avatar/${album.username}.jpg" class="user-avatar" alt="Creator avatar">
-                <span>Created by ${album.username}</span>
-            </div>
-
-            <div class="album-info-grid">
-                <div class="album-info-item">
-                    <div class="album-info-label">Artist</div>
-               <div class="album-info-value">
+        <div class="album-info-grid">
+            <div class="album-info-item">
+                <div class="album-info-label">Artist</div>
+                <div class="album-info-value">
                     <i class="fas fa-user"></i> 
                     <span id="artist-name-display">${album.artist || 'Various Artists'}</span>
-                    ${album.distributed != 1 ?
-                `<button class="edit-artist-name-btn edit-release-info-btn ml-2" data-album-id="${album.id}" data-artist-id="${album.artist_id}" data-artist="${album.artist || 'Various Artists'}">
+                    ${album.distributed < 2 ?
+                        `<button class="edit-artist-name-btn edit-release-info-btn ml-2" data-album-id="${album.id}" data-artist-id="${album.artist_id}" data-artist="${album.artist || 'Various Artists'}">
                             <i class="fas fa-pencil-alt"></i>
                         </button>` : ''}
                 </div>
-                </div>
-
-                <div class="album-info-item">
-                    <div class="album-info-label">Release Date</div>
-                    <div class="album-info-value">
-                        <i class="fas fa-calendar-alt"></i> 
-                        <span id="release-date-display">${releaseDate}</span>
-                        ${album.distributed != 1 ?
-                `<button class="edit-release-date-btn edit-release-info-btn ml-2" data-album-id="${album.id}" data-date="${album.releaseDate}">
-                                <i class="fas fa-pencil-alt"></i>
-                            </button>` : ''}
-                    </div>
-                </div>
-
-                <div class="album-info-item">
-                    <div class="album-info-label">Genre</div>
-                    <div class="album-info-value">
-                        <span class="album-genre-badge">
-                            <i class="fas fa-tag"></i> ${album.genre || 'Various'}
-                        </span>
-                    </div>
-                </div>
-
-                ${instrumentsHTML}
-
-                <div class="album-info-item">
-                    <div class="album-info-label">Songs</div>
-                    <div class="album-info-value">
-                        <i class="fas fa-music"></i> <span id="song-count">${album.songs ? album.songs.length : 0}</span>
-                    </div>
-                </div>
-
-                <div class="album-info-item">
-                    <div class="album-info-label">Status</div>
-                    <div class="album-info-value">
-                        <span class="detail-status-badge ${album.distributed == 1 ? 'distributed' : album.distributed == 2 ? 'badge-warning' : 'not-distributed'}" id="current-album-status">
-                            <i class="fas ${album.distributed == 1 ? 'fa-check-circle' : album.distributed == 2 ? 'fa-clock' : 'fa-times-circle' }"></i>
-                            ${album.distributed == 1 ? 'Distributed' : album.distributed == 2 ? 'Pending Distribution' : 'Not Yet Distributed'}
-                        </span>
-                    </div>
-                </div>                              
             </div>
-                                ${spotifyLinksHTML}
+
+            <div class="album-info-item">
+                <div class="album-info-label">Release Date</div>
+                <div class="album-info-value">
+                    <i class="fas fa-calendar-alt"></i> 
+                    <span id="release-date-display">${releaseDate}</span>
+                    ${album.distributed < 2 ?
+                        `<button class="edit-release-date-btn edit-release-info-btn ml-2" data-album-id="${album.id}" data-date="${album.releaseDate}">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>` : ''}
+                </div>
+            </div>
+
+            <div class="album-info-item">
+                <div class="album-info-label">Genre</div>
+                <div class="album-info-value">
+                    <span class="album-genre-badge">
+                        <i class="fas fa-tag"></i> ${album.genre || 'Various'}
+                    </span>
+                </div>
+            </div>
+
+            ${instrumentsHTML}
+
+            <div class="album-info-item">
+                <div class="album-info-label">Songs</div>
+                <div class="album-info-value">
+                    <i class="fas fa-music"></i> <span id="song-count">${album.songs ? album.songs.length : 0}</span>
+                </div>
+            </div>
+
+            <div class="album-info-item">
+                <div class="album-info-label">Status</div>
+                <div class="album-info-value">
+                    <span class="detail-status-badge ${statusBadgeClass}" id="current-album-status">
+                        <i class="fas ${statusIcon}"></i>
+                        ${statusText}
+                    </span>
+                </div>
+            </div>                              
         </div>
+        ${spotifyLinksHTML}
+    </div>
     `;
 
-        return albumInfoHTML;
-    }
+    return albumInfoHTML;
+}
+//    function updateAlbumInfoHTML(album) {
+//        // Định dạng ngày phát hành
+//        const releaseDate = new Date(album.releaseDate).toLocaleDateString('en-US', {
+//            year: 'numeric',
+//            month: 'long',
+//            day: 'numeric'
+//        });
+//        let instrumentsHTML = '';
+//        if (album.instruments && album.instruments.length > 0) {
+//            instrumentsHTML = `
+//                <div class="album-info-item">
+//                    <div class="album-info-label">Instruments</div>
+//                    <div class="album-info-value instruments-container">
+//                        <div class="instruments-list">
+//                            ${album.instruments.map(instrument => 
+//                                `<span class="album-genre-badge">${instrument}</span>`
+//                            ).join('')}
+//                        </div>
+//                    </div>
+//                </div>
+//            `;
+//        }
+//
+//        let spotifyLinksHTML = '';
+//
+//        if (album.spotify_info) {
+//            try {
+//                // Parse spotify_info nếu nó là string
+//                const spotifyInfo = typeof album.spotify_info === 'string'
+//                        ? JSON.parse(album.spotify_info)
+//                        : album.spotify_info;
+//
+//                if (spotifyInfo) {
+//                    spotifyLinksHTML = `
+//                        <div class="album-spotify-links">
+//                            ${spotifyInfo.album_id ? `
+//                                <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/album/${spotifyInfo.album_id}">
+//                                    <i class="fab fa-spotify"></i>
+//                                    <span>Copy Album Link</span>
+//                                </div>
+//                            ` : ''}
+//
+//                            ${spotifyInfo.artist_id ? `
+//                                <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/artist/${spotifyInfo.artist_id}">
+//                                    <i class="fas fa-user"></i>
+//                                    <span>Copy Artist Link</span>
+//                                </div>
+//                            ` : ''}
+//                        </div>
+//                    `;
+//                }
+//            } catch (e) {
+//                console.error('Error parsing spotify_info:', e);
+//            }
+//        }
+//
+//        const albumInfoHTML = `
+//        <div class="album-cover-container">
+//            <img src="${album.coverImg}" class="album-cover-img" alt="${album.name}" id="current-album-cover">
+//        </div>
+//
+//        <div class="album-info-panel">
+//            <div class="album-creator">
+//                <img src="/images/avatar/${album.username}.jpg" class="user-avatar" alt="Creator avatar">
+//                <span>Created by ${album.username}</span>
+//            </div>
+//
+//            <div class="album-info-grid">
+//                <div class="album-info-item">
+//                    <div class="album-info-label">Artist</div>
+//               <div class="album-info-value">
+//                    <i class="fas fa-user"></i> 
+//                    <span id="artist-name-display">${album.artist || 'Various Artists'}</span>
+//                    ${album.distributed != 1 ?
+//                `<button class="edit-artist-name-btn edit-release-info-btn ml-2" data-album-id="${album.id}" data-artist-id="${album.artist_id}" data-artist="${album.artist || 'Various Artists'}">
+//                            <i class="fas fa-pencil-alt"></i>
+//                        </button>` : ''}
+//                </div>
+//                </div>
+//
+//                <div class="album-info-item">
+//                    <div class="album-info-label">Release Date</div>
+//                    <div class="album-info-value">
+//                        <i class="fas fa-calendar-alt"></i> 
+//                        <span id="release-date-display">${releaseDate}</span>
+//                        ${album.distributed != 1 ?
+//                `<button class="edit-release-date-btn edit-release-info-btn ml-2" data-album-id="${album.id}" data-date="${album.releaseDate}">
+//                                <i class="fas fa-pencil-alt"></i>
+//                            </button>` : ''}
+//                    </div>
+//                </div>
+//
+//                <div class="album-info-item">
+//                    <div class="album-info-label">Genre</div>
+//                    <div class="album-info-value">
+//                        <span class="album-genre-badge">
+//                            <i class="fas fa-tag"></i> ${album.genre || 'Various'}
+//                        </span>
+//                    </div>
+//                </div>
+//
+//                ${instrumentsHTML}
+//
+//                <div class="album-info-item">
+//                    <div class="album-info-label">Songs</div>
+//                    <div class="album-info-value">
+//                        <i class="fas fa-music"></i> <span id="song-count">${album.songs ? album.songs.length : 0}</span>
+//                    </div>
+//                </div>
+//
+//                <div class="album-info-item">
+//                    <div class="album-info-label">Status</div>
+//                    <div class="album-info-value">
+//                        <span class="detail-status-badge ${album.distributed == 1 ? 'distributed' : album.distributed == 2 ? 'badge-warning' : 'not-distributed'}" id="current-album-status">
+//                            <i class="fas ${album.distributed == 1 ? 'fa-check-circle' : album.distributed == 2 ? 'fa-clock' : 'fa-times-circle' }"></i>
+//                            ${album.distributed == 1 ? 'Distributed' : album.distributed == 2 ? 'Pending Distribution' : 'Not Yet Distributed'}
+//                        </span>
+//                    </div>
+//                </div>                              
+//            </div>
+//                                ${spotifyLinksHTML}
+//        </div>
+//    `;
+//
+//        return albumInfoHTML;
+//    }
     
     // Function to add the artist chart button after Spotify links
     function addArtistChartButton(album) {
@@ -2880,7 +3258,7 @@
         // Toggle chart visibility when button is clicked
         $(document).off('click', '#show-artist-chart').on('click', '#show-artist-chart', function() {
             const artistName = $(this).data('artist');
-            const chartUrl = `https://966d-2402-800-62d1-60f9-cc4c-ff42-12e6-9874.ngrok-free.app/iframe/charts/${artistName}`;
+            const chartUrl = `https://a292-2402-800-62d1-e01a-ad94-7052-b545-3ccc.ngrok-free.app/iframe/charts/${artistName}`;
 
             // Update iframe src
             $('#artist-chart-iframe').attr('src', chartUrl);
@@ -2925,7 +3303,168 @@
             $('#hide-artist-chart').attr('id', 'show-artist-chart');
         });
     }
+function showAlbumDetails(albumId) {
+    currentAlbumId = albumId;
+    $('#album-details').show();
+    $('#albums-container').hide();
+    $('#album-details .card-body').html(
+            '<div class="text-center my-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2 col-md-12">Loading album details...</p></div>'
+            );
+    fetchAlbumDetails(albumId, function (error, album) {
+        if (error) {
+            $('#album-details .card-body').html(
+                    '<div class="text-center my-5"><i class="fas fa-exclamation-triangle text-danger fa-2x"></i><p class="mt-2 col-md-12">Failed to load album details. Please try again.</p></div>'
+                    );
+            console.error('Error fetching album details:', error);
+            return;
+        }
 
+        let distributionIndicator = '';
+        if (album.distroReleaseDate) {
+            const distroDate = new Date(album.distroReleaseDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            distributionIndicator = `
+                <span class="distribution-indicator ml-2" data-toggle="tooltip" title="Distributed on ${distroDate}">
+                    <i class="fas fa-check-circle text-success"></i>
+                </span>
+            `;
+        }
+        
+        // Create action buttons based on the current album status
+        let actionButtons = '';
+        
+        // Only show Spotify scan button if album is fully distributed (3) or online (5)
+        if (album.distributed === 3 || album.distributed === 5) {
+            actionButtons += `
+                <button id="btn-spotify-scan" class="btn btn-action btn-spotify" data-album-id="${album.id}" onclick="scanSpotify(${album.id})">
+                    <i class="fab fa-spotify"></i> Scan
+                </button>
+            `;
+        }
+        
+        // Admin can add songs and distribute for statuses 0, 1, 4
+        if (album.distributed === 0 || album.distributed === 1 || album.distributed === 4) {
+            actionButtons += `
+                @if($is_admin_music)
+                    <button id="album-details-distribute-btn" class="btn btn-action btn-distribute-detail distribute-btn" data-album-id="${album.id}" onclick="distribute(${album.id})">
+                        <i class="fas fa-solid fa-rocket"></i> Distribute
+                    </button>
+                    <button class="btn btn-action btn-add-songs" data-toggle="modal" data-target="#addSongsModal">
+                        <i class="fas fa-plus"></i> Add Songs
+                    </button>
+                @else
+                    ${album.distributed === 0 ? `
+                        <button id="album-details-distribute-btn" class="btn btn-action btn-distribute-detail distribute-btn" data-album-id="${album.id}" onclick="distribute(${album.id})">
+                            <i class="fas fa-solid fa-rocket"></i> Distribute
+                        </button>
+                        <button class="btn btn-action btn-add-songs" data-toggle="modal" data-target="#addSongsModal">
+                            <i class="fas fa-plus"></i> Add Songs
+                        </button>
+                    ` : ''}
+                @endif
+            `;
+        }
+        
+        // For error status, show retry button for both admin and users
+        if (album.distributed === 4) {
+            actionButtons += `
+                <button id="album-details-retry-btn" class="btn btn-action btn-danger distribute-btn" data-album-id="${album.id}" onclick="distribute(${album.id})">
+                    <i class="fas fa-redo"></i> Retry Distribution
+                </button>
+            `;
+        }
+        
+        const headerContent = `
+            <div class="album-detail-title">
+                <button class="btn btn-back" id="back-to-albums">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h5 id="current-album-name">
+                    ${album.name}
+                    ${distributionIndicator}
+                </h5>
+            </div>
+            <div class="album-action-buttons">
+                ${actionButtons}
+            </div>
+        `;
+
+        // Update header content
+        $('.card-header .d-flex').html(headerContent);
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // Update card body content
+        const albumInfoColumn = $('<div class="col-md-4 mb-4 album-info-container"></div>');
+        albumInfoColumn.html(updateAlbumInfoHTML(album));
+
+        const songsColumn = $('<div class="col-md-8 songs-container"></div>');
+        songsColumn.html(`
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Songs List</h5>
+                <form id="album-songs-search-form" class="search-container">
+                    <div class="search-container" id="album-search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="form-control" placeholder="Search and press Enter..." id="album-songs-search">
+                    </div>
+                </form>
+            </div>
+            <div class="songs-list" id="album-songs-list">
+            </div>
+                
+            <div class="audio-player mt-4 d-none" id="audio-player">
+                <div class="player-controls mb-2">
+                    <button class="btn btn-play" id="player-play-btn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <div class="player-song-info">
+                        <div class="font-weight-bold" id="player-song-title">Song Title</div>
+                        <small class="text-muted" id="player-song-artist">Artist Name</small>
+                    </div>
+                    <span class="text-muted" id="player-time">0:00 / 0:00</span>
+                </div>
+                <div class="progress">
+                    <div id="player-progress" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                </div>
+                <audio id="audio-element" src=""></audio>
+            </div>
+        `);
+
+        // Update content
+        $('#album-details .card-body').empty()
+                .append($('<div class="row h-100"></div>').append(albumInfoColumn).append(songsColumn));
+
+        // Render songs list
+        renderAlbumSongs(album);
+        
+        // Add artist chart button for distributed or online albums
+        if((album.distributed === 3 || album.distributed === 5) && album.distroReleaseDate){
+            addArtistChartButton(album);
+            setupArtistChartHandlers();
+        }
+
+        // Set up Back button event
+        $('#back-to-albums').off('click').on('click', function () {
+            // Hide album details and show albums list
+            $('#album-details').hide();
+            $('#albums-container').show();
+            currentAlbumId = null;
+
+            // Stop playback if playing
+            const audioElement = $('#audio-element')[0];
+            if (audioElement) {
+                audioElement.pause();
+                $('#audio-player').addClass('d-none');
+            }
+        });
+
+        // Setup song search
+        setupAlbumSongSearch();
+    });
+}
 //    // Function to set up event handlers for artist chart
 //    function setupArtistChartHandlers() {
 //        // Toggle chart visibility when button is clicked
@@ -2970,144 +3509,144 @@
 //        });
 //    }
 
-    function showAlbumDetails(albumId) {
-        currentAlbumId = albumId;
-        $('#album-details').show();
-        $('#albums-container').hide();
-        $('#album-details .card-body').html(
-                '<div class="text-center my-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2 col-md-12">Loading album details...</p></div>'
-                );
-        fetchAlbumDetails(albumId, function (error, album) {
-            if (error) {
-                $('#album-details .card-body').html(
-                        '<div class="text-center my-5"><i class="fas fa-exclamation-triangle text-danger fa-2x"></i><p class="mt-2 col-md-12">Failed to load album details. Please try again.</p></div>'
-                        );
-                console.error('Error fetching album details:', error);
-                return;
-            }
-
-            let distributionIndicator = '';
-            if (album.distroReleaseDate) {
-                const distroDate = new Date(album.distroReleaseDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-
-                distributionIndicator = `
-                    <span class="distribution-indicator ml-2" data-toggle="tooltip" title="Distributed on ${distroDate}">
-                        <i class="fas fa-check-circle text-success"></i>
-                    </span>
-                `;
-            }
-            const headerContent = `
-        <div class="album-detail-title">
-            <button class="btn btn-back" id="back-to-albums">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <h5 id="current-album-name">
-                ${album.name}
-                ${distributionIndicator}
-            </h5>
-                        
-        </div>
-        <div class="album-action-buttons">
-            ${album.distributed == 1 ?
-                    `<button id="btn-spotify-scan" class="btn btn-action btn-spotify" data-album-id="${album.id}" onclick="scanSpotify(${album.id})">
-                    <i class="fab fa-spotify"></i> Scan
-                </button>` : ''}
-             @if($is_admin_music)
-                ${album.distributed != 1 ?
-                    `<button id="album-details-distribute-btn" class="btn btn-action btn-distribute-detail distribute-btn" data-album-id="${album.id}" onclick="distribute(${album.id})">
-                           <i class="fas fa-solid fa-rocket"></i> Distribute
-                        </button>
-                        <button class="btn btn-action btn-add-songs" data-toggle="modal" data-target="#addSongsModal">
-                            <i class="fas fa-plus"></i> Add Songs
-                        </button>` : ''}     
-             @else
-                ${album.distributed != 1 && album.distributed != 2 ?
-                    `<button id="album-details-distribute-btn" class="btn btn-action btn-distribute-detail distribute-btn" data-album-id="${album.id}" onclick="distribute(${album.id})">
-                           <i class="fas fa-solid fa-rocket"></i> Distribute
-                        </button>
-                        <button class="btn btn-action btn-add-songs" data-toggle="modal" data-target="#addSongsModal">
-                            <i class="fas fa-plus"></i> Add Songs
-                        </button>` : ''}      
-             @endif          
- 
-        </div>
-    `;
-
-            // Cập nhật nội dung header
-            $('.card-header .d-flex').html(headerContent);
-            $('[data-toggle="tooltip"]').tooltip();
-
-            // Cập nhật nội dung card body
-            const albumInfoColumn = $('<div class="col-md-4 mb-4 album-info-container"></div>');
-            albumInfoColumn.html(updateAlbumInfoHTML(album));
-
-            const songsColumn = $('<div class="col-md-8 songs-container"></div>');
-            songsColumn.html(`
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Songs List</h5>
-            <form id="album-songs-search-form" class="search-container">
-                <div class="search-container" id="album-search-container">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" class="form-control" placeholder="Search and press Enter..." id="album-songs-search">
-                </div>
-
-            </form>
-        </div>
-        <div class="songs-list" id="album-songs-list">
-        </div>
-            
-        <div class="audio-player mt-4 d-none" id="audio-player">
-            <div class="player-controls mb-2">
-                <button class="btn btn-play" id="player-play-btn">
-                    <i class="fas fa-play"></i>
-                </button>
-                <div class="player-song-info">
-                    <div class="font-weight-bold" id="player-song-title">Song Title</div>
-                    <small class="text-muted" id="player-song-artist">Artist Name</small>
-                </div>
-                <span class="text-muted" id="player-time">0:00 / 0:00</span>
-            </div>
-            <div class="progress">
-                <div id="player-progress" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
-            </div>
-            <audio id="audio-element" src=""></audio>
-        </div>
-    `);
-
-            // Cập nhật content
-            $('#album-details .card-body').empty()
-                    .append($('<div class="row h-100"></div>').append(albumInfoColumn).append(songsColumn));
-
-            // Render danh sách bài hát
-            renderAlbumSongs(album);
-            if(album.distributed === 1 && album.distroReleaseDate){
-                addArtistChartButton(album);
-                setupArtistChartHandlers();
-            }
-
-            // Thiết lập sự kiện cho nút Back
-            $('#back-to-albums').off('click').on('click', function () {
-                // Ẩn chi tiết album và hiển thị danh sách album
-                $('#album-details').hide();
-                $('#albums-container').show();
-                currentAlbumId = null;
-
-                // Dừng phát nhạc nếu đang phát
-                const audioElement = $('#audio-element')[0];
-                if (audioElement) {
-                    audioElement.pause();
-                    $('#audio-player').addClass('d-none');
-                }
-            });
-
-            // Thiết lập sự kiện tìm kiếm bài hát
-            setupAlbumSongSearch();
-        });
-    }
+//    function showAlbumDetails(albumId) {
+//        currentAlbumId = albumId;
+//        $('#album-details').show();
+//        $('#albums-container').hide();
+//        $('#album-details .card-body').html(
+//                '<div class="text-center my-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2 col-md-12">Loading album details...</p></div>'
+//                );
+//        fetchAlbumDetails(albumId, function (error, album) {
+//            if (error) {
+//                $('#album-details .card-body').html(
+//                        '<div class="text-center my-5"><i class="fas fa-exclamation-triangle text-danger fa-2x"></i><p class="mt-2 col-md-12">Failed to load album details. Please try again.</p></div>'
+//                        );
+//                console.error('Error fetching album details:', error);
+//                return;
+//            }
+//
+//            let distributionIndicator = '';
+//            if (album.distroReleaseDate) {
+//                const distroDate = new Date(album.distroReleaseDate).toLocaleDateString('en-US', {
+//                    year: 'numeric',
+//                    month: 'long',
+//                    day: 'numeric'
+//                });
+//
+//                distributionIndicator = `
+//                    <span class="distribution-indicator ml-2" data-toggle="tooltip" title="Distributed on ${distroDate}">
+//                        <i class="fas fa-check-circle text-success"></i>
+//                    </span>
+//                `;
+//            }
+//            const headerContent = `
+//        <div class="album-detail-title">
+//            <button class="btn btn-back" id="back-to-albums">
+//                <i class="fas fa-arrow-left"></i>
+//            </button>
+//            <h5 id="current-album-name">
+//                ${album.name}
+//                ${distributionIndicator}
+//            </h5>
+//                        
+//        </div>
+//        <div class="album-action-buttons">
+//            ${album.distributed == 1 ?
+//                    `<button id="btn-spotify-scan" class="btn btn-action btn-spotify" data-album-id="${album.id}" onclick="scanSpotify(${album.id})">
+//                    <i class="fab fa-spotify"></i> Scan
+//                </button>` : ''}
+//             @if($is_admin_music)
+//                ${album.distributed != 1 ?
+//                    `<button id="album-details-distribute-btn" class="btn btn-action btn-distribute-detail distribute-btn" data-album-id="${album.id}" onclick="distribute(${album.id})">
+//                           <i class="fas fa-solid fa-rocket"></i> Distribute
+//                        </button>
+//                        <button class="btn btn-action btn-add-songs" data-toggle="modal" data-target="#addSongsModal">
+//                            <i class="fas fa-plus"></i> Add Songs
+//                        </button>` : ''}     
+//             @else
+//                ${album.distributed != 1 && album.distributed != 2 ?
+//                    `<button id="album-details-distribute-btn" class="btn btn-action btn-distribute-detail distribute-btn" data-album-id="${album.id}" onclick="distribute(${album.id})">
+//                           <i class="fas fa-solid fa-rocket"></i> Distribute
+//                        </button>
+//                        <button class="btn btn-action btn-add-songs" data-toggle="modal" data-target="#addSongsModal">
+//                            <i class="fas fa-plus"></i> Add Songs
+//                        </button>` : ''}      
+//             @endif          
+// 
+//        </div>
+//    `;
+//
+//            // Cập nhật nội dung header
+//            $('.card-header .d-flex').html(headerContent);
+//            $('[data-toggle="tooltip"]').tooltip();
+//
+//            // Cập nhật nội dung card body
+//            const albumInfoColumn = $('<div class="col-md-4 mb-4 album-info-container"></div>');
+//            albumInfoColumn.html(updateAlbumInfoHTML(album));
+//
+//            const songsColumn = $('<div class="col-md-8 songs-container"></div>');
+//            songsColumn.html(`
+//        <div class="d-flex justify-content-between align-items-center mb-3">
+//            <h5 class="mb-0">Songs List</h5>
+//            <form id="album-songs-search-form" class="search-container">
+//                <div class="search-container" id="album-search-container">
+//                    <i class="fas fa-search search-icon"></i>
+//                    <input type="text" class="form-control" placeholder="Search and press Enter..." id="album-songs-search">
+//                </div>
+//
+//            </form>
+//        </div>
+//        <div class="songs-list" id="album-songs-list">
+//        </div>
+//            
+//        <div class="audio-player mt-4 d-none" id="audio-player">
+//            <div class="player-controls mb-2">
+//                <button class="btn btn-play" id="player-play-btn">
+//                    <i class="fas fa-play"></i>
+//                </button>
+//                <div class="player-song-info">
+//                    <div class="font-weight-bold" id="player-song-title">Song Title</div>
+//                    <small class="text-muted" id="player-song-artist">Artist Name</small>
+//                </div>
+//                <span class="text-muted" id="player-time">0:00 / 0:00</span>
+//            </div>
+//            <div class="progress">
+//                <div id="player-progress" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+//            </div>
+//            <audio id="audio-element" src=""></audio>
+//        </div>
+//    `);
+//
+//            // Cập nhật content
+//            $('#album-details .card-body').empty()
+//                    .append($('<div class="row h-100"></div>').append(albumInfoColumn).append(songsColumn));
+//
+//            // Render danh sách bài hát
+//            renderAlbumSongs(album);
+//            if(album.distributed === 1 && album.distroReleaseDate){
+//                addArtistChartButton(album);
+//                setupArtistChartHandlers();
+//            }
+//
+//            // Thiết lập sự kiện cho nút Back
+//            $('#back-to-albums').off('click').on('click', function () {
+//                // Ẩn chi tiết album và hiển thị danh sách album
+//                $('#album-details').hide();
+//                $('#albums-container').show();
+//                currentAlbumId = null;
+//
+//                // Dừng phát nhạc nếu đang phát
+//                const audioElement = $('#audio-element')[0];
+//                if (audioElement) {
+//                    audioElement.pause();
+//                    $('#audio-player').addClass('d-none');
+//                }
+//            });
+//
+//            // Thiết lập sự kiện tìm kiếm bài hát
+//            setupAlbumSongSearch();
+//        });
+//    }
 
 //    function renderAlbumSongs(album) {
 //        const songsContainer = $('#album-songs-list');
@@ -3197,19 +3736,129 @@
 //        });
 //    }
 
+//function renderAlbumSongs(album) {
+//    const songsContainer = $('#album-songs-list');
+//    songsContainer.empty();
+//    
+//    // Add class to songs container if album is distributed
+//    songsContainer.parent().toggleClass('album-distributed', album.distributed == 1);
+//
+//    if (!album.songs || !album.songs.length) {
+//        songsContainer.html(`
+//            <div class="text-center py-5 text-muted" id="empty-album-message">
+//                <i class="fas fa-music fa-3x mb-3"></i>
+//                <p class="w-100">This album has no songs yet</p>
+//                ${!album.distributed ?
+//                    `<button class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#addSongsModal">
+//                        Add Songs Now
+//                    </button>` : ''}
+//            </div>
+//        `);
+//        $('#audio-player').addClass('d-none');
+//        return;
+//    }
+//    
+//    // Sort songs by order_id if available
+//    let sortedSongs = [...album.songs];
+//    sortedSongs.sort((a, b) => {
+//        if (a.order_id && b.order_id) {
+//            return a.order_id - b.order_id;
+//        }
+//        return 0; // Keep original order if order_id is not available
+//    });
+//
+//    sortedSongs.forEach(song => {
+//        const spotifyButton = song.spotify_id ?
+//            `<div class="spotify-link mr-2 cur-poiter" title="Copy Spotify link" data-spotify-id="${song.spotify_id}">
+//                <i class="fab fa-spotify"></i>
+//            </div>` : '';
+//        
+//        // Add drag handle - only shown if album is not distributed
+//        const dragHandle = !album.distributed ? 
+//            `<div class="drag-handle mr-2">
+//                <i class="fas fa-grip-vertical"></i>
+//            </div>` : '';
+//            
+//        const songItem = `
+//            <div class="song-item d-flex justify-content-between align-items-center searchable-song-item" data-song-id="${song.id}" data-order="${song.order_id || 0}">
+//                <div class="d-flex align-items-center">
+//                    ${dragHandle}
+//                    <button class="btn-play-song play-song-btn mr-2" data-song-id="${song.id}" type="button">
+//                        <i class="fas fa-play"></i>
+//                    </button>
+//                    <div>
+//                        <div class="song-title searchable-title">${song.title}</div>
+//                        <div class="song-artist searchable-artist">${song.artist}</div>
+//                    </div>
+//                </div>
+//                <div class="d-flex align-items-center">
+//                    ${spotifyButton}        
+//                    <span class="song-duration mr-3">${song.duration || '00:00'}</span>
+//                    ${!album.distributed ?
+//                        `<button class="btn btn-sm btn-outline-danger remove-song-btn btn-remove-song" data-song-id="${song.id}" title="Remove song" type="button">
+//                            <i class="fas fa-times"></i>
+//                        </button>` : ''}
+//                </div>
+//            </div>
+//        `;
+//        songsContainer.append(songItem);
+//    });
+//
+//    // Add click event to play song buttons
+//    $('.play-song-btn').click(function (e) {
+//        e.stopPropagation();
+//        const songId = $(this).data('song-id');
+//        const song = album.songs.find(s => s.id == songId); // Use == instead of === for type coercion
+//        if (song) {
+//            playSong(song);
+//        }
+//    });
+//
+//    // Only add click events for remove buttons if they exist (for non-distributed albums)
+//    if (!album.distributed) {
+//        // Add click event to remove song buttons
+//        $('.remove-song-btn').click(function (e) {
+//            e.stopPropagation();
+//            const songId = $(this).data('song-id');
+//            handleRemoveSongFromAlbum(songId, album.id);
+//        });
+//        
+//        // Initialize sortable for undistributed albums
+//        initSortable();
+//    }
+//
+//    $('.spotify-link').click(function (e) {
+//        e.stopPropagation();
+//        const spotifyId = $(this).data('spotify-id');
+//        const spotifyUrl = `https://open.spotify.com/track/${spotifyId}`;
+//
+//        // Copy to clipboard
+//        copyToClipboard2(spotifyUrl);
+//
+//        // Show copied effect
+//        showCopiedEffect($(this));
+//
+//        // Optional: show notification
+//        showNotification("Spotify link copied to clipboard", "success");
+//    });
+//}
+
 function renderAlbumSongs(album) {
     const songsContainer = $('#album-songs-list');
     songsContainer.empty();
     
+    // Only enable drag-n-drop for non-distributed albums (status 0, 1, and 4)distribute
+    const canEdit = album.distributed === 0 || album.distributed === 1 || album.distributed === 4;
+    
     // Add class to songs container if album is distributed
-    songsContainer.parent().toggleClass('album-distributed', album.distributed == 1);
+    songsContainer.parent().toggleClass('album-distributed', album.distributed === 3 || album.distributed === 5);
 
     if (!album.songs || !album.songs.length) {
         songsContainer.html(`
             <div class="text-center py-5 text-muted" id="empty-album-message">
                 <i class="fas fa-music fa-3x mb-3"></i>
                 <p class="w-100">This album has no songs yet</p>
-                ${!album.distributed ?
+                ${canEdit ?
                     `<button class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#addSongsModal">
                         Add Songs Now
                     </button>` : ''}
@@ -3234,8 +3883,8 @@ function renderAlbumSongs(album) {
                 <i class="fab fa-spotify"></i>
             </div>` : '';
         
-        // Add drag handle - only shown if album is not distributed
-        const dragHandle = !album.distributed ? 
+        // Add drag handle - only shown if album can be edited
+        const dragHandle = canEdit ? 
             `<div class="drag-handle mr-2">
                 <i class="fas fa-grip-vertical"></i>
             </div>` : '';
@@ -3255,7 +3904,7 @@ function renderAlbumSongs(album) {
                 <div class="d-flex align-items-center">
                     ${spotifyButton}        
                     <span class="song-duration mr-3">${song.duration || '00:00'}</span>
-                    ${!album.distributed ?
+                    ${canEdit ?
                         `<button class="btn btn-sm btn-outline-danger remove-song-btn btn-remove-song" data-song-id="${song.id}" title="Remove song" type="button">
                             <i class="fas fa-times"></i>
                         </button>` : ''}
@@ -3275,8 +3924,8 @@ function renderAlbumSongs(album) {
         }
     });
 
-    // Only add click events for remove buttons if they exist (for non-distributed albums)
-    if (!album.distributed) {
+    // Only add click events for remove buttons if album can be edited
+    if (canEdit) {
         // Add click event to remove song buttons
         $('.remove-song-btn').click(function (e) {
             e.stopPropagation();
@@ -3284,7 +3933,7 @@ function renderAlbumSongs(album) {
             handleRemoveSongFromAlbum(songId, album.id);
         });
         
-        // Initialize sortable for undistributed albums
+        // Initialize sortable for editable albums
         initSortable();
     }
 
@@ -3303,7 +3952,6 @@ function renderAlbumSongs(album) {
         showNotification("Spotify link copied to clipboard", "success");
     });
 }
-
 // Initialize Sortable.js for the songs list
 function initSortable() {
     const songsList = document.getElementById('album-songs-list');
@@ -4201,34 +4849,65 @@ function saveSongOrder() {
         }
     }
 
-    function distribute(id) {
-        $("#album-details-distribute-btn").html(`<i class="fas fa-spinner fa-spin"></i> Loading...`);
-        $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-spinner fa-spin"></i>`);
-        $.ajax({
-            type: "GET",
-            url: "/sendAlbumToSalad",
-            data: {
-                id: id
-            },
-            dataType: 'json',
-            success: function (data) {
-                logger('distribute', data);
-                $("#album-details-distribute-btn").html(
-                        `<i class="fas fa-solid fa-rocket"></i> Distribute`);
-                $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-solid fa-rocket"></i>`);
-                showNotification(data.message, data.status);
-                if (data.status == "success") {
-                    setTimeout(function () {
-                        location.reload();
-                    }, 1000);
-                }
-
-            },
-            error: function (data) {
-                console.log('Error:', data);
+//    function distribute(id) {
+//        $("#album-details-distribute-btn").html(`<i class="fas fa-spinner fa-spin"></i> Loading...`);
+//        $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-spinner fa-spin"></i>`);
+//        $.ajax({
+//            type: "GET",
+//            url: "/sendAlbumToSalad",
+//            data: {
+//                id: id
+//            },
+//            dataType: 'json',
+//            success: function (data) {
+//                logger('distribute', data);
+//                $("#album-details-distribute-btn").html(
+//                        `<i class="fas fa-solid fa-rocket"></i> Distribute`);
+//                $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-solid fa-rocket"></i>`);
+//                showNotification(data.message, data.status);
+//                if (data.status == "success") {
+//                    setTimeout(function () {
+//                        location.reload();
+//                    }, 1000);
+//                }
+//
+//            },
+//            error: function (data) {
+//                console.log('Error:', data);
+//            }
+//        });
+//    }
+function distribute(id) {
+    $("#album-details-distribute-btn").html(`<i class="fas fa-spinner fa-spin"></i> Loading...`);
+    $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-spinner fa-spin"></i>`);
+    $.ajax({
+        type: "GET",
+        url: "/sendAlbumToSalad",
+        data: {
+            id: id
+        },
+        dataType: 'json',
+        success: function (data) {
+            logger('distribute', data);
+            $("#album-details-distribute-btn").html(
+                    `<i class="fas fa-solid fa-rocket"></i> Distribute`);
+            $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-solid fa-rocket"></i>`);
+            showNotification(data.message, data.status);
+            if (data.status == "success") {
+                setTimeout(function () {
+                    location.reload();
+                }, 1000);
             }
-        });
-    }
+        },
+        error: function (data) {
+            console.log('Error:', data);
+            $("#album-details-distribute-btn").html(`<i class="fas fa-solid fa-rocket"></i> Distribute`);
+            $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-solid fa-rocket"></i>`);
+            showNotification("Error distributing album. Please try again.", "error");
+        }
+    });
+}
+
 
     function scanSpotify(albumId) {
 // Cập nhật trạng thái nút
@@ -4392,41 +5071,36 @@ function saveSongOrder() {
             }
         });
     }
-
-function setupStatusFilter() {
-    // Create filter buttons HTML with improved styling
-    const statusFilterHTML = `
-    <div class="filter-container mb-4">
-        <div class="d-flex align-items-center flex-wrap">
-            
-            <div class="filter-buttons">
-                <button type="button" class="filter-btn active" data-status="all">All</button>
-                <button type="button" class="filter-btn filter-btn-distributed" data-status="distributed">Distributed</button>
-                <button type="button" class="filter-btn filter-btn-pending" data-status="pending">Pending</button>
-                <button type="button" class="filter-btn filter-btn-not-distributed" data-status="not-distributed">Not Distributed</button>
-            </div>
-        </div>
-    </div>`;
-    
-    // Insert filter buttons after the search input
-    $('#album-search-container').after(statusFilterHTML);
-    
-    // Add click event handler for status filter buttons
-    $('.filter-btn').click(function() {
-        // Update active button state
-        $('.filter-btn').removeClass('active');
-        $(this).addClass('active');
-        
-        // Apply filtering
-        applyFilters();
-    });
-    
-    // Update the search input event to also apply status filtering
-    $('#album-search').off('input').on('input', function() {
-        applyFilters();
+function distribute(id) {
+    $("#album-details-distribute-btn").html(`<i class="fas fa-spinner fa-spin"></i> Loading...`);
+    $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-spinner fa-spin"></i>`);
+    $.ajax({
+        type: "GET",
+        url: "/sendAlbumToSalad",
+        data: {
+            id: id
+        },
+        dataType: 'json',
+        success: function (data) {
+            logger('distribute', data);
+            $("#album-details-distribute-btn").html(
+                    `<i class="fas fa-solid fa-rocket"></i> Distribute`);
+            $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-solid fa-rocket"></i>`);
+            showNotification(data.message, data.status);
+            if (data.status == "success") {
+                setTimeout(function () {
+                    location.reload();
+                }, 1000);
+            }
+        },
+        error: function (data) {
+            console.log('Error:', data);
+            $("#album-details-distribute-btn").html(`<i class="fas fa-solid fa-rocket"></i> Distribute`);
+            $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-solid fa-rocket"></i>`);
+            showNotification("Error distributing album. Please try again.", "error");
+        }
     });
 }
-
 function applyFilters() {
     const searchTerm = $('#album-search').val().toLowerCase().trim();
     const selectedStatus = $('.filter-btn.active').data('status');
@@ -4444,7 +5118,7 @@ function applyFilters() {
         const albumGenre = cardElement.find('.album-genre').text().toLowerCase();
         const albumStatusElement = cardElement.find('.album-status-badge');
         const albumStatusText = albumStatusElement.text().trim();
-        const albumUsername = cardElement.find('.album-username').text().toLowerCase();
+        const albumUsername = cardElement.find('.user-avatar').attr('title').toLowerCase();
         
         // Check search match
         const matchesSearch = searchTerm === '' || 
@@ -4456,15 +5130,28 @@ function applyFilters() {
             albumGenre.includes(searchTerm) ||
             albumStatusText.toLowerCase().includes(searchTerm);
             
-        // Check status match - using exact match
+        // Check status match based on the new status values
         let matchesStatus = true;
         if (selectedStatus !== 'all') {
-            if (selectedStatus === 'distributed') {
-                matchesStatus = albumStatusText === 'Distributed';
-            } else if (selectedStatus === 'pending') {
-                matchesStatus = albumStatusText === 'Pending Distribution';
-            } else if (selectedStatus === 'not-distributed') {
-                matchesStatus = albumStatusText === 'Not Yet Distributed';
+            switch (selectedStatus) {
+                case 'not-distributed':
+                    matchesStatus = albumStatusText === 'Not Distributed';
+                    break;
+                case 'pending':
+                    matchesStatus = albumStatusText === 'Pending Distribution';
+                    break;
+                case 'distributing':
+                    matchesStatus = albumStatusText === 'Distributing';
+                    break;
+                case 'distributed':
+                    matchesStatus = albumStatusText === 'Distributed';
+                    break;
+                case 'error':
+                    matchesStatus = albumStatusText === 'Distribution Error';
+                    break;
+                case 'online':
+                    matchesStatus = albumStatusText === 'Online';
+                    break;
             }
         }
         
@@ -4502,6 +5189,170 @@ function applyFilters() {
         $('#no-results-message').remove();
     }
 }
+
+function setupStatusFilter() {
+    // Create filter buttons HTML with improved styling
+    const statusFilterHTML = `
+    <div class="filter-container mb-4">
+        <div class="d-flex align-items-center flex-wrap">
+            <div class="filter-buttons">
+                <button type="button" class="filter-btn active" data-status="all">All</button>
+                <button type="button" class="filter-btn filter-btn-not-distributed" data-status="not-distributed">Not Distributed</button>
+                <button type="button" class="filter-btn filter-btn-pending" data-status="pending">Pending</button>
+                <button type="button" class="filter-btn filter-btn-distributing" data-status="distributing">Distributing</button>
+                <button type="button" class="filter-btn filter-btn-distributed" data-status="distributed">Distributed</button>
+                <button type="button" class="filter-btn filter-btn-error" data-status="error">Error</button>
+                <button type="button" class="filter-btn filter-btn-online" data-status="online">Online</button>
+            </div>
+        </div>
+    </div>`;
+    
+    // Insert filter buttons after the search input
+    $('#album-search-container').after(statusFilterHTML);
+    
+    // Add click event handler for status filter buttons
+    $('.filter-btn').click(function() {
+        // Update active button state
+        $('.filter-btn').removeClass('active');
+        $(this).addClass('active');
+        
+        // Apply filtering
+        applyFilters();
+    });
+    
+    // Update the search input event to also apply status filtering
+    $('#album-search').off('input').on('input', function() {
+        applyFilters();
+    });
+    
+    // Add specific styling for the new status buttons
+//    $("<style>")
+//        .prop("type", "text/css")
+//        .html(`
+//            .filter-btn-distributing.active {
+//                background-color: #17a2b8;
+//                color: white;
+//            }
+//            .filter-btn-error.active {
+//                background-color: #dc3545;
+//                color: white;
+//            }
+//            .filter-btn-online.active {
+//                background-color: #007bff;
+//                color: white;
+//            }
+//        `)
+//        .appendTo("head");
+}
+//function setupStatusFilter() {
+//    // Create filter buttons HTML with improved styling
+//    const statusFilterHTML = `
+//    <div class="filter-container mb-4">
+//        <div class="d-flex align-items-center flex-wrap">
+//            
+//            <div class="filter-buttons">
+//                <button type="button" class="filter-btn active" data-status="all">All</button>
+//                <button type="button" class="filter-btn filter-btn-distributed" data-status="distributed">Distributed</button>
+//                <button type="button" class="filter-btn filter-btn-pending" data-status="pending">Pending</button>
+//                <button type="button" class="filter-btn filter-btn-not-distributed" data-status="not-distributed">Not Distributed</button>
+//            </div>
+//        </div>
+//    </div>`;
+//    
+//    // Insert filter buttons after the search input
+//    $('#album-search-container').after(statusFilterHTML);
+//    
+//    // Add click event handler for status filter buttons
+//    $('.filter-btn').click(function() {
+//        // Update active button state
+//        $('.filter-btn').removeClass('active');
+//        $(this).addClass('active');
+//        
+//        // Apply filtering
+//        applyFilters();
+//    });
+//    
+//    // Update the search input event to also apply status filtering
+//    $('#album-search').off('input').on('input', function() {
+//        applyFilters();
+//    });
+//}
+
+//function applyFilters() {
+//    const searchTerm = $('#album-search').val().toLowerCase().trim();
+//    const selectedStatus = $('.filter-btn.active').data('status');
+//    
+//    // Tìm kiếm qua tất cả card album
+//    $('.card.album-card').each(function() {
+//        const cardElement = $(this);
+//        const parentElement = cardElement.closest('.col-md-3');
+//
+//        // Get album data
+//        const albumTitle = cardElement.find('.album-title').text().toLowerCase();
+//        const albumArtist = cardElement.find('.album-meta-item').eq(0).text().toLowerCase();
+//        const albumDate = cardElement.find('.album-meta-item').eq(1).text().toLowerCase();
+//        const albumSongs = cardElement.find('.album-meta-item').eq(2).text().toLowerCase();
+//        const albumGenre = cardElement.find('.album-genre').text().toLowerCase();
+//        const albumStatusElement = cardElement.find('.album-status-badge');
+//        const albumStatusText = albumStatusElement.text().trim();
+//        const albumUsername = cardElement.find('.album-username').text().toLowerCase();
+//        
+//        // Check search match
+//        const matchesSearch = searchTerm === '' || 
+//            albumTitle.includes(searchTerm) ||
+//            albumArtist.includes(searchTerm) ||
+//            albumDate.includes(searchTerm) ||
+//            albumSongs.includes(searchTerm) ||
+//            albumUsername.includes(searchTerm) ||
+//            albumGenre.includes(searchTerm) ||
+//            albumStatusText.toLowerCase().includes(searchTerm);
+//            
+//        // Check status match - using exact match
+//        let matchesStatus = true;
+//        if (selectedStatus !== 'all') {
+//            if (selectedStatus === 'distributed') {
+//                matchesStatus = albumStatusText === 'Distributed';
+//            } else if (selectedStatus === 'pending') {
+//                matchesStatus = albumStatusText === 'Pending Distribution';
+//            } else if (selectedStatus === 'not-distributed') {
+//                matchesStatus = albumStatusText === 'Not Yet Distributed';
+//            }
+//        }
+//        
+//        // Show/hide based on both filters
+//        if (matchesSearch && matchesStatus) {
+//            parentElement.show();
+//        } else {
+//            parentElement.hide();
+//        }
+//    });
+//    
+//    // Show message if no results
+//    const visibleAlbums = $('.card.album-card').parent().filter(':visible').length;
+//    if (visibleAlbums === 0) {
+//        if ($('#no-results-message').length === 0) {
+//            $('#albums-list').append(`
+//                <div id="no-results-message" class="col-12 text-center my-5 py-5">
+//                    <i class="fas fa-search text-muted fa-2x mb-3"></i>
+//                    <p class="text-muted w-100">No albums match your filters.</p>
+//                    <button class="btn btn-outline-primary btn-sm mt-2 reset-filters-btn">
+//                        <i class="fas fa-redo mr-1"></i> Reset Filters
+//                    </button>
+//                </div>
+//            `);
+//            
+//            // Add reset filters button handler
+//            $('.reset-filters-btn').click(function() {
+//                $('#album-search').val('');
+//                $('.filter-btn').removeClass('active');
+//                $('.filter-btn[data-status="all"]').addClass('active');
+//                applyFilters();
+//            });
+//        }
+//    } else {
+//        $('#no-results-message').remove();
+//    }
+//}
     let currentModalAudio = null;
     $(document).ready(function () {
         // Biến toàn cục

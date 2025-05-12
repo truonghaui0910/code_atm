@@ -28,59 +28,77 @@ use Log;
 class CallbackController extends Controller {
 
     //hàm parse lỗi bass
-    function extractBASErrors($input) {
-        // Khởi tạo mảng lưu kết quả lỗi
-        $errors = [];
-
-        if ($input === null || $input === "") {
-            return [
-                    [
-                    'script_name' => 'unknown',
-                    'func_name' => 'unknown',
-                    'error_message' => 'No result'
-                ]
+function extractBASErrors($input) {
+    // Khởi tạo mảng lưu kết quả lỗi
+    $errors = [];
+    
+    // Kiểm tra đầu vào rỗng
+    if ($input === null || $input === "") {
+        return [
+            [
+                'script_name' => 'unknown',
+                'func_name' => 'unknown',
+                'error_message' => 'No result'
+            ]
+        ];
+    }
+    
+    // Kiểm tra xem đầu vào có nhiều dòng không
+    if (strpos($input, "\n") !== false) {
+        // Trường hợp nhiều dòng - tách thành từng dòng
+        $lines = explode("\n", $input);
+    } else {
+        // Trường hợp một dòng
+        $lines = [$input];
+    }
+    
+    // Biến kiểm tra xem có ít nhất một JSON hợp lệ không
+    $hasValidJson = false;
+    
+    // Xử lý từng dòng
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line)) {
+            continue;
+        }
+        
+        // Phân tích JSON
+        $data = json_decode($line);
+        
+        // Kiểm tra nếu parse thất bại
+        if ($data === null) {
+            continue; // Bỏ qua dòng không phải JSON hợp lệ
+        }
+        
+        // Đánh dấu đã tìm thấy ít nhất một JSON hợp lệ
+        $hasValidJson = true;
+        
+        // Kiểm tra xem có lỗi không
+        if (isset($data->result) && strpos($data->result, 'WAS_ERROR:') === 0) {
+            // Trích xuất thông báo lỗi (bỏ qua "WAS_ERROR:")
+            $errorMessage = substr($data->result, 10);
+            // Thêm vào danh sách lỗi
+            $errors[] = [
+                'script_name' => $data->script_name,
+                'func_name' => $data->func_name,
+                'error_message' => $errorMessage
             ];
         }
-        // Kiểm tra xem đầu vào có nhiều dòng không
-        if (strpos($input, "\n") !== false) {
-            // Trường hợp nhiều dòng - tách thành từng dòng
-            $lines = explode("\n", $input);
-        } else {
-            // Trường hợp một dòng
-            $lines = [$input];
-        }
-
-        // Xử lý từng dòng
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (empty($line)) {
-                continue;
-            }
-
-            // Phân tích JSON
-            $data = json_decode($line);
-
-            // Kiểm tra nếu parse thất bại
-            if ($data === null) {
-                continue; // Bỏ qua dòng không phải JSON hợp lệ
-            }
-
-            // Kiểm tra xem có lỗi không
-            if (isset($data->result) && strpos($data->result, 'WAS_ERROR:') === 0) {
-                // Trích xuất thông báo lỗi (bỏ qua "WAS_ERROR:")
-                $errorMessage = substr($data->result, 10);
-
-                // Thêm vào danh sách lỗi
-                $errors[] = [
-                    'script_name' => $data->script_name,
-                    'func_name' => $data->func_name,
-                    'error_message' => $errorMessage
-                ];
-            }
-        }
-
-        return $errors;
     }
+    
+    // Nếu không có lỗi nào nhưng có ít nhất một JSON hợp lệ, trả về "No errors"
+    if (empty($errors) && $hasValidJson) {
+        return [
+            [
+                'script_name' => 'success',
+                'func_name' => 'all',
+                'error_message' => 'Bas not return error'
+            ]
+        ];
+    }
+    
+    return $errors;
+}
 
     //2034/04/17 callback create channel
     public function callbackChannelCreate(Request $request) {
@@ -507,13 +525,27 @@ class CallbackController extends Controller {
 
             //kiểm tra xem nếu upload fail đếm. nếu 3 lần thì thông báo
             if ($request->status != 5) {
+                //chỉ đếm khi status_upload < 3, status_upload=4 sẽ dành cho trường hợp Cant resolve
+                $count = 0;
+                if (!empty($channel->last_upload)) {
+                    $old = json_decode($channel->last_upload);
+                    if (!empty($old[0]->count)) {
+                        $count = $old[0]->count;
+                    }
+                }
+                $count++;
                 $channel->status_upload = $channel->status_upload + 1;
                 $errorArr = $this->extractBASErrors(trim($request->result));
                 $errorArr[0]["job_id"] = $request->id;
+                $errorArr[0]["count"] = $count;
                 $channel->last_upload = json_encode($errorArr);
+                if ($channel->status_upload > 3) {
+                    $channel->status_upload = 3;
+                }
                 $channel->save();
             } else {
                 $channel->status_upload = 0;
+                $channel->last_upload = null;
                 $channel->save();
             }
         }
@@ -1255,6 +1287,30 @@ class CallbackController extends Controller {
             return response()->json(["status" => "success"]);
         }
         return response()->json(["status" => "error"]);
+    }
+
+    public function callbackRenderError(Request $request) {
+        Logger::logUpload('CallbackController.callbackRenderError|request=' . json_encode($request->all()));
+        $channel = AccountInfo::where("chanel_id", $request->channel_id)->first();
+        if ($channel) {
+            $count = 0;
+            if (!empty($channel->last_upload)) {
+                $old = json_decode($channel->last_upload);
+                if (!empty($old[0]->count)) {
+                    $count = $old[0]->count;
+                }
+            }
+            $count++;
+            $channel->status_upload = 3;
+            $errors[] = [
+                'job_id' => $request->id,
+                'error_message' => "render error",
+                'count' => $count
+            ];
+            $channel->last_upload = json_encode($errors);
+            $channel->save();
+        }
+        return 1;
     }
 
 }

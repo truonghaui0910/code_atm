@@ -946,6 +946,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
     Route::post('/callback/sync_cookie', 'CallbackController@callbackSyncCookie')->name('callbackSyncCookie');
     Route::post('/callback/upload/claim', 'CallbackController@callbackUploadClaim')->name('callbackUploadClaim');
     Route::post('/callback/channel/comment', 'CallbackController@callbackChannelCommment')->name('callbackChannelCommment');
+    Route::get('/callback/render/error', 'CallbackController@callbackRenderError')->name('callbackRenderError');
 
     //2023/04/19 fake callback
     Route::get('/fakecallback', 'ApiController@fakeCallback')->name('fakeCallback');

@@ -66,11 +66,13 @@ class ChannelManagementController extends Controller {
             $errStatus = 4;
         }
 
+        if ($request->is_supper_admin) {
+            $errStatus = 7;
+        }
         $errorCountChangeInfo = $errorCountTmp->where("last_change_pass", $errStatus)->count();
-
         $uploadCountTmp = clone $datas;
-        $errorCountUpload = $uploadCountTmp->where("status_upload", ">=",3)->count();
-        
+        $errorCountUpload = $uploadCountTmp->where("status_upload", "=", 3)->count();
+
         $limit = 30;
         if (isset($request->limit)) {
             if ($request->limit <= 1000 && $request->limit > 0) {
@@ -194,10 +196,10 @@ class ChannelManagementController extends Controller {
             $queries['is_change_info_error'] = $request->is_change_info_error;
         }
         if (isset($request->is_upload_error)) {
-            $datas = $datas->where('status_upload','>=',3);
+            $datas = $datas->where('status_upload', '=', 3);
             $queries['is_upload_error'] = $request->is_upload_error;
         }
-
+//        last_change_pass 4:change fail,6:Cant resolve,7:User need to check
         if (isset($request->is_changeinfo) && $request->is_changeinfo != '-1') {
             if ($request->is_changeinfo == 1) {
                 $datas = $datas->where('last_change_pass', '>', 7);
@@ -865,12 +867,25 @@ class ChannelManagementController extends Controller {
                     $count = 0;
                     $message = null;
                     if ($request->action_type == "resolve") {
+                        $statusUpload = 0;
+                        $lastUpload = "";
                         $lastChangePass = time();
-                        $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve last_change_pass=time()";
+                        if ($request->error_type == "upload") {
+                            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve statusUpload=0,lastUpload=empty";
+                        } else {
+                            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve last_change_pass=time()";
+                        }
                     } else if ($request->action_type == "not_resolve") {
-                        $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name not resolve last_change_pass=6";
+                        if ($request->error_type == "upload") {
+
+                            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve statusUpload=4,lastUpload=Cant resolve";
+                        } else {
+                            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name not resolve last_change_pass=6";
+                        }
                         $lastChangePass = 6;
+                        $statusUpload = 4;
                         $message = $request->message;
+                        $lastUpload = $message;
                     } else {
                         $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name sent user to check last_change_pass=7";
                         $lastChangePass = 7;
@@ -878,13 +893,22 @@ class ChannelManagementController extends Controller {
                     }
                     foreach ($dataChannels as $account) {
                         $count++;
-                        $currentLog = $account->log;
-                        $newLog = preg_replace('/.*change info fail.*\n?/', '', $currentLog);
-                        $newLog = $newLog . $log;
-                        $account->message = $message;
-                        $account->last_change_pass = $lastChangePass;
-                        $account->log = $newLog;
-                        $account->save();
+
+                        //xử lý kênh lỗi upload hoặc render
+                        if ($request->error_type == "upload") {
+                            $account->last_upload = $lastUpload;
+                            $account->status_upload = $statusUpload;
+                            $account->log = $account->log . $log;
+                            $account->save();
+                        } else {
+                            $currentLog = $account->log;
+                            $newLog = preg_replace('/.*change info fail.*\n?/', '', $currentLog);
+                            $account->message = $message;
+                            $account->last_change_pass = $lastChangePass;
+                            $newLog = $newLog . $log;
+                            $account->log = $newLog;
+                            $account->save();
+                        }
                     }
                     array_push($content, str_replace(':values', $count, "Set success :values channels"));
                 }
@@ -1639,7 +1663,8 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                         'message' => 'Not found info'
             ]);
         }
-        $data = RequestHelper::callAPI2("GET", "http://gmail.69hot.info/manager/google-reco/verify/$account->reco_email/$account->note", []);
+        $header = array("platform: autowin");
+        $data = RequestHelper::callAPI2("GET", "http://gmail.69hot.info/manager/google-reco/verify/$account->reco_email/$account->note", [],$header);
         Log::info(json_encode($data));
         if ($data->status == "success") {
             return response()->json([

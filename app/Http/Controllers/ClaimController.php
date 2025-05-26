@@ -2888,9 +2888,9 @@ class ClaimController extends Controller {
                         $rev->artist_percent = $claim->artist_percent;
                         $rev->cost_percent = $claim->cost_percent;
                     }
-                    //từ tháng 3/2024 tăng cost lên 30%
-                    if ($claim->distributor == "Orchard" && $request->period >= '202403') {
-                        $rev->cost_percent = 30;
+                    //từ tháng 3/2024 tăng cost lên 30%, tháng 2.3/2025 giảm còn 10%
+                    if ($claim->distributor == "Orchard" && ($request->period == '202503' ||$request->period == '202502' )) {
+                        $rev->cost_percent = 10;
                     }
 
                     $tax = $rev->tax_percent * $rev->revenue / 100;
@@ -3445,6 +3445,8 @@ class ClaimController extends Controller {
         Log::info('ClaimController.checkClaimDistributor|request=' . json_encode($request->all()));
         $claim = CampaignStatistics::where("id", $request->id)->first();
         //first=0: kiểm tra lại xem có dữ liệu cũ ko thì check lại video, first=1: làm lại từ đầu,bao gồm make lại video
+        $status = "success";
+        $message = "finished";
         if ($request->remake == 0) {
             //kiểm tra xem đã có thông tin claim trong short_text chưa
             if ($claim->short_text != null) {
@@ -3470,6 +3472,10 @@ class ClaimController extends Controller {
                         if (isset($info->contentOwners[0]->displayName)) {
                             $distributor = $info->contentOwners[0]->displayName;
                         }
+                        if(isset($info->error)){
+                            $status = "error";
+                            $message = isset($info->error->message) ? $info->error->message : "Unknown Error";
+                        }
                     }
 
                     $shortText->title = $title;
@@ -3481,11 +3487,11 @@ class ClaimController extends Controller {
                         $claim->asset_id = $assetId;
                     }
                     $claim->save();
-                    $status = "success";
+                    
                     if ($artists == []) {
                         $status = "error";
                     }
-                    return response()->json(["status" => $status, "reload" => 0, "message" => "finished", "rs" => $rs, "cmd" => $cmd]);
+                    return response()->json(["status" => $status, "reload" => 1, "message" => $message, "rs" => $rs, "cmd" => $cmd]);
                 }
             }
         }

@@ -525,7 +525,7 @@ function extractBASErrors($input) {
 
             //kiểm tra xem nếu upload fail đếm. nếu 3 lần thì thông báo
             if ($request->status != 5) {
-                //chỉ đếm khi status_upload < 3, status_upload=4 sẽ dành cho trường hợp Cant resolve
+                //chỉ đếm khi status_upload <= 2, status_upload=4 sẽ dành cho trường hợp Cant resolve
                 $count = 0;
                 if (!empty($channel->last_upload)) {
                     $old = json_decode($channel->last_upload);
@@ -539,7 +539,7 @@ function extractBASErrors($input) {
                 $errorArr[0]["job_id"] = $request->id;
                 $errorArr[0]["count"] = $count;
                 $channel->last_upload = json_encode($errorArr);
-                if ($channel->status_upload > 3) {
+                if ($channel->status_upload > 2) {
                     $channel->status_upload = 3;
                 }
                 $channel->save();

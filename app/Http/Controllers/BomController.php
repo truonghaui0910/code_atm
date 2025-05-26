@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Log;
 use TheSeer\Tokenizer\Exception;
 use Validator;
-use function Symfony\Component\Debug\header;
+
 
 class BomController extends Controller {
 

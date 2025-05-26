@@ -21,11 +21,13 @@
                     <i class="mdi mdi-crop-free noti-icon"></i>
                 </a>
             </li>
-            <!--            <li class="list-inline-item notification-list">
-                            <a class="nav-link right-bar-toggle waves-light waves-effect">
-                                <i class="mdi mdi-dots-horizontal noti-icon"></i>
-                            </a>
-                        </li>-->
+            <li class="list-inline-item dropdown notification-list">
+                <a id="openNotify" class="nav-link dropdown-toggle arrow-none waves-light waves-effect"  onclick="loadNotify()" role="button"
+                   aria-haspopup="false" aria-expanded="false">
+                    <i class="ti-money noti-icon"></i>
+                    <span id="notify-count" class="notify-badge ">10</span>
+                </a>
+            </li>
 
             <li class="list-inline-item dropdown notification-list">
                 <a class="nav-link dropdown-toggle arrow-none waves-light waves-effect" data-toggle="dropdown" href="#" role="button"

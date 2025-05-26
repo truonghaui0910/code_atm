@@ -173,7 +173,7 @@ $listCampignid=[];
                                 </th>
                                 <th style="width: 5%;text-align: center">@sortablelink('id','ID')</th>
                                 <th style="width: 20%;">Campaign Name</th>
-                                <th style="width: 10%;text-align: center">Username</th>
+                                <th class="disp-none" style="width: 10%;text-align: center">Username</th>
                                 <th style="width: 10%;text-align: center">Genre</th>
                                 <th style="width: 10%;text-align: center">Start Date</th>
                
@@ -184,12 +184,13 @@ $listCampignid=[];
                                 <th style="width: 7%;text-align: center">Total</th>
                                 <th style="width: 7%;text-align: center">Count</th>
                                 <th style="width: 5%;text-align: center">Artist</th>
-                                <th style="width: 10%;text-align: right">{{trans('label.col.function')}}</th>
+                                <th  class="disp-none" style="width: 10%;text-align: right">{{trans('label.col.function')}}</th>
                                 <th  class="disp-none">PreName</th>
                                 <th  class="disp-none">Status</th>
                                 <th  class="disp-none">AssetId</th>
                                 <th  class="disp-none">YT Distributor</th>
                                 <th  class="disp-none">Distributor</th>
+                                <th  class="disp-none">Genre</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -237,8 +238,29 @@ $listCampignid=[];
                                     @endif
                                 </td>
 
-                                <td>{{$data->username}}</td>
-                                <td>{{$data->custom_genre}}_{{$data->genre}}</td>
+                                <td class="disp-none">{{$data->username}}</td>
+                                <td>{{$data->custom_genre}}_{{$data->genre}}<br>
+                                    <div class="m-t-10">
+                                    @if(in_array('20',explode(",", $user_login->role)) || in_array('1',explode(",",$user_login->role)))
+
+                                    @if($data->lyric_timestamp_id==null)
+                                    <i onclick="getListUser('{{$data->id}}')" class="ti-music-alt  color-h font-22  m-l-5 cur-poiter " data-toggle="tooltip" data-placement="top" data-original-title="Assign make lyric"></i>
+                                    @else
+                                    <i onclick="getListChannel('{{$data->id}}')" class="btn-show-channel ti-user color-h font-22  m-l-5 cur-poiter " data-toggle="tooltip" data-placement="top" data-original-title="Assign manual channel" data-cam-id="{{$data->id}}" data-music-id="{{$data->lyric_timestamp_id}}" data-songname="{{$data->song_name}}"></i>
+
+
+                                    @endif
+                                    @endif
+                                    <i onclick="editCampaign('{{$data->id}}')" class="ti-pencil-alt color-h font-22 m-l-5 cur-poiter" data-toggle="tooltip" data-placement="top" data-original-title="Edit Campaign"></i>
+                                    <i class="btn-show-hub ti-video-clapper color-h font-22  m-l-5 cur-poiter " data-toggle="tooltip" data-placement="top" data-original-title="Crosspost video promos" data-music-id="{{$data->lyric_timestamp_id}}" data-music-type="local" data-cross-type="2" data-songname="{{$data->song_name}}"></i>
+                                    <a href="claim#detail" onclick="detailCampaign('{{$data->id}}')" class="ti-view-list  color-h font-22  m-l-5 cur-poiter " data-toggle="tooltip" data-placement="top" data-original-title="Video List"></a>
+                                    <!--<i onclick="checkList('{{$data->id}}')" class="ti-check color-h font-1rem m-l-5 cur-poiter scale-02" data-toggle="tooltip" data-placement="top" data-original-title="Tier Checklist"></i>-->
+                                    <i onclick="chartsCampaign({{$data->id}})" class="ti-stats-up color-h font-22 m-l-5 cur-poiter" data-toggle="tooltip" data-placement="top" data-original-title="Chart"></i></span>
+                                    <span onclick="scanCampaignAll(this)" class="cur-poiter td-info color-h font-22 m-l-5 " data-id="{{$data->id}}"><i data-toggle="tooltip" data-placement="top" data-original-title="Scan view list video" class="ti-reload"></i></span>
+                                    <i data-toggle="tooltip" data-placement="top" data-original-title="Report by channel manager" class="ti-files cur-poiter td-info color-h font-22 m-l-5 report-user" data-id="{{$data->id}}"></i> 
+                                    </div>
+
+                                </td>
                                 <td>{{$data->campaign_start_date}}</td>
                                 
                                 <td>{{$data->distributor}}<br>
@@ -275,30 +297,15 @@ $listCampignid=[];
                                          {{number_format($data->count_videos, 0, '.', ',')}}
                                 </td>
                                 <td>{{$data->artist}}</td>
-                                <td style="text-align: right">
-                                    @if(in_array('20',explode(",", $user_login->role)) || in_array('1',explode(",",$user_login->role)))
+                                <td class="disp-none" style="text-align: right">
 
-                                    @if($data->lyric_timestamp_id==null)
-                                    <i onclick="getListUser('{{$data->id}}')" class="ti-music-alt  color-h font-22  m-l-5 cur-poiter " data-toggle="tooltip" data-placement="top" data-original-title="Assign make lyric"></i>
-                                    @else
-                                    <i onclick="getListChannel('{{$data->id}}')" class="btn-show-channel ti-user color-h font-22  m-l-5 cur-poiter " data-toggle="tooltip" data-placement="top" data-original-title="Assign manual channel" data-cam-id="{{$data->id}}" data-music-id="{{$data->lyric_timestamp_id}}" data-songname="{{$data->song_name}}"></i>
-
-
-                                    @endif
-                                    @endif
-                                    <i onclick="editCampaign('{{$data->id}}')" class="ti-pencil-alt color-h font-22 m-l-5 cur-poiter" data-toggle="tooltip" data-placement="top" data-original-title="Edit Campaign"></i>
-                                    <i class="btn-show-hub ti-video-clapper color-h font-22  m-l-5 cur-poiter " data-toggle="tooltip" data-placement="top" data-original-title="Crosspost video promos" data-music-id="{{$data->lyric_timestamp_id}}" data-music-type="local" data-cross-type="2" data-songname="{{$data->song_name}}"></i>
-                                    <a href="claim#detail" onclick="detailCampaign('{{$data->id}}')" class="ti-view-list  color-h font-22  m-l-5 cur-poiter " data-toggle="tooltip" data-placement="top" data-original-title="Video List"></a>
-                                    <!--<i onclick="checkList('{{$data->id}}')" class="ti-check color-h font-1rem m-l-5 cur-poiter scale-02" data-toggle="tooltip" data-placement="top" data-original-title="Tier Checklist"></i>-->
-                                    <i onclick="chartsCampaign({{$data->id}})" class="ti-stats-up color-h font-22 m-l-5 cur-poiter" data-toggle="tooltip" data-placement="top" data-original-title="Chart"></i></span>
-                                    <span onclick="scanCampaignAll(this)" class="cur-poiter td-info color-h font-22 m-l-5 " data-id="{{$data->id}}"><i data-toggle="tooltip" data-placement="top" data-original-title="Scan view list video" class="ti-reload"></i></span>
-                                    <i data-toggle="tooltip" data-placement="top" data-original-title="Report by channel manager" class="ti-files cur-poiter td-info color-h font-22 m-l-5 report-user" data-id="{{$data->id}}"></i>
                                 </td>
                                 <td  class="disp-none">{{$data->pre_name}}</td>
                                 <td  class="disp-none">{{$data->status}}</td>
                                 <td  class="disp-none">{{$data->asset_id}}</td>
                                 <td  class="disp-none">{{$data->yt_distributor}}</td>
                                 <td  class="disp-none">{{$data->distributor}}</td>
+                                <td  class="disp-none">{{$data->custom_genre}}_{{$data->genre}}</td>
                             </tr>
                             @php
                             $listCampignid[]=$data->id;
@@ -458,7 +465,7 @@ $listCampignid=[];
                 }else{
                     $(".btn-check-claim").html(`<i class="fa fa-circle-o-notch fa-spin"></i> Uploading...`);
                 }
-                if(data.reload){
+                if(data.reload && data.status=="success"){
                     editCampaign(id,0);
                 }
 
@@ -882,14 +889,14 @@ $listCampignid=[];
             collapse: true,
             //            initCollapsed: true,
             @if($is_admin_music)
-            columns: [3, 4, 17, 16, 13,14,15,11]
+            columns: [3, 18, 17, 16, 13,14,15,11]
             @else
-            columns: [3, 4, 17, 16, 13,14,15,11]
+            columns: [3, 18, 17, 16, 13,14,15,11]
             @endif
         },
         dom: 'Plfrtip',
         columnDefs: [{
-                "targets": @if($is_admin_music)[3, 17,16, 13,14,15,11] @else[3, 17,16, 13,14,15,11] @endif,
+                "targets": @if($is_admin_music)[3, 17,16, 13,14,15,11,18] @else[3, 17,16, 13,14,15,11,18] @endif,
                 "visible": false,
                 "searchable": true
             },

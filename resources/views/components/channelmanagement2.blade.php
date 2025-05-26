@@ -2715,8 +2715,10 @@
                             @endif
                             <button class="btn btn-sm btn-outline-secondary action-btn" data-value="26">Clear
                                 Profile Moonshots</button>
+                            @if ($is_admin_music)
                             <button class="btn btn-sm btn-outline-secondary action-btn" data-value="29">Clear Profile
                                 Bas</button>
+                            @endif
                             <button class="btn btn-sm btn-outline-secondary action-btn" data-value="28">Sync
                                 Cookie</button>
                         </div>

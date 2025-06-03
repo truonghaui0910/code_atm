@@ -18,7 +18,6 @@ use Log;
 use TheSeer\Tokenizer\Exception;
 use Validator;
 
-
 class BomController extends Controller {
 
 //    protected $bomService;
@@ -992,24 +991,49 @@ class BomController extends Controller {
             $boom->log = $log;
             $boom->lyric = 2;
             $boom->save();
-            $lyricText = "";
+            $lyricText = "Your lyric here...";
             if ($boom->lyric_text != null && $boom->lyric_text != "") {
                 $lyricText = urlencode($boom->lyric_text);
             }
+            //2025/05/29 bỏ cạch cạch theo deezer id, chuyển hết thành local id dể tự động lưu local_id về bom
+            $url = $boom->direct_link;
+            $songName = urlencode($boom->song_name);
+            $artist = urlencode($boom->artist);
+            $bomId = $boom->id;
             if ($boom->deezer_id != null) {
                 $temp = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$boom->deezer_id");
                 $data = json_decode($temp);
-                return array("status" => "success", "type" => "deezer", "id" => $data->results[0]->id, "url" => $data->results[0]->url_128, "username" => $user->user_name);
-            } else {
-                return array("status" => "success",
-                    "type" => "direct",
-                    "lyric" => $lyricText,
-                    "url" => $boom->direct_link,
-                    "username" => $user->user_name,
-                    "title" => urlencode($boom->song_name),
-                    "artist" => urlencode($boom->artist),
-                    "id" => $boom->id);
+                $url = $data->results[0]->url_128;
             }
+            return array("status" => "success",
+                "type" => "direct",
+                "lyric" => $lyricText,
+                "url" => $url,
+                "username" => $user->user_name,
+                "title" => $songName,
+                "artist" => $artist,
+                "id" => $bomId);
+            
+//            if ($boom->deezer_id != null) {
+//                $temp = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$boom->deezer_id");
+//                $data = json_decode($temp);
+//                $url = $data->results[0]->url_128;
+//                return array("status" => "success", 
+//                    "type" => "deezer", 
+//                    "id" => $data->results[0]->id, 
+//                    "cam_id" => $boom->id, 
+//                    "url" => $data->results[0]->url_128, 
+//                    "username" => $user->user_name);
+//            } else {
+//                return array("status" => "success",
+//                    "type" => "direct",
+//                    "lyric" => $lyricText,
+//                    "url" => $url,
+//                    "username" => $user->user_name,
+//                    "title" => $songName,
+//                    "artist" => $artist,
+//                    "id" => $bomId);
+//            }
         }
         return array("status" => "error", "message" => "Remove failed");
     }
@@ -2673,6 +2697,7 @@ class BomController extends Controller {
     public function addAlbum(Request $request) {
         $user = Auth::user();
         Log::info($user->user_name . '|BomController.addAlbum|request=' . json_encode($request->all()));
+        $isEdit = $request->input('edit_mode') == '1';
         if (!$request->has('title') || empty($request->title)) {
             return response()->json([
                         "status" => "error",
@@ -2706,31 +2731,6 @@ class BomController extends Controller {
                 ]);
             }
         }
-
-        if (!$request->hasFile('albumCover')) {
-            return response()->json([
-                        "status" => "error",
-                        "message" => "The Album Cover is required."
-            ]);
-        }
-
-        $image = $request->file('albumCover');
-        $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
-        if (!in_array($image->getMimeType(), $allowedMimes)) {
-            return response()->json([
-                        "status" => "error",
-                        "message" => "The Album Cover must be a valid image (jpeg, png, jpg, gif)."
-            ]);
-        }
-
-        list($width, $height) = getimagesize($image->getPathname());
-        if ($width < 1400 || $height < 1400) {
-            return response()->json([
-                        "status" => "error",
-                        "message" => "The Album Cover dimensions must be at least 1400x1400 pixels."
-            ]);
-        }
-
         $artist = BomArtist::find($request->artist);
         if (!$artist) {
             return response()->json([
@@ -2743,29 +2743,18 @@ class BomController extends Controller {
             $instruments = explode(",", $request->instruments);
         }
 
-        $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-        $pathPublic = public_path("images/album_covers/");
-        $fullPathFile = "$pathPublic$imageName";
-        $image->move($pathPublic, $imageName);
-        $cdnCmd = "gbak upload-r2 --input $fullPathFile --server automusic-image";
-        Log::info("addAlbum upload cdn cmd $cdnCmd");
-        $ul = shell_exec($cdnCmd);
-        Log::info("addAlbum upload cdn result $ul");
-        if ($ul != null && $ul != "") {
-            $direct = trim($ul);
-            Log::info($direct);
-            unlink($fullPathFile);
-            $album = new BomAlbum();
-            $album->username = $user->user_name;
+
+        if ($isEdit) {
+            $album = BomAlbum::where("id", $request->album_id)->first();
             $album->genre_id = $request->genre;
             $album->genre_name = $request->genreText;
             $album->album_name = trim($request->title);
-            $album->artist_id = $artist->id;
-            $album->artist = $artist->artist_name;
-            $album->desc = $request->description ?? null;
+            if ($album->artist_id != $artist->id) {
+                $album->artist_id = $artist->id;
+                $album->artist = $artist->artist_name;
+                Bom::where("album_id", $album->id)->update(["artist" => $album->artist]);
+            }
             $album->release_date = $request->releaseDate ?? null;
-            $album->album_cover = $direct;
-            $album->created = Utils::timeToStringGmT7(time());
             $album->instruments = json_encode($instruments);
             $album->save();
             return response()->json([
@@ -2774,10 +2763,70 @@ class BomController extends Controller {
                         'album' => $album
             ]);
         } else {
-            return response()->json([
-                        'status' => "error",
-                        'message' => 'Upload Album Cover fail'
-            ]);
+
+
+
+            if (!$request->hasFile('albumCover')) {
+                return response()->json([
+                            "status" => "error",
+                            "message" => "The Album Cover is required."
+                ]);
+            }
+
+            $image = $request->file('albumCover');
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+            if (!in_array($image->getMimeType(), $allowedMimes)) {
+                return response()->json([
+                            "status" => "error",
+                            "message" => "The Album Cover must be a valid image (jpeg, png, jpg, gif)."
+                ]);
+            }
+
+            list($width, $height) = getimagesize($image->getPathname());
+            if ($width < 1400 || $height < 1400) {
+                return response()->json([
+                            "status" => "error",
+                            "message" => "The Album Cover dimensions must be at least 1400x1400 pixels."
+                ]);
+            }
+
+
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $pathPublic = public_path("images/album_covers/");
+            $fullPathFile = "$pathPublic$imageName";
+            $image->move($pathPublic, $imageName);
+            $cdnCmd = "gbak upload-r2 --input $fullPathFile --server automusic-image";
+            Log::info("addAlbum upload cdn cmd $cdnCmd");
+            $ul = shell_exec($cdnCmd);
+            Log::info("addAlbum upload cdn result $ul");
+            if ($ul != null && $ul != "") {
+                $direct = trim($ul);
+                Log::info($direct);
+                unlink($fullPathFile);
+                $album = new BomAlbum();
+                $album->username = $user->user_name;
+                $album->genre_id = $request->genre;
+                $album->genre_name = $request->genreText;
+                $album->album_name = trim($request->title);
+                $album->artist_id = $artist->id;
+                $album->artist = $artist->artist_name;
+                $album->desc = $request->description ?? null;
+                $album->release_date = $request->releaseDate ?? null;
+                $album->album_cover = $direct;
+                $album->created = Utils::timeToStringGmT7(time());
+                $album->instruments = json_encode($instruments);
+                $album->save();
+                return response()->json([
+                            'status' => "success",
+                            'message' => 'Album created successfully',
+                            'album' => $album
+                ]);
+            } else {
+                return response()->json([
+                            'status' => "error",
+                            'message' => 'Upload Album Cover fail'
+                ]);
+            }
         }
     }
 
@@ -2901,6 +2950,12 @@ class BomController extends Controller {
         foreach ($bomTracks as $index => $track) {
 
             $index++;
+            if(empty($track->song_name)){
+                return response()->json(['status' => "error", 'message' => 'Song name is empty']);
+            }
+            if(empty($track->artist)){
+                return response()->json(['status' => "error", 'message' => 'Artist name is empty']);
+            }
             if ($track->isrc == null) {
                 $isrcRp = RequestHelper::callAPI("GET", "$api/api/salad/isrc/get", []);
                 Log::info(json_encode($isrcRp));
@@ -3006,10 +3061,27 @@ class BomController extends Controller {
         }
         $query->orderBy("id", "desc");
         $albums = $query->get();
-//        Log::info(DB::getQueryLog());
-        // Chuyển danh sách bài hát từ chuỗi sang mảng
-        $albums = $albums->map(function ($album) {
+        // Lấy danh sách artist duy nhất
+        $artistNames = $albums->pluck('artist')->filter()->unique()->values()->all();
+        $artistTotalStreams = [];
+        if (!empty($artistNames)) {
+            // Gọi API lấy tổng streams cho tất cả artist
+            $apiUrl = 'https://distro.360promo.fm/api/artists/total-streams?names=' . urlencode(implode(',', $artistNames));
+
+            $apiResult = \App\Common\Network\RequestHelper::callAPI2('GET', $apiUrl, []);
+
+            if (is_array($apiResult)) {
+                foreach ($apiResult as $item) {
+                    if (isset($item->artist) && isset($item->total_streams)) {
+                        $artistTotalStreams[$item->artist] = $item->total_streams;
+                    }
+                }
+            }
+        }
+        // Chuyển danh sách bài hát từ chuỗi sang mảng và gán tổng streams cho từng album
+        $albums = $albums->map(function ($album) use ($artistTotalStreams) {
             $album->songs = $album->songs ? explode(',', $album->songs) : [];
+            $album->artist_total_streams = isset($artistTotalStreams[$album->artist]) ? $artistTotalStreams[$album->artist] : null;
             return $album;
         });
 

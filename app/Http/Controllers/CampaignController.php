@@ -2496,9 +2496,22 @@ class CampaignController extends Controller {
             $curr = gmdate("Y/m/d H:i:s", time() + 7 * 3600);
             if ($noclaim) {
                 $noclaim->lyric = 1;
+                $noclaim->is_real_lyric = 1;
                 $noclaim->local_id = $request->lyricId;
                 $log = $noclaim->log;
-                $log .= PHP_EOL . "$curr finished make lyric";
+                $log .= PHP_EOL . "$curr auto finished make lyric";
+                //xóa deezerId -> chuyển thành dùng local_id
+                $deezerId = $noclaim->deezer_id;
+                if (!empty($deezerId)) {
+                    //lưu lại các thông tin cần thiết
+                    $temp = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$deezerId");
+                    $data = json_decode($temp);
+                    $noclaim->direct_link = $data->results[0]->url_128;
+                    $noclaim->duration_ms = $data->results[0]->duration * 1000;
+                    $noclaim->isrc = $data->results[0]->isrc;
+                    $log .= PHP_EOL . "$curr remove deezerid=$deezerId";
+                    $noclaim->deezer_id = null;
+                }
                 $noclaim->log = $log;
                 $noclaim->save();
             }

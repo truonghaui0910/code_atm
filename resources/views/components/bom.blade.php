@@ -1439,7 +1439,8 @@
                     if (data.status == "success") {
                         if (data.type == 'deezer') {
                             window.open('http://lyric.automusic.win?track_id=' + data.id + '&url=' +
-                                data.url + '&username=' + data.username + '', '_blank');
+                                data.url + '&username=' + data.username + '&type=noclaim&deezer_art_id=-1&cam_id='+
+                                data.cam_id, '_blank');
                         } else {
                             window.open('http://lyric.automusic.win?audio_url=' + data.url +
                                 '&username=' + data.username + '&artist=' + data.artist +
@@ -1448,6 +1449,16 @@
                                 data.id, '_blank'
                             );
                         }
+                        
+                            window.open(`http://lyric.automusic.win?audio_url=${data.url}
+                                &username=${data.username}
+                                &artist=${data.artist}
+                                &title=${data.title}
+                                &lyric=${data.lyric}
+                                &type=noclaim
+                                &deezer_art_id=-1
+                                &cam_id=${data.id}, _blank`
+                            );
                         location.reload();
                     }
 

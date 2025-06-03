@@ -27,6 +27,8 @@
             <div id="content-dialog" class="modal-body">
                 <form id="form-album" method="POST">
                     {{ csrf_field() }}
+                    <input type="hidden"  id="edit_album_id" name="album_id" value="">
+                    <input type="hidden" id="edit_mode" name="edit_mode" value="0">
                     <div class="row justify-content-center">
                         <div class="col-lg-12">
                             <div class="album-form-container">                    
@@ -228,7 +230,7 @@
                                                                     </button>-->
                                         <button type="button" class="btn btn-primary btn-create" id="submitAlbum">
                                             <span class="spinner-border spinner-border-sm loading-spinner" id="loadingSpinner" role="status" aria-hidden="true"></span>
-                                            <i class="fas fa-plus-circle mr-1" id="submitIcon"></i>Create Album
+                                            <i class="fas fa-save mr-1" id="submitIcon"></i> Save
                                         </button>
                                     </div>
                                 </form>

@@ -43,6 +43,7 @@ class Promo360Controller extends Controller {
             error_log("syncCampaign $data->cam_id");
             $role = json_decode($data->role);
             $type = 1;
+            $distributor = "";
             if (in_array("CLAIM", $role)) {
                 $type = 2;
                 $distributor = $data->distributor;
@@ -92,7 +93,7 @@ class Promo360Controller extends Controller {
             $campaign->status = $data->status;
             $pressRelease = "";
 
-            $distributor = "";
+            
             //tên gọi nhớ
             $name = $data->distributor;
             if ($name == null) {
@@ -344,7 +345,7 @@ class Promo360Controller extends Controller {
                     }
                 }
 //                error_log(json_encode($info));
-                error_log(json_encode($videoInfo));
+//                error_log(json_encode($videoInfo));
                 if (isset($videoInfo)) {
                     foreach ($listOfficialVideoVersion as $officialVersion) {
                         if ($officialVersion->link == $offi) {

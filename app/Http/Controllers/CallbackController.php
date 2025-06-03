@@ -28,77 +28,77 @@ use Log;
 class CallbackController extends Controller {
 
     //hàm parse lỗi bass
-function extractBASErrors($input) {
-    // Khởi tạo mảng lưu kết quả lỗi
-    $errors = [];
-    
-    // Kiểm tra đầu vào rỗng
-    if ($input === null || $input === "") {
-        return [
-            [
-                'script_name' => 'unknown',
-                'func_name' => 'unknown',
-                'error_message' => 'No result'
-            ]
-        ];
-    }
-    
-    // Kiểm tra xem đầu vào có nhiều dòng không
-    if (strpos($input, "\n") !== false) {
-        // Trường hợp nhiều dòng - tách thành từng dòng
-        $lines = explode("\n", $input);
-    } else {
-        // Trường hợp một dòng
-        $lines = [$input];
-    }
-    
-    // Biến kiểm tra xem có ít nhất một JSON hợp lệ không
-    $hasValidJson = false;
-    
-    // Xử lý từng dòng
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if (empty($line)) {
-            continue;
-        }
-        
-        // Phân tích JSON
-        $data = json_decode($line);
-        
-        // Kiểm tra nếu parse thất bại
-        if ($data === null) {
-            continue; // Bỏ qua dòng không phải JSON hợp lệ
-        }
-        
-        // Đánh dấu đã tìm thấy ít nhất một JSON hợp lệ
-        $hasValidJson = true;
-        
-        // Kiểm tra xem có lỗi không
-        if (isset($data->result) && strpos($data->result, 'WAS_ERROR:') === 0) {
-            // Trích xuất thông báo lỗi (bỏ qua "WAS_ERROR:")
-            $errorMessage = substr($data->result, 10);
-            // Thêm vào danh sách lỗi
-            $errors[] = [
-                'script_name' => $data->script_name,
-                'func_name' => $data->func_name,
-                'error_message' => $errorMessage
+    function extractBASErrors($input) {
+        // Khởi tạo mảng lưu kết quả lỗi
+        $errors = [];
+
+        // Kiểm tra đầu vào rỗng
+        if ($input === null || $input === "") {
+            return [
+                    [
+                    'script_name' => 'unknown',
+                    'func_name' => 'unknown',
+                    'error_message' => 'No result'
+                ]
             ];
         }
+
+        // Kiểm tra xem đầu vào có nhiều dòng không
+        if (strpos($input, "\n") !== false) {
+            // Trường hợp nhiều dòng - tách thành từng dòng
+            $lines = explode("\n", $input);
+        } else {
+            // Trường hợp một dòng
+            $lines = [$input];
+        }
+
+        // Biến kiểm tra xem có ít nhất một JSON hợp lệ không
+        $hasValidJson = false;
+
+        // Xử lý từng dòng
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) {
+                continue;
+            }
+
+            // Phân tích JSON
+            $data = json_decode($line);
+
+            // Kiểm tra nếu parse thất bại
+            if ($data === null) {
+                continue; // Bỏ qua dòng không phải JSON hợp lệ
+            }
+
+            // Đánh dấu đã tìm thấy ít nhất một JSON hợp lệ
+            $hasValidJson = true;
+
+            // Kiểm tra xem có lỗi không
+            if (isset($data->result) && strpos($data->result, 'WAS_ERROR:') === 0) {
+                // Trích xuất thông báo lỗi (bỏ qua "WAS_ERROR:")
+                $errorMessage = substr($data->result, 10);
+                // Thêm vào danh sách lỗi
+                $errors[] = [
+                    'script_name' => $data->script_name,
+                    'func_name' => $data->func_name,
+                    'error_message' => $errorMessage
+                ];
+            }
+        }
+
+        // Nếu không có lỗi nào nhưng có ít nhất một JSON hợp lệ, trả về "No errors"
+        if (empty($errors) && $hasValidJson) {
+            return [
+                    [
+                    'script_name' => 'success',
+                    'func_name' => 'all',
+                    'error_message' => 'Bas not return error'
+                ]
+            ];
+        }
+
+        return $errors;
     }
-    
-    // Nếu không có lỗi nào nhưng có ít nhất một JSON hợp lệ, trả về "No errors"
-    if (empty($errors) && $hasValidJson) {
-        return [
-            [
-                'script_name' => 'success',
-                'func_name' => 'all',
-                'error_message' => 'Bas not return error'
-            ]
-        ];
-    }
-    
-    return $errors;
-}
 
     //2034/04/17 callback create channel
     public function callbackChannelCreate(Request $request) {
@@ -1088,28 +1088,37 @@ function extractBASErrors($input) {
         $message = "callbackInfoChange|job_id=$request->id,ref_id=$request->studio_id,gmail= $request->gmail ,status=$request->status";
 
         if ($request->status == 5) {
-            $newPass = null;
+//            $newPass = null;
             $newRecovery = null;
             $results = explode("@;@", str_replace(array("\r\n", "\n"), "@;@", trim($request->result)));
+//            foreach ($results as $result) {
+//                $temp = json_decode($result);
+//                if (Utils::containString($result, "change_info")) {
+//                    $rs = explode(":", $temp->result);
+//                    if (count($rs) == 2) {
+//                        $newRecovery = $rs[0];
+//                        $newPass = $rs[1];
+//                    }
+//                }
+//            }
             foreach ($results as $result) {
                 $temp = json_decode($result);
-                if (Utils::containString($result, "change_info")) {
-                    $rs = explode(":", $temp->result);
-                    if (count($rs) == 2) {
-                        $newRecovery = $rs[0];
-                        $newPass = $rs[1];
+                if ($temp && isset($temp->script_name) && isset($temp->func_name) && isset($temp->result)) {
+                    if ($temp->script_name == "profile" && $temp->func_name == "change_info") {
+                        $newRecovery = $temp->result;
+                        break;
                     }
                 }
             }
-            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change info success job_id=$request->id,newpass=$newPass,newRecove=$newRecovery";
+            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change info success job_id=$request->id,newRecove=$newRecovery";
             AccountInfo::where("note", $request->gmail)->update(['last_change_pass' => time(), "log" => DB::raw("CONCAT(log,'$log')")]);
             //đổi text từ change info fail thành fail change info để search những trường hợp fail  = từ khóa change info fail
             AccountInfo::where("note", $request->gmail)->update(['last_change_pass' => time(), "message" => "Change info success", 'log' => DB::raw("REPLACE(log, 'change info fail', 'fail change info')")]);
             RequestHelper::callAPI("GET", $tele . urlencode($message), []);
-            if ($newPass != null) {
-                $input = array("gmail" => $request->gmail, "passWord" => $newPass);
-                RequestHelper::callAPI2("POST", "http://165.22.105.138/automail/api/mail/update/", $input);
-            }
+//            if ($newPass != null) {
+//                $input = array("gmail" => $request->gmail, "passWord" => $newPass);
+//                RequestHelper::callAPI2("POST", "http://165.22.105.138/automail/api/mail/update/", $input);
+//            }
             return 1;
         } else if ($request->status == 4) {
             $error = $this->extractBASErrors($request->result);

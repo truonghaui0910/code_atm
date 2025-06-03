@@ -1189,7 +1189,7 @@
 //});
 
 //khóa DevTools
-@if(!$is_admin_music && !$user_login->user_name=='quocgiangmusic')
+@if(!$is_admin_music || $user_login->user_name!='quocgiangmusic')
 
 window.devtools = (function () {
     const devtools = {

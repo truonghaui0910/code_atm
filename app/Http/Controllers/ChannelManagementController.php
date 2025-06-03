@@ -2817,6 +2817,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
 
     public function sendCommandChangePass($channel, $runTime = 0) {
         $taskLists = [];
+        $newPass = Utils::randomString(16);
         $login = (object) [
                     "script_name" => "profile",
                     "func_name" => "login",
@@ -2827,6 +2828,11 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                     "name" => "hash_id",
                     "type" => "string",
                     "value" => $channel->hash_pass
+        ];
+        $params[] = (object) [
+                    "name" => "new_pass",
+                    "type" => "string",
+                    "value" => $newPass
         ];
 
         $changePass = (object) [
@@ -2856,7 +2862,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                 $oldPass = $mail->pass_word;
             }
             $jobId = $res->job_id;
-            $channel->log = $channel->log . PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change pass job_id=$jobId old_pass=$oldPass";
+            $channel->log = $channel->log . PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change pass job_id=$jobId old_pass=$oldPass,new_pass=$newPass";
             $channel->save();
         }
     }

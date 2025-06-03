@@ -30,10 +30,10 @@ class Utils {
         return $count;
     }
 
-    public static function randomString() {
+    public static function randomString($length = 10) {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $randstring = '';
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < $length; $i++) {
             $randstring .= $characters[rand(0, strlen($characters) - 1)];
         }
         return $randstring;
@@ -750,52 +750,48 @@ class Utils {
         }
         return null; // Trả về null nếu không tìm thấy
     }
-    
+
     public static function extractYoutubeChannelId($input) {
-    // Loại bỏ khoảng trắng
-    $channel = trim($input);
-    
-    // Pattern cho channel ID: bắt đầu bằng "UC" và theo sau là 22 ký tự chữ và số
-    $channelIdPattern = '/^UC[a-zA-Z0-9_-]{22}$/';
-    
-    // Pattern cho channel ID có phần mở rộng như /about, /videos, etc.
-    $channelIdExtendedPattern = '/^(UC[a-zA-Z0-9_-]{22})\/.*$/';
-    
-    // Kiểm tra nếu input đã là channel ID
-    if (preg_match($channelIdPattern, $channel)) {
-        return $channel;
-    }
-    
-    // Kiểm tra nếu input là channel ID có phần mở rộng (/about, /videos, etc.)
-    if (preg_match($channelIdExtendedPattern, $channel, $matches)) {
-        return $matches[1];
-    }
-    
-    // Kiểm tra URL
-    $urlPatterns = [
-        // URL dạng: https://www.youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA
-        '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/',
-        
-        // URL dạng: https://youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA
-        '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/',
-        
-        // URL dạng: www.youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA
-        '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/',
-        
-        // URL với các tham số khác: https://www.youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA?view_as=subscriber
-        '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})(\?|\&)/',
-        
-        // URL với phần mở rộng: https://www.youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA/about
-        '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})\/[a-zA-Z0-9_-]+/'
-    ];
-    
-    foreach ($urlPatterns as $pattern) {
-        if (preg_match($pattern, $channel, $matches)) {
+        // Loại bỏ khoảng trắng
+        $channel = trim($input);
+
+        // Pattern cho channel ID: bắt đầu bằng "UC" và theo sau là 22 ký tự chữ và số
+        $channelIdPattern = '/^UC[a-zA-Z0-9_-]{22}$/';
+
+        // Pattern cho channel ID có phần mở rộng như /about, /videos, etc.
+        $channelIdExtendedPattern = '/^(UC[a-zA-Z0-9_-]{22})\/.*$/';
+
+        // Kiểm tra nếu input đã là channel ID
+        if (preg_match($channelIdPattern, $channel)) {
+            return $channel;
+        }
+
+        // Kiểm tra nếu input là channel ID có phần mở rộng (/about, /videos, etc.)
+        if (preg_match($channelIdExtendedPattern, $channel, $matches)) {
             return $matches[1];
         }
+
+        // Kiểm tra URL
+        $urlPatterns = [
+            // URL dạng: https://www.youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA
+            '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/',
+            // URL dạng: https://youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA
+            '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/',
+            // URL dạng: www.youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA
+            '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/',
+            // URL với các tham số khác: https://www.youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA?view_as=subscriber
+            '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})(\?|\&)/',
+            // URL với phần mở rộng: https://www.youtube.com/channel/UCNxa69PEwsxx3-hgSM44KEA/about
+            '/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})\/[a-zA-Z0-9_-]+/'
+        ];
+
+        foreach ($urlPatterns as $pattern) {
+            if (preg_match($pattern, $channel, $matches)) {
+                return $matches[1];
+            }
+        }
+
+        return null;
     }
-    
-    return null;
-}
 
 }

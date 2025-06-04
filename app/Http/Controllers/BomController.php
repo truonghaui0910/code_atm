@@ -1013,7 +1013,7 @@ class BomController extends Controller {
                 "title" => $songName,
                 "artist" => $artist,
                 "id" => $bomId);
-            
+
 //            if ($boom->deezer_id != null) {
 //                $temp = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$boom->deezer_id");
 //                $data = json_decode($temp);
@@ -2950,10 +2950,10 @@ class BomController extends Controller {
         foreach ($bomTracks as $index => $track) {
 
             $index++;
-            if(empty($track->song_name)){
+            if (empty($track->song_name)) {
                 return response()->json(['status' => "error", 'message' => 'Song name is empty']);
             }
-            if(empty($track->artist)){
+            if (empty($track->artist)) {
                 return response()->json(['status' => "error", 'message' => 'Artist name is empty']);
             }
             if ($track->isrc == null) {
@@ -3013,6 +3013,8 @@ class BomController extends Controller {
         $songs = Bom::where("is_releasable", 1)
                 ->where("status", 1)
                 ->where("sync", 1)
+                ->whereNotNull("song_name")
+                ->where("song_name", "<>", "")
                 ->where("username", $user->user_name)
                 ->whereNotNull("direct_wav")
                 ->whereNull("album_id");
@@ -3059,7 +3061,7 @@ class BomController extends Controller {
         if (!$request->is_admin_music) {
             $query->where('a.username', $user->user_name);
         }
-        $query->orderBy("id", "desc");
+        $query->orderBy("a.release_date", "asc");
         $albums = $query->get();
         // Lấy danh sách artist duy nhất
         $artistNames = $albums->pluck('artist')->filter()->unique()->values()->all();

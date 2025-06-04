@@ -1189,8 +1189,8 @@
 //});
 
 //khóa DevTools
-@if(!$is_admin_music || $user_login->user_name!='quocgiangmusic')
-
+@if(!$is_admin_music )
+@if($user_login->user_name!='quocgiangmusic')
 window.devtools = (function () {
     const devtools = {
         open: false,
@@ -1232,6 +1232,7 @@ window.devtools = (function () {
             window.location.href = 'https://moonseo.app/images/stop.png';
         }
     }); 
+@endif
 @endif
 
 

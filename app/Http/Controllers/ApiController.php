@@ -304,7 +304,7 @@ class ApiController extends Controller {
             //thêm link avatar
             if (!Utils::containString($channel->channel_clickup, "https://yt3.ggpht.com/")) {
                 $thumb = "";
-                $thumbItem = RequestHelper::getUrl("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$channel->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyAbhCFK1TTj8ONgUUuCp8AO_Gv3nBnD0Tc");
+                $thumbItem = RequestHelper::getUrl("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$channel->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyAnfl6tyoZukXLFuZMoqd20dpZlUk1y0J8");
                 if ($thumbItem != null && $thumbItem != "") {
                     $items = json_decode($thumbItem);
                     if (!empty($items->items[0]->snippet->thumbnails->medium->url)) {

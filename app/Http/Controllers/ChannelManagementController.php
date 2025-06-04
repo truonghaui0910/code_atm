@@ -1757,6 +1757,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             if (isset($data->body)) {
                 if (preg_match('/>(\d{6})</', $data->body, $match)) {
                     $code = $match[1];
+                    $status = "success";
                 }
             }
             return array("status" => $status, "data" => $code);

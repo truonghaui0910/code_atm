@@ -490,6 +490,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
 
         Route::get('/album', 'BomController@indexAlbum')->name('indexAlbum');
         Route::post('/addAlbum', 'BomController@addAlbum')->name('addAlbum');
+        Route::post('/albumUploadImage', 'BomController@albumUploadImage')->name('albumUploadImage');
         Route::get('/albumListArtist', 'BomController@albumListArtist')->name('albumListArtist');
         Route::post('/albumAddArtist', 'BomController@albumAddArtist')->name('albumAddArtist');
         Route::get('/getSongsForRelease', 'BomController@getSongsForRelease')->name('getSongsForRelease');
@@ -568,7 +569,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/getDataChart', 'ChannelManagementController@getDataChart')->name('getDataChart');
         Route::get('/getDataCharts', 'ChannelManagementController@getDataCharts')->name('getDataCharts');
 
-        Route::get('/genEmailInfo', 'ChannelManagementController@genEmailInfo')->name('genEmailInfo');
+        
         Route::get('/createEmail', 'ChannelManagementController@createEmail')->name('createEmail');
         //add channel vào email đã có sẵn
         Route::get('/addChannel', 'ChannelManagementController@addChannel')->name('addChannel');
@@ -1109,6 +1110,13 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
     Route::get('/getChannelByHash', 'ChannelManagementController@getChannelByHash')->name('getChannelByHash');
     
     Route::get('/listUser', 'UserController@listUser')->name('listUser');
+    
+    Route::get('/genEmailInfo', 'ChannelManagementController@genEmailInfo')->name('genEmailInfo');
+    
+    
+    Route::get('/spotify/artist-albums-onl/get/{id}', 'ApiController@spotifyGetArtistAlbums')->name('spotifyGetArtistAlbums');
+    Route::get('/spotify/album-info/get/{id}', 'ApiController@spotifyGetAlbum')->name('spotifyGetAlbum');
+    Route::get('/spotify/playlist-info/get/{id}', 'ApiController@spotifyGetPlaylist')->name('spotifyGetPlaylist');
 });
 
 

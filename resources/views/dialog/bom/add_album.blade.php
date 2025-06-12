@@ -211,11 +211,6 @@
                                                     </div>
                                                     <small class="form-text text-muted">Minimum size: 1400x1400px</small>
                                                 </div>
-
-                                                <!--                                    <div class="form-group mt-3">
-                                                                                        <label for="recordLabel">Record Label/Producer</label>
-                                                                                        <input type="text" class="form-control" id="recordLabel" placeholder="Record label name">
-                                                                                    </div>-->
                                             </div>
                                         </div>
 
@@ -225,9 +220,6 @@
 
 
                                     <div class="album-actions">
-                                        <!--                            <button type="button" class="btn btn-light" id="resetBtn">
-                                                                        <i class="fas fa-undo mr-1"></i>Reset
-                                                                    </button>-->
                                         <button type="button" class="btn btn-primary btn-create" id="submitAlbum">
                                             <span class="spinner-border spinner-border-sm loading-spinner" id="loadingSpinner" role="status" aria-hidden="true"></span>
                                             <i class="fas fa-save mr-1" id="submitIcon"></i> Save

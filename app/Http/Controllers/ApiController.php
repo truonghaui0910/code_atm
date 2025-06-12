@@ -1426,7 +1426,7 @@ class ApiController extends Controller {
 
         if (isset($request->username) && $request->username != "") {
 //            $datas = $datas->whereRaw("(username = '$request->username' or username is null)");
-            $datas = $datas->where("username",$request->username);
+            $datas = $datas->where("username", $request->username);
         }
 
         //kiểm tra giới hạn tuần đã quá 1 tuần chưa, nếu quá thì reset
@@ -2388,7 +2388,6 @@ class ApiController extends Controller {
 //            }
 //        }
 //    }
-
     //check xem da brand xong chưa
     public function checkMakeBrand() {
         $locker = new Locker(983);
@@ -2976,22 +2975,22 @@ class ApiController extends Controller {
             $link = "http://65.109.3.200:5002/copyright/check/$account->note/$campaign->video_id";
             $result = RequestHelper::callAPI2("GET", $link, array());
             $claims = [];
-            if(isset($result->claims)){
-                if(count($result->claims)>0){
-                    foreach($result->claims as $data){
-                        $meta = (object)[];
-                        if(isset($data->asset->metadata->soundRecording->title)){
+            if (isset($result->claims)) {
+                if (count($result->claims) > 0) {
+                    foreach ($result->claims as $data) {
+                        $meta = (object) [];
+                        if (isset($data->asset->metadata->soundRecording->title)) {
                             $meta->title = $data->asset->metadata->soundRecording->title;
                         }
-                        if(isset($data->asset->metadata->soundRecording->artists)){
+                        if (isset($data->asset->metadata->soundRecording->artists)) {
                             $meta->artists = $data->asset->metadata->soundRecording->artists;
                         }
-                        if(isset($data->assetId)){
+                        if (isset($data->assetId)) {
                             $meta->assetId = $data->assetId;
                         }
                         $claims[] = $meta;
                     }
-                    return json_encode($claims); 
+                    return json_encode($claims);
                 }
             }
 //            Log::info(json_encode($result)) ;
@@ -3002,12 +3001,12 @@ class ApiController extends Controller {
 
     public function syncCookieByVideoId(Request $request) {
         $campaign = Campaign::where("video_id", $request->video_id)->first();
-        $us  = "truongpv";
-        if(isset($request->user)){
+        $us = "truongpv";
+        if (isset($request->user)) {
             $us = $request->user;
         }
         if ($campaign) {
-            $channel = AccountInfo::where("chanel_id", $campaign->channel_id)->first(["id","note"]);
+            $channel = AccountInfo::where("chanel_id", $campaign->channel_id)->first(["id", "note"]);
             $ch = new ChannelManagementController();
             $cb = "http://automusic.win/callback/sync_cookie?us=$us";
             return $ch->syncCookie($channel, $cb);
@@ -3093,6 +3092,201 @@ class ApiController extends Controller {
         }
         Log::info("generateHashForChannel finish");
         ProxyHelper::get("https://api.telegram.org/bot1224443390:AAHgF0sXuDDqU7bSqBSzILQgTVkx672aQZU/sendMessage?chat_id=-475912250&text=Finish change hash " . (time() - $time) . 's');
+    }
+
+    public function spotifyGetArtistAlbums($id) {
+        // API 1: Lấy access token
+        $token_url = 'http://source.automusic.win/spotify/token/get';
+
+        $curl1 = curl_init();
+        curl_setopt_array($curl1, array(
+            CURLOPT_URL => $token_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+        ));
+
+        $token_response = curl_exec($curl1);
+        curl_close($curl1);
+
+        // Kiểm tra lỗi khi gọi API token
+        if ($token_response === false) {
+            return response()->json(['error' => 'Không thể lấy access token từ API'], 500);
+        }
+
+        // Decode JSON response từ API token
+        $token_data = json_decode($token_response, true);
+
+        if (!isset($token_data['access_token'])) {
+            return response()->json(['error' => 'Access token không tồn tại trong response'], 500);
+        }
+
+        $access_token = $token_data['access_token'];
+
+        // API 2: Lấy danh sách album của artist
+        $albums_url = "https://api.spotify.com/v1/artists/{$id}/albums?limit=50";
+
+        $curl2 = curl_init();
+        curl_setopt_array($curl2, array(
+            CURLOPT_URL => $albums_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer {$access_token}"
+            ),
+        ));
+
+        $albums_response = curl_exec($curl2);
+        $albums_http_code = curl_getinfo($curl2, CURLINFO_HTTP_CODE);
+        curl_close($curl2);
+
+        // Kiểm tra lỗi khi gọi Spotify API
+        if ($albums_response === false) {
+            return response()->json(['error' => 'Không thể lấy danh sách album từ Spotify API'], 500);
+        }
+
+        // Trả về kết quả nguyên xi từ Spotify API với header Content-Type phù hợp
+        return response($albums_response, $albums_http_code)
+                        ->header('Content-Type', 'application/json');
+    }
+
+    public function spotifyGetAlbum($id) {
+        // API 1: Lấy access token
+        $token_url = 'http://source.automusic.win/spotify/token/get';
+
+        $curl1 = curl_init();
+        curl_setopt_array($curl1, array(
+            CURLOPT_URL => $token_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+        ));
+
+        $token_response = curl_exec($curl1);
+        curl_close($curl1);
+
+        // Kiểm tra lỗi khi gọi API token
+        if ($token_response === false) {
+            return response()->json(['error' => 'Không thể lấy access token từ API'], 500);
+        }
+
+        // Decode JSON response từ API token
+        $token_data = json_decode($token_response, true);
+
+        if (!isset($token_data['access_token'])) {
+            return response()->json(['error' => 'Access token không tồn tại trong response'], 500);
+        }
+
+        $access_token = $token_data['access_token'];
+
+        // API 2: Lấy thông tin album
+        $album_url = "https://api.spotify.com/v1/albums/{$id}";
+
+        $curl2 = curl_init();
+        curl_setopt_array($curl2, array(
+            CURLOPT_URL => $album_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer {$access_token}"
+            ),
+        ));
+
+        $album_response = curl_exec($curl2);
+        $album_http_code = curl_getinfo($curl2, CURLINFO_HTTP_CODE);
+        curl_close($curl2);
+
+        // Kiểm tra lỗi khi gọi Spotify API
+        if ($album_response === false) {
+            return response()->json(['error' => 'Không thể lấy thông tin album từ Spotify API'], 500);
+        }
+
+        // Trả về kết quả nguyên xi từ Spotify API với header Content-Type phù hợp
+        return response($album_response, $album_http_code)
+                        ->header('Content-Type', 'application/json');
+    }
+
+    public function spotifyGetPlaylist($id) {
+        // API 1: Lấy access token
+        $token_url = 'http://source.automusic.win/spotify/token/get';
+
+        $curl1 = curl_init();
+        curl_setopt_array($curl1, array(
+            CURLOPT_URL => $token_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+        ));
+
+        $token_response = curl_exec($curl1);
+        curl_close($curl1);
+
+        // Kiểm tra lỗi khi gọi API token
+        if ($token_response === false) {
+            return response()->json(['error' => 'Không thể lấy access token từ API'], 500);
+        }
+
+        // Decode JSON response từ API token
+        $token_data = json_decode($token_response, true);
+
+        if (!isset($token_data['access_token'])) {
+            return response()->json(['error' => 'Access token không tồn tại trong response'], 500);
+        }
+
+        $access_token = $token_data['access_token'];
+
+        // API 2: Lấy thông tin playlist
+        $playlist_url = "https://api.spotify.com/v1/playlists/{$id}";
+
+        $curl2 = curl_init();
+        curl_setopt_array($curl2, array(
+            CURLOPT_URL => $playlist_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer {$access_token}"
+            ),
+        ));
+
+        $playlist_response = curl_exec($curl2);
+        $playlist_http_code = curl_getinfo($curl2, CURLINFO_HTTP_CODE);
+        curl_close($curl2);
+
+        // Kiểm tra lỗi khi gọi Spotify API
+        if ($playlist_response === false) {
+            return response()->json(['error' => 'Không thể lấy thông tin playlist từ Spotify API'], 500);
+        }
+
+        // Trả về kết quả nguyên xi từ Spotify API với header Content-Type phù hợp
+        return response($playlist_response, $playlist_http_code)
+                        ->header('Content-Type', 'application/json');
     }
 
 }

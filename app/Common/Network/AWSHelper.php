@@ -16,13 +16,11 @@ require 'vendor/autoload.php';
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
-class AWSHelper
-{
+class AWSHelper {
 
     private static $accountId = "f9c3a8281b5ed069e736fa2108f6f106";
 
-    public static function init()
-    {
+    public static function init() {
         $s3Client = new S3Client([
             'endpoint' => "https://" . self::$accountId . ".r2.cloudflarestorage.com",
             'version' => 'latest',
@@ -35,8 +33,20 @@ class AWSHelper
         return $s3Client;
     }
 
-    public static function uploadFile($filePath, $type, $folder = 'resource', $bucket = 'moonaz')
-    {
+    public static function initImage() {
+        $s3Client = new S3Client([
+            'endpoint' => "https://" . self::$accountId . ".r2.cloudflarestorage.com",
+            'version' => 'latest',
+            'region' => 'auto',
+            'credentials' => [
+                'key' => '0d64191a2cb7dd7574f4fd6b15858392',
+                'secret' => 'a10edb145b190e4a5241db514dd2a61376790ef8d9caff0ad26056054a6ed8b6',
+            ],
+        ]);
+        return $s3Client;
+    }
+
+    public static function uploadFile($filePath, $type, $folder = 'resource', $bucket = 'moonaz') {
         $client = self::init();
         $baseName = basename($filePath);
         $keyname = "$folder/$type/$baseName";
@@ -54,8 +64,7 @@ class AWSHelper
         return $newUrl;
     }
 
-    public static function deleteFile($public_url, $bucket = 'moonaz')
-    {
+    public static function deleteFile($public_url, $bucket = 'moonaz') {
         try {
             $client = self::init();
             // https: //victor-public.s3.ap-southeast-1.amazonaws.com/resource/image/34a0c45e4394c05e.png
@@ -72,12 +81,12 @@ class AWSHelper
             // }
             return true;
         } catch (Exception $ex) {
+            
         }
         return false;
     }
 
-    public static function getUploadLink($fileName, $type, $folder = 'resource', $bucket = 'moonaz')
-    {
+    public static function getUploadLink($fileName, $type, $folder = 'resource', $bucket = 'moonaz') {
         $s3Client = self::init();
         $keyname = "$folder/$type/$fileName";
         $cmd = $s3Client->getCommand('PutObject', [
@@ -91,4 +100,18 @@ class AWSHelper
         $newUrl = str_replace("$bucket." . self::$accountId . ".r2.cloudflarestorage.com", "cdn.moonaz.net", $url);
         return [$presignedUrl, $newUrl];
     }
+
+    public static function getUploadImageLink($fileName, $folder = 'image', $bucket = 'automusic') {
+        $s3Client = self::initImage();
+        $keyname = "$folder/$fileName";
+        $cmd = $s3Client->getCommand('PutObject', [
+            'Bucket' => $bucket,
+            'Key' => $keyname
+        ]);
+        $request = $s3Client->createPresignedRequest($cmd, '+60 minutes')->withMethod('PUT');
+        $presignedUrl = (string) $request->getUri();
+        $newUrl = "https://storage.automusic.win/$keyname";
+        return [$presignedUrl, $newUrl];
+    }
+
 }

@@ -643,7 +643,7 @@ class ChannelManagementController extends Controller {
                         $thumb = "";
 //                        $thumbItem = \App\Common\Network\ProxyHelper::get("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$channel->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyAbhCFK1TTj8ONgUUuCp8AO_Gv3nBnD0Tc");
                         if ($channel->channel_clickup == null) {
-                            $thumbItem = ProxyHelper::get("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$channel->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyB0QH1MoohfCLR746NU5hNffzGPMDMAAxQ");
+                            $thumbItem = ProxyHelper::get("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$channel->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyAnfl6tyoZukXLFuZMoqd20dpZlUk1y0J8");
 //                        $thumbItem = RequestHelper::getUrl("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$channel->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyAbhCFK1TTj8ONgUUuCp8AO_Gv3nBnD0Tc");
                             if ($thumbItem != null && $thumbItem != "") {
                                 $items = json_decode($thumbItem);
@@ -873,7 +873,7 @@ class ChannelManagementController extends Controller {
                         if ($request->error_type == "upload") {
                             $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve statusUpload=0,lastUpload=empty";
                         } else {
-                            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve last_change_pass=time()";
+                            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve last_change_pass=".time();
                         }
                     } else if ($request->action_type == "not_resolve") {
                         if ($request->error_type == "upload") {
@@ -1864,7 +1864,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         $thumb = "";
         $data = AccountInfo::where("id", $request->id)->first();
         if ($data) {
-            $thumbItem = ProxyHelper::get("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$data->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyB0QH1MoohfCLR746NU5hNffzGPMDMAAxQ");
+            $thumbItem = ProxyHelper::get("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$data->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyAnfl6tyoZukXLFuZMoqd20dpZlUk1y0J8");
 //            Log::info($thumbItem);
             $items = json_decode($thumbItem);
 //            Log::info($items->items[0]->snippet->thumbnails->medium->url);

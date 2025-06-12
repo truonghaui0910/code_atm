@@ -2409,13 +2409,6 @@
 <div class="modal fade" id="addSongsModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-            <!--                <div class="modal-header">
-                        <h5 class="modal-title" id="addSongsModalLabel">Add songs to album: <span
-                                id="modal-album-name"></span></h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>-->
             <div class="modal-header">
                 <div class="d-flex justify-content-sm-between align-items-center w-100">
                     <div>
@@ -2667,6 +2660,7 @@ $(document).on('click', '.btn-edit-album', function(e) {
         e.preventDefault();
         var $this = $(this);
         $this.html(`<i class="fas fa-spinner fa-spin"></i> Loading...`);
+
         const albumTitle = $('#albumTitle').val();
         const albumArtist = $('#albumArtist').val();
         const albumGenre = $('#albumGenre').val();
@@ -2674,7 +2668,7 @@ $(document).on('click', '.btn-edit-album', function(e) {
         const albumGenreText = $('#albumGenre option:selected').text();
         const albumCover = $('#albumCover')[0].files[0];
 
-        if (!albumTitle || !albumArtist || !albumGenre || ($("#edit_mode").val()==0 && !albumCover) ) {
+        if (!albumTitle || !albumArtist || !albumGenre || ($("#edit_mode").val()==0 && !albumCover)) {
             showNotification("Please fill in all required album information!", "error");
             $this.html(`<i class="fas fa-plus-circle mr-1"></i> Create Album`);
             return;
@@ -2682,7 +2676,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
 
         $('#submitBtn').attr('disabled', true);
 
-        // Prepare data
         const formData = new FormData();
         formData.append('_token', $('input[name="_token"]').val());
         formData.append('title', albumTitle);
@@ -2692,44 +2685,38 @@ $(document).on('click', '.btn-edit-album', function(e) {
         formData.append('releaseDate', $('#releaseDate').val());
         formData.append('albumCover', albumCover);
         formData.append('instruments', instruments);
-        formData.append('album_id',  $('#edit_album_id').val());
-        formData.append('edit_mode',  $('#edit_mode').val());
+        formData.append('album_id', $('#edit_album_id').val());
+        formData.append('edit_mode', $('#edit_mode').val());
 
         fetch('/addAlbum', {
             method: 'POST',
-            body: formData,
-            headers: {
-                'Authorization': 'Bearer yqeqnwkel1kenwmlrjkqnlendl'
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP error! status: ' + response.status); // ✅ Throw error
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status == "success") {
+                showNotification("Album created successfully!", "success");
+                $("#form-album")[0].reset();
+                $("#addAlbumModal").modal("hide");
+                location.reload();
+            } else {
+                showNotification(data.message, "error");
             }
         })
-                .then(response => {
-                    if (!response.ok) {
-                        showNotification("Error creating music album", "error");
-                        return;
-                        //                        throw new Error('Error creating music album');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    $this.html(`<i class="fas fa-plus-circle mr-1"></i> Save`);
-                    if (data.status == "success") {
-                        showNotification("Album created successfully!", "success");
-                        $("#form-album")[0].reset();
-                        $("#addAlbumModal").modal("hide");
-                        location.reload();
-
-                    } else {
-                        showNotification(data.message, "error");
-                    }
-                })
-                .catch(error => {
-                    alert('Error: ' + error.message);
-                    console.error('Error:', error);
-                })
-                .finally(() => {
-                    $('#submitBtn').attr('disabled', false);
-
-                });
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error: ' + error.message, "error");
+        })
+        .finally(() => {
+            // ✅ Reset button state trong finally để đảm bảo luôn chạy
+            $this.html(`<i class="fas fa-plus-circle mr-1"></i> Save`);
+            $('#submitBtn').attr('disabled', false);
+        });
     });
 
     $('#imagePreview').click(function () {

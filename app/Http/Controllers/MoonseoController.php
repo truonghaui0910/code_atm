@@ -248,7 +248,7 @@ class MoonseoController extends Controller {
     }
 
     public function viewStudioResult(Request $request) {
-        $data = RequestHelper::callAPI2("GET", "http://api-magicframe.automusic.win/job/load/$request->id", []);
+        $data = RequestHelper::callAPI2("GET", "http://api-magicframe.automusic.win/job/loadaaa/$request->id", []);
         if ($data->id != 0) {
             if ($data->result != null) {
                 return view("layouts.studioresult", ["result" => "https://drive.google.com/file/d/" . explode(";;", $data->result)[0]]);

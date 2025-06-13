@@ -44,7 +44,7 @@ class Test2 extends Command {
      */
     public function handle() {
         set_time_limit(0);
-        Log::info("run commnad");
+        error_log("run commnad");
         $functionName = $this->argument('fn');
 
         if (method_exists($this, $functionName)) {
@@ -763,27 +763,27 @@ class Test2 extends Command {
 
     public function updateUserToHub() {
         $users = ["truongpv_1515486846"
-,"hoadev_1492490931"
-,"huymusic_1527129950"
-,"manhmusic_1554824317"
-,"sangmusic_1568953186"
-,"hiepmusic_1596599107"
-,"ketmusic_1596599202"
-,"quynhanhmusic_1607051529"
-,"nhungmusic_1607051554"
-,"thuymusic_1607051628"
-,"jamesmusic_1638329193"
-,"quocgiangmusic_1649304730"
-,"darrell_1651207695"
-,"tungtt_1659410238"
-,"chrismusic_1638329193"
-,"hieumusic_1527129950"
-,"uyenmusic_1527129950"
-,"yenmusic_1527129950"
-,"nhimusic_1527129950"
-,"hanmusic_1527129950"
-,"hangmusic_1527129950"];
-        $channels = AccountInfo::where("del_status", 1)->whereRaw("chanel_id NOT LIKE ?", ['%@%'])->whereNotNull("gologin")->whereIn("user_name",$users)->get();
+            , "hoadev_1492490931"
+            , "huymusic_1527129950"
+            , "manhmusic_1554824317"
+            , "sangmusic_1568953186"
+            , "hiepmusic_1596599107"
+            , "ketmusic_1596599202"
+            , "quynhanhmusic_1607051529"
+            , "nhungmusic_1607051554"
+            , "thuymusic_1607051628"
+            , "jamesmusic_1638329193"
+            , "quocgiangmusic_1649304730"
+            , "darrell_1651207695"
+            , "tungtt_1659410238"
+            , "chrismusic_1638329193"
+            , "hieumusic_1527129950"
+            , "uyenmusic_1527129950"
+            , "yenmusic_1527129950"
+            , "nhimusic_1527129950"
+            , "hanmusic_1527129950"
+            , "hangmusic_1527129950"];
+        $channels = AccountInfo::where("del_status", 1)->whereRaw("chanel_id NOT LIKE ?", ['%@%'])->whereNotNull("gologin")->whereIn("user_name", $users)->get();
         $total = count($channels);
         $i = 0;
         foreach ($channels as $channel) {
@@ -792,7 +792,124 @@ class Test2 extends Command {
             $url = "http://api-magicframe.automusic.win/hub/fix-update/$channel->chanel_id/$username";
             error_log("$i/$total $url");
             RequestHelper::callAPI2("GET", $url, []);
+        }
+    }
 
+    public function updateUserToArtistSystem() {
+
+        try {
+            // Lấy danh sách users từ bảng users
+            $users = DB::table('users')
+                    ->select('user_name as email', 'password_plaintext as password')
+                    ->where('status', '1')
+                    ->where('role', 'LIKE', '%26%')
+                    ->where('description', '=', 'admin')
+                    ->get();
+
+            if ($users->isEmpty()) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'No users found in database',
+                            'data' => null
+                ]);
+            }
+
+            $results = [];
+            $successCount = 0;
+            $errorCount = 0;
+
+            foreach ($users as $user) {
+                try {
+                    // Chuẩn bị data để gửi
+                    $postData = json_encode([
+                        'email' => "$user->email"."@moonshots.vn",
+                        'password' => $user->password // Hoặc password mặc định nếu cần
+                    ]);
+
+                    // Khởi tạo cURL
+                    $curl = curl_init();
+                    curl_setopt_array($curl, array(
+                        CURLOPT_URL => 'https://d76c-27-66-179-222.ngrok-free.app/api/signup',
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 30, // Tăng timeout cho an toàn
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => $postData,
+                        CURLOPT_HTTPHEADER => array(
+                            'Content-Type: application/json'
+                        ),
+                    ));
+
+                    $response = curl_exec($curl);
+                    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                    $error = curl_error($curl);
+                    curl_close($curl);
+
+                    if ($error) {
+                        Log::error("CURL Error for {$user->email}: " . $error);
+                        $results[] = [
+                            'email' => $user->email,
+                            'status' => 'error',
+                            'message' => 'CURL Error: ' . $error
+                        ];
+                        $errorCount++;
+                    } else {
+                        $responseData = json_decode($response, true);
+
+                        if ($httpCode >= 200 && $httpCode < 300) {
+                            error_log("Success signup for {$user->email}");
+                            $results[] = [
+                                'email' => $user->email,
+                                'status' => 'success',
+                                'message' => 'User synced successfully',
+                                'response' => $responseData
+                            ];
+                            $successCount++;
+                        } else {
+                            Log::error("API Error for {$user->email}: HTTP {$httpCode} - " . $response);
+                            $results[] = [
+                                'email' => $user->email,
+                                'status' => 'error',
+                                'message' => "HTTP {$httpCode}: " . ($responseData['message'] ?? 'Unknown error'),
+                                'response' => $responseData
+                            ];
+                            $errorCount++;
+                        }
+                    }
+
+                    // Tạm dừng giữa các request để tránh spam API
+                    usleep(500000); // 0.5 giây
+                } catch (\Exception $e) {
+                    Log::error("Exception for {$user->email}: " . $e->getMessage());
+                    $results[] = [
+                        'email' => $user->email,
+                        'status' => 'error',
+                        'message' => 'Exception: ' . $e->getMessage()
+                    ];
+                    $errorCount++;
+                }
+            }
+
+            return response()->json([
+                        'status' => 'completed',
+                        'message' => "Sync completed. Success: {$successCount}, Errors: {$errorCount}",
+                        'summary' => [
+                            'total_users' => count($users),
+                            'success_count' => $successCount,
+                            'error_count' => $errorCount
+                        ],
+                        'details' => $results
+            ]);
+        } catch (\Exception $e) {
+            Log::error("syncUsersToExternalSystem error: " . $e->getMessage());
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'Error processing sync: ' . $e->getMessage(),
+                        'data' => null
+            ]);
         }
     }
 

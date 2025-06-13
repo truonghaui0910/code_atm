@@ -551,11 +551,11 @@ class CallbackController extends Controller {
         }
         $upload->update_time = $currDate;
         $upload->save();
-
-        if ($request->status == 5 && $upload->type == "studio_moon" && $videoId != "" && $videoId != null) {
+        Logger::logUpload("Debug: request->status={$request->status}, upload->type={$upload->type}, videoId='$videoId'");
+        if ($request->status == 5 && $upload->type == "studio_moon" && !empty($videoId)) {
             //tạo lệnh auto comment nếu upload thành công
             $curr = time();
-            $studio = RequestHelper::callAPI("GET", "http://api-magicframe.automusic.win/job/load/$upload->source_id", []);
+            $studio = RequestHelper::callAPI("GET", "http://api-magicframe.automusic.win/job/loadaaa/$upload->source_id", []);
             Logger::logUpload("UPload thanh cong $studio->id status=$studio->status auto_submit=$studio->auto_submit");
             $meta = json_decode($studio->reup_config);
             $title = $meta->title;
@@ -736,7 +736,7 @@ class CallbackController extends Controller {
             }
 
             //auto comment
-
+            
             $autoComment = false;
             if (!empty($meta->auto_comment)) {
                 $autoComment = $meta->auto_comment;

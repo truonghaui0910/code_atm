@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\Network\AWSHelper;
+use App\Common\Utils;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Log;
 use Validator;
-use Illuminate\Support\Facades\Auth;
 
 class ImageUploadController extends Controller {
 
@@ -137,7 +138,7 @@ class ImageUploadController extends Controller {
                 $extension = $request->file('promoUpload')->getClientOriginalExtension();
                 $uploadName = "$user->user_name-" . time() . "-$original_name";
                 $uploadName = str_replace(" ", "-", $uploadName);
-                $uploadName = \App\Common\Utils::slugify($uploadName);
+                $uploadName = Utils::slugify($uploadName);
 //            $path = $request->file('promoUpload')->storeAs('public/promos', $uploadName);
                 $request->file('promoUpload')->move(public_path("$folder/music/download/"), "$uploadName.$extension");
                 return response()->json([
@@ -208,6 +209,131 @@ class ImageUploadController extends Controller {
                     'link' => asset('check_claim/' . $fileName),
                     'file_path' => $filePath
         ];
+    }
+
+    public function getUploadImageLink(Request $request) {
+        try {
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                        'filename' => 'required|string',
+                        'filesize' => 'required|numeric|max:5120', // Max 5MB in KB
+                        'mimetype' => 'required|string|in:image/jpeg,image/jpg,image/png,image/gif,image/webp'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Validation failed',
+                            'errors' => $validator->errors()
+                                ], 422);
+            }
+
+            $filename = $request->filename;
+            $filesize = $request->filesize; // in KB
+            $mimetype = $request->mimetype;
+
+            // Additional validation based on your album validation rules
+            if ($filesize > 5120) { // 5MB max
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'File size must not exceed 5MB'
+                                ], 422);
+            }
+
+            // Generate unique filename to prevent conflicts
+            $extension = $this->getExtensionFromMimeType($mimetype);
+            $uniqueFilename = time() . '_' . uniqid() . '.' . $extension;
+
+            // Get upload link from AWS
+            list($presignedUrl, $publicUrl) = AWSHelper::getUploadImageLink($uniqueFilename);
+
+            return response()->json([
+                        'status' => 'success',
+                        'presigned_url' => $presignedUrl,
+                        'public_url' => $publicUrl,
+                        'filename' => $uniqueFilename
+            ]);
+        } catch (Exception $e) {
+            logger('Upload link error: ' . $e->getMessage());
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'Failed to generate upload link'
+                            ], 500);
+        }
+    }
+
+    private function getExtensionFromMimeType($mimeType) {
+        $mimeToExt = [
+            'image/jpeg' => 'jpg',
+            'image/jpg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp'
+        ];
+
+        return $mimeToExt[$mimeType] ?? 'jpg';
+    }
+
+    public function validateImageFile(Request $request) {
+        try {
+            // Validate uploaded file
+            $validator = Validator::make($request->all(), [
+                        'image' => [
+                            'required',
+                            'image',
+                            'mimes:jpeg,jpg,png,gif,webp',
+                            'max:5120', // 5MB max
+                            'dimensions:min_width=300,min_height=300' // Minimum dimensions
+                        ]
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Image validation failed',
+                            'errors' => $validator->errors()
+                                ], 422);
+            }
+
+            $file = $request->file('image');
+
+            // Get image dimensions
+            $imageInfo = getimagesize($file->path());
+            if (!$imageInfo) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Invalid image file'
+                                ], 422);
+            }
+
+            list($width, $height) = $imageInfo;
+
+            // Check minimum dimensions (như trong comment HTML: Minimum size: 1400x1400px)
+            if ($width < 1400 || $height < 1400) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Image dimensions must be at least 1400x1400 pixels'
+                                ], 422);
+            }
+
+            return response()->json([
+                        'status' => 'success',
+                        'message' => 'Image validation passed',
+                        'file_info' => [
+                            'size' => $file->getSize(),
+                            'mime_type' => $file->getMimeType(),
+                            'original_name' => $file->getClientOriginalName(),
+                            'width' => $width,
+                            'height' => $height
+                        ]
+            ]);
+        } catch (Exception $e) {
+            logger('Image validation error: ' . $e->getMessage());
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'Image validation failed'
+                            ], 500);
+        }
     }
 
 }

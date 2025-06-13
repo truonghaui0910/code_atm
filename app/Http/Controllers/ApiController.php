@@ -1799,7 +1799,7 @@ class ApiController extends Controller {
             ProcessUtils::lockProcess($processName);
             $datas = Upload::where("status", 7)->take(3)->where("next_time_scan", "<=", time())->get();
             foreach ($datas as $data) {
-                $res = RequestHelper::callAPI("GET", "http://api-magicframe.automusic.win/job/load/$data->source_id", []);
+                $res = RequestHelper::callAPI("GET", "http://api-magicframe.automusic.win/job/loadaaa/$data->source_id", []);
                 Logger::logUpload("retryApiAutoUploadStudio: " . $res->id);
                 //sử dụng 33 điểm
                 if (empty($res->reup_config)) {
@@ -2093,7 +2093,7 @@ class ApiController extends Controller {
                         if (($upload->type == "studio" || $upload->type == "studio_moon") && $videoId != "" && $videoId != null) {
                             //tạo lệnh auto comment nếu upload thành công
                             Logger::logUpload("UPload thanh cong $res->id $res->status");
-                            $studio = RequestHelper::callAPI("GET", "http://api-magicframe.automusic.win/job/load/$upload->source_id", []);
+                            $studio = RequestHelper::callAPI("GET", "http://api-magicframe.automusic.win/job/loadaaa/$upload->source_id", []);
 
                             $meta = json_decode($studio->reup_config);
 

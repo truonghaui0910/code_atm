@@ -1858,6 +1858,88 @@
     margin-right: 4px;
     color: #1976d2;
 }
+
+/*.preview-image {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px dashed #e0e0e0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.preview-image:hover {
+    border-color: #007bff;
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+}
+
+.preview-image.uploading {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+}
+
+.preview-image.error {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #fdf2f2 0%, #f8d7da 100%);
+}
+
+.preview-image .position-absolute {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fa-spinner.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+.custom-file-input.disp-none {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.preview-image img {
+    transition: all 0.3s ease;
+}
+
+.preview-image:hover img {
+    filter: brightness(1.1);
+}
+
+.preview-image .text-danger {
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.preview-image .text-primary {
+    color: #007bff !important;
+}
+
+.preview-image .text-muted {
+    font-size: 0.875rem;
+    font-weight: 500;
+}*/
+
 </style>
 <style>
     @media (max-width: 991px) {
@@ -2471,8 +2553,8 @@
 
 @section('script')
 <script type="text/javascript">
-artistList();
-$(document).on('click', '.btn-edit-album', function(e) {
+    artistList();
+    $(document).on('click', '.btn-edit-album', function(e) {
     e.preventDefault();
     // Lấy thông tin album hiện tại từ biến album (hoặc từ DOM nếu cần)
     const album = window.currentAlbumData; // hoặc lấy từ albums array
@@ -2513,6 +2595,7 @@ $(document).on('click', '.btn-edit-album', function(e) {
         $('#artist-stats-iframe').attr('src', chartUrl);
         $('#artistStatsModal').modal('show');
     });
+    
     $('#artistStatsModal').on('hidden.bs.modal', function () {
         $('#artist-stats-iframe').attr('src', 'about:blank');
     });
@@ -2645,83 +2728,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
             }
         });
     }
-
-    $(".btn-create-album").click(function () {
-        $('#releaseDate').val(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]);
-        $("#addAlbumModal").modal("show");
-        $("#form-album")[0].reset();
-        $('#instruments').selectpicker('refresh');
-        $('#albumArtist').selectpicker('refresh');
-        $("#imagePreview").html(`<i class="fas fa-image fa-3x music-icon"></i>`);
-        artistList();
-    });
-
-    $('#submitAlbum').on('click', function (e) {
-        e.preventDefault();
-        var $this = $(this);
-        $this.html(`<i class="fas fa-spinner fa-spin"></i> Loading...`);
-
-        const albumTitle = $('#albumTitle').val();
-        const albumArtist = $('#albumArtist').val();
-        const albumGenre = $('#albumGenre').val();
-        const instruments = $('#instruments').val();
-        const albumGenreText = $('#albumGenre option:selected').text();
-        const albumCover = $('#albumCover')[0].files[0];
-
-        if (!albumTitle || !albumArtist || !albumGenre || ($("#edit_mode").val()==0 && !albumCover)) {
-            showNotification("Please fill in all required album information!", "error");
-            $this.html(`<i class="fas fa-plus-circle mr-1"></i> Create Album`);
-            return;
-        }
-
-        $('#submitBtn').attr('disabled', true);
-
-        const formData = new FormData();
-        formData.append('_token', $('input[name="_token"]').val());
-        formData.append('title', albumTitle);
-        formData.append('artist', albumArtist);
-        formData.append('genre', albumGenre);
-        formData.append('genreText', albumGenreText);
-        formData.append('releaseDate', $('#releaseDate').val());
-        formData.append('albumCover', albumCover);
-        formData.append('instruments', instruments);
-        formData.append('album_id', $('#edit_album_id').val());
-        formData.append('edit_mode', $('#edit_mode').val());
-
-        fetch('/addAlbum', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('HTTP error! status: ' + response.status); // ✅ Throw error
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status == "success") {
-                showNotification("Album created successfully!", "success");
-                $("#form-album")[0].reset();
-                $("#addAlbumModal").modal("hide");
-                location.reload();
-            } else {
-                showNotification(data.message, "error");
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error: ' + error.message, "error");
-        })
-        .finally(() => {
-            // ✅ Reset button state trong finally để đảm bảo luôn chạy
-            $this.html(`<i class="fas fa-plus-circle mr-1"></i> Save`);
-            $('#submitBtn').attr('disabled', false);
-        });
-    });
-
-    $('#imagePreview').click(function () {
-        $('#albumCover').click();
-    });
 
     function updateFilterCounts() {
     const statusCounts = {
@@ -4376,20 +4382,15 @@ $(document).on('click', '.btn-edit-album', function(e) {
         const songTitle = $(this).find('.modal-song-title').text().toLowerCase();
         const songArtist = $(this).find('.modal-song-artist').text().toLowerCase();
         const songGenre = $(this).data('genre');
-
         console.log(`Checking song: "${songTitle}" by "${songArtist}", genre: ${songGenre}`);
-
-        // Kiểm tra cả từ khóa tìm kiếm và bộ lọc thể loại
         const matchesSearch = songTitle.includes(searchTerm) || songArtist.includes(searchTerm);
         const matchesGenre = selectedGenre === 'all' || songGenre === selectedGenre;
 
         if (matchesSearch && matchesGenre) {
             $(this).removeClass('d-none').addClass('d-flex');
             hasResults = true;
-            //                console.log('  - Showing song');
         } else {
             $(this).removeClass('d-flex').addClass('d-none');
-            //                console.log('  - Hiding song');
         }
     });
 
@@ -4601,7 +4602,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
     }
 
     function updateAddSongsModal() {
-        // Cập nhật cấu trúc HTML của modal
         $('#addSongsModal .modal-dialog').addClass('modal-lg');
         $('#addSongsModal .modal-body').html(`
     <div class="modal-filter-container">
@@ -4659,10 +4659,8 @@ $(document).on('click', '.btn-edit-album', function(e) {
     }
 
     function setupProgressBarDrag() {
-        // Remove previous event handlers to avoid duplicates
         $('.progress').off('click');
 
-        // Add click event for seeking
         $(document).on('click', '.progress', function (e) {
             e.preventDefault();
             const progressBar = $(this);
@@ -4675,11 +4673,9 @@ $(document).on('click', '.btn-edit-album', function(e) {
             const percent = offset / progressBar.width();
             const seekTime = percent * audioElement.duration;
 
-            //                console.log(`Seeking to ${seekTime} seconds (${percent * 100}%)`);
             audioElement.currentTime = seekTime;
         });
 
-        // Ensure player play button functionality works
         $(document).off('click', '#player-play-btn').on('click', '#player-play-btn', function () {
             console.log('Play button clicked');
             const audioElement = $('#audio-element')[0];
@@ -4712,7 +4708,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
             }
         });
 
-        // Same for the modal player button
         $(document).off('click', '#modal-player-play-btn').on('click', '#modal-player-play-btn', function () {
             console.log('Modal play button clicked');
             const audioElement = $('#modal-audio-element')[0];
@@ -4741,7 +4736,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
     }
 
     function showNoResultsMessage(container, message) {
-        // Kiểm tra xem đã có thông báo không
         if ($(container).find('.no-results-message').length === 0) {
             $(container).append(`<div class="no-results-message">${message}</div>`);
         }
@@ -4754,7 +4748,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
     function performAlbumSongSearch() {
         const searchTerm = $('#album-songs-search').val().toLowerCase().trim();
         if (!searchTerm) {
-            // Hiển thị tất cả bài hát
             $('#album-songs-list .song-item').removeClass('d-none').addClass('d-flex');
             hideNoResultsMessage('#album-songs-list');
             return;
@@ -4762,7 +4755,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
 
         let hasResults = false;
 
-        // Tìm kiếm qua tất cả bài hát trong album
         $('#album-songs-list .song-item').each(function () {
             const songTitle = $(this).find('.song-title').text().toLowerCase();
             const songArtist = $(this).find('.song-artist').text().toLowerCase();
@@ -4774,7 +4766,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
             }
         });
 
-        // Hiển thị thông báo nếu không có kết quả
         if (!hasResults) {
             showNoResultsMessage('#album-songs-list', 'No songs match your search. Try different keywords.');
         } else {
@@ -4785,23 +4776,22 @@ $(document).on('click', '.btn-edit-album', function(e) {
     function performModalSongSearch() {
         const searchTerm = $('#modal-song-search').val().toLowerCase().trim();
         if (!searchTerm) {
-            applyGenreFilter(); // Chỉ áp dụng bộ lọc thể loại nếu không có từ khóa tìm kiếm
+            applyGenreFilter(); 
             hideNoResultsMessage('#available-songs-list');
             return;
         }
 
-        // Lấy thể loại đang được lọc
+
         const selectedGenre = $('.genre-filter-btn.active').data('genre');
         let hasResults = false;
 
-        // Tìm kiếm qua tất cả bài hát trong modal
+       
         $('.modal-song-item').each(function () {
             const songTitle = $(this).find('.modal-song-title').text().toLowerCase();
             const songArtist = $(this).find('.modal-song-artist').text().toLowerCase();
             const songGenre = $(this).data('genre');
 
 
-            // Kiểm tra cả từ khóa tìm kiếm và bộ lọc thể loại
             const matchesSearch = songTitle.includes(searchTerm) || songArtist.includes(searchTerm);
             const matchesGenre = selectedGenre === 'all' || songGenre === selectedGenre;
 
@@ -4813,7 +4803,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
             }
         });
 
-        // Hiển thị thông báo nếu không có kết quả
         if (!hasResults) {
             showNoResultsMessage('#available-songs-list',
                     'No songs match your search. Try different keywords or filters.');
@@ -4854,47 +4843,35 @@ $(document).on('click', '.btn-edit-album', function(e) {
     }
 
     function scanSpotify(albumId) {
-// Cập nhật trạng thái nút
         const scanButton = $('#btn-spotify-scan');
         scanButton.html('<i class="fas fa-spinner fa-spin"></i> Scanning... 0%');
         scanButton.addClass('scanning');
 
-// Đóng SSE cũ nếu có
         if (window.spotifyScanEventSource) {
             window.spotifyScanEventSource.close();
         }
 
-// Tạo SSE connection
         const eventSource = new EventSource(`/scanAlbum?id=${albumId}`);
         window.spotifyScanEventSource = eventSource;
 
-// Xử lý sự kiện bắt đầu
         eventSource.addEventListener('start', function (e) {
             const data = JSON.parse(e.data);
             console.log('Scan started. Total songs:', data.totalSongs);
         });
 
-// Xử lý sự kiện tiến trình
         eventSource.addEventListener('progress', function (e) {
             const data = JSON.parse(e.data);
-
-            // Cập nhật % trên nút
             scanButton.html(`<i class="fas fa-spinner fa-spin"></i> Scanning... ${data.progress}%`);
         });
 
-// Xử lý sự kiện hoàn thành
         eventSource.addEventListener('complete', function (e) {
-            // Đóng kết nối
             eventSource.close();
 
-            // Khôi phục nút và cập nhật giao diện 
             scanButton.html('<i class="fab fa-spotify"></i> Scan');
             scanButton.removeClass('scanning');
 
-            // Hiển thị thông báo thành công
             showNotification('Spotify scan completed successfully', 'success');
 
-            // Cập nhật lại danh sách bài hát để hiển thị Spotify ID mới
             fetchAlbumDetails(albumId, function (error, album) {
                 if (!error && album) {
                     renderAlbumSongs(album);
@@ -4902,7 +4879,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
             });
         });
 
-// Xử lý sự kiện lỗi
         eventSource.addEventListener('error', function (e) {
             let errorMessage = 'Error during scan';
 
@@ -4914,26 +4890,19 @@ $(document).on('click', '.btn-edit-album', function(e) {
             } catch (err) {
             }
 
-            // Hiển thị thông báo lỗi
             showNotification(errorMessage, 'error');
 
-            // Đóng kết nối
             eventSource.close();
 
-            // Khôi phục nút
             scanButton.html('<i class="fab fa-spotify"></i> Scan');
             scanButton.removeClass('scanning');
         });
 
-// Xử lý lỗi kết nối
         eventSource.onerror = function () {
-            // Đóng kết nối
             eventSource.close();
 
-            // Hiển thị thông báo lỗi
             showNotification('Connection error during scan', 'error');
 
-            // Khôi phục nút
             scanButton.html('<i class="fab fa-spotify"></i> Scan');
             scanButton.removeClass('scanning');
         };
@@ -5388,8 +5357,147 @@ $(document).on('click', '.btn-edit-album', function(e) {
     }
 
     let currentModalAudio = null;
+
+    let currentUploadedImageUrl = null;
+
+    function validateImageFile(file) {
+        const errors = [];
+
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            errors.push('Please select a valid image file (JPEG, PNG, GIF, WebP)');
+        }
+
+        const maxSize = 5 * 1024 * 1024; 
+        if (file.size > maxSize) {
+            errors.push('Image size must not exceed 5MB');
+        }
+
+        return errors;
+    }
+
+    function validateImageDimensions(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = function() {
+                const width = this.width;
+                const height = this.height;
+
+                if (width < 1400 || height < 1400) {
+                    reject(['Image dimensions must be at least 1400x1400 pixels. Current: ' + width + 'x' + height]);
+                    return;
+                }
+
+                resolve({ width, height });
+            };
+
+            img.onerror = function() {
+                reject(['Invalid image file']);
+            };
+
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
+    function showImageUploadLoading() {
+        $('#imagePreview').html(`
+            <div class="d-flex flex-column align-items-center justify-content-center h-100">
+                <i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i>
+                <span class="text-muted">Uploading...</span>
+            </div>
+        `);
+    }
+
+    function showImageUploadError(message) {
+        $('#imagePreview').html(`
+            <div class="d-flex flex-column align-items-center justify-content-center h-100 text-danger">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <small class="text-center">${message}</small>
+            </div>
+        `);
+    }
+
+    async function uploadImageToCDN(file) {
+        try {
+            showImageUploadLoading();
+            const validationErrors = validateImageFile(file);
+            if (validationErrors.length > 0) {
+                showImageUploadError(validationErrors.join('<br>'));
+                return false;
+            }
+            try {
+                await validateImageDimensions(file);
+            } catch (dimensionErrors) {
+                showImageUploadError(dimensionErrors.join('<br>'));
+                return false;
+            }
+
+            const uploadLinkResponse = await fetch('/album/upload-image-link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': $('input[name="_token"]').val()
+                },
+                body: JSON.stringify({
+                    filename: file.name,
+                    filesize: Math.round(file.size / 1024), // Convert to KB
+                    mimetype: file.type
+                })
+            });
+
+            const uploadLinkData = await uploadLinkResponse.json();
+
+            if (uploadLinkData.status !== 'success') {
+                showImageUploadError(uploadLinkData.message || 'Failed to get upload link');
+                return false;
+            }
+
+            const uploadResponse = await fetch(uploadLinkData.presigned_url, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                    'Content-Type': file.type
+                }
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error('Upload failed with status: ' + uploadResponse.status);
+            }
+
+            currentUploadedImageUrl = uploadLinkData.public_url;
+
+            $('#imagePreview').html(`
+                <img src="${currentUploadedImageUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;" alt="Album cover preview">
+                <div class="position-absolute" style="top: 5px; right: 5px;">
+                    <i class="fas fa-check-circle text-success fa-lg"></i>
+                </div>
+            `);
+
+            showNotification('Image uploaded successfully!', 'success');
+
+            return true;
+
+        } catch (error) {
+            console.error('Upload error:', error);
+            showImageUploadError('Upload failed. Please try again.');
+            showNotification('Upload failed: ' + error.message, 'error');
+            return false;
+        }
+    }
+
+    function handleImageInputChange(event) {
+        const file = event.target.files[0];
+
+        if (!file) {
+            $('#imagePreview').html(`<i class="fas fa-image fa-3x music-icon"></i>`);
+            currentUploadedImageUrl = null;
+            return;
+        }
+
+        uploadImageToCDN(file);
+    }
+
     $(document).ready(function () {
-        // Biến toàn cục
         window.albums = [];
         window.currentAlbumId = null;
         window.currentAlbumData = null;
@@ -5397,34 +5505,25 @@ $(document).on('click', '.btn-edit-album', function(e) {
         window.currentAudio = null;
         window.currentModalAudio = null;
 
-        // Lấy danh sách album
         fetchAlbums();
 
-        // Thiết lập modal Add Songs
         setupAddSongsModal();
 
-        // Thiết lập kéo thả thanh progress
         setupProgressBarDrag();
 
-        // Thiết lập sự kiện cho modal Add Songs
         $('#addSongsModal').on('show.bs.modal', function () {
             renderAvailableSongs();
         });
 
-        // Sự kiện khi đóng modal Add Songs - reset trạng thái
         $('#addSongsModal').on('hidden.bs.modal', function () {
             selectedSongs = [];
             updateSelectedCount();
         });
 
-        // Sự kiện thêm bài hát vào album
         $('#add-songs-btn').click(handleAddSongsToAlbum);
 
-        // Thiết lập sự kiện tìm kiếm album
         setupAlbumSearch();
-//        setupStatusFilter();
 
-        // Thiết lập sự kiện ẩn/hiện các mục
         $('#show-all-albums').click(function (e) {
             e.preventDefault();
             $('#album-details').hide();
@@ -5463,7 +5562,6 @@ $(document).on('click', '.btn-edit-album', function(e) {
 
         $('#audio-element').off('timeupdate').on('timeupdate', updateMainAudioProgress);
 
-        // Sự kiện khi bài hát kết thúc
         $('#audio-element').on('ended', function () {
             $('#player-play-btn').html('<i class="fas fa-play"></i>').removeClass('playing');
             if (currentAudio) {
@@ -5479,54 +5577,35 @@ $(document).on('click', '.btn-edit-album', function(e) {
 
         setupArtistNameEdit();
 
-        $('#albumCover').change(function () {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    $('#imagePreview').html(`
-                    <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;">
-                `);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
         $(document).on('click', '.album-spotify-link', function () {
             const spotifyUrl = $(this).data('spotify-url');
 
-            // Copy to clipboard
             copyToClipboard2(spotifyUrl);
 
-            // Show copied effect
             $(this).addClass('copied');
             setTimeout(() => {
                 $(this).removeClass('copied');
             }, 2000);
 
-            // Show notification
             const isArtist = $(this).find('i').hasClass('fa-user');
             showNotification(`Spotify ${isArtist ? 'artist' : 'album'} link copied to clipboard`, "success");
         });
-        // Setup filter buttons (đã có sẵn trong HTML)
+        
         $('.filter-btn').click(function () {
             $('.filter-btn').removeClass('active');
             $(this).addClass('active');
             applyFilters();
         });
 
-        // Setup view switcher (đã có sẵn trong HTML)
         $('.view-btn').click(function () {
             const view = $(this).data('view');
             saveViewPreference(view);
             renderAlbumsWithView();
         });
 
-        // Set initial view state
         const currentView = getViewPreference();
         updateViewSwitcher(currentView);
 
-        // Setup search functionality với ID mới
         $('#album-search').on('input', function () {
             applyFilters();
         });
@@ -5534,6 +5613,107 @@ $(document).on('click', '.btn-edit-album', function(e) {
         if ($('.filter-btn').length > 0 && albums.length > 0) {
             updateFilterCounts();
         }
+
+        $('#albumCover').off('change').on('change', handleImageInputChange);
+    
+        $('#submitAlbum').off('click').on('click', function (e) {
+            e.preventDefault();
+            var $this = $(this);
+            $this.html(`<i class="fas fa-spinner fa-spin"></i> Loading...`);
+
+            const albumTitle = $('#albumTitle').val();
+            const albumArtist = $('#albumArtist').val();
+            const albumGenre = $('#albumGenre').val();
+            const instruments = $('#instruments').val();
+            const albumGenreText = $('#albumGenre option:selected').text();
+            const editMode = $("#edit_mode").val();
+
+            // Check required fields
+            if (!albumTitle || !albumArtist || !albumGenre) {
+                showNotification("Please fill in all required album information!", "error");
+                $this.html(`<i class="fas fa-plus-circle mr-1"></i> Save`);
+                return;
+            }
+
+            // Check if image is required (new album) and uploaded
+            if (editMode == 0 && !currentUploadedImageUrl) {
+                showNotification("Please upload an album cover image!", "error");
+                $this.html(`<i class="fas fa-plus-circle mr-1"></i> Save`);
+                return;
+            }
+
+            $('#submitBtn').attr('disabled', true);
+
+            const formData = new FormData();
+            formData.append('_token', $('input[name="_token"]').val());
+            formData.append('title', albumTitle);
+            formData.append('artist', albumArtist);
+            formData.append('genre', albumGenre);
+            formData.append('genreText', albumGenreText);
+            formData.append('releaseDate', $('#releaseDate').val());
+            formData.append('instruments', instruments);
+            formData.append('album_id', $('#edit_album_id').val());
+            formData.append('edit_mode', editMode);
+
+            // Add uploaded image URL instead of file
+            if (currentUploadedImageUrl) {
+                formData.append('uploaded_image_url', currentUploadedImageUrl);
+            }
+
+            fetch('/addAlbum', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status == "success") {
+                    showNotification("Album saved successfully!", "success");
+                    $("#form-album")[0].reset();
+                    $('#imagePreview').html(`<i class="fas fa-image fa-3x music-icon"></i>`);
+                    currentUploadedImageUrl = null;
+                    $("#addAlbumModal").modal("hide");
+                    location.reload();
+                } else {
+                    showNotification(data.message, "error");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error: ' + error.message, "error");
+            })
+            .finally(() => {
+                $this.html(`<i class="fas fa-plus-circle mr-1"></i> Save`);
+                $('#submitBtn').attr('disabled', false);
+            });
+        });
+    
+        $(".btn-create-album").off('click').on('click', function () {
+            // Reset form and image state
+            $("#form-album")[0].reset();
+            $('#imagePreview').html(`<i class="fas fa-image fa-3x music-icon"></i>`);
+            currentUploadedImageUrl = null;
+
+            // Set default release date
+            $('#releaseDate').val(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]);
+
+            // Reset other controls
+            $('#instruments').selectpicker('refresh');
+            $('#albumArtist').selectpicker('refresh');
+            $('#edit_mode').val('0');
+            $('#edit_album_id').val('');
+
+            $("#addAlbumModal").modal("show");
+            artistList();
+        });
+        
+        $('#imagePreview').click(function () {
+            $('#albumCover').click();
+        });        
     });
 </script>
 @endsection

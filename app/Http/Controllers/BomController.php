@@ -13,6 +13,7 @@ use App\Http\Models\BomArtist;
 use App\Http\Models\BomGroups;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Log;
 use TheSeer\Tokenizer\Exception;
@@ -2756,53 +2757,53 @@ class BomController extends Controller {
             }
             $album->release_date = $request->releaseDate ?? null;
             $album->instruments = json_encode($instruments);
+            $album->album_cover = $request->uploaded_image_url;
             $album->save();
             return response()->json([
                         'status' => "success",
-                        'message' => 'Album created successfully',
+                        'message' => 'Album updated successfully',
                         'album' => $album
             ]);
         } else {
 
 
+//            if (!$request->hasFile('albumCover')) {
+//                return response()->json([
+//                            "status" => "error",
+//                            "message" => "The Album Cover is required."
+//                ]);
+//            }
 
-            if (!$request->hasFile('albumCover')) {
-                return response()->json([
-                            "status" => "error",
-                            "message" => "The Album Cover is required."
-                ]);
-            }
-
-            $image = $request->file('albumCover');
-            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
-            if (!in_array($image->getMimeType(), $allowedMimes)) {
-                return response()->json([
-                            "status" => "error",
-                            "message" => "The Album Cover must be a valid image (jpeg, png, jpg, gif)."
-                ]);
-            }
-
-            list($width, $height) = getimagesize($image->getPathname());
-            if ($width < 1400 || $height < 1400) {
-                return response()->json([
-                            "status" => "error",
-                            "message" => "The Album Cover dimensions must be at least 1400x1400 pixels."
-                ]);
-            }
+//            $image = $request->file('albumCover');
+//            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+//            if (!in_array($image->getMimeType(), $allowedMimes)) {
+//                return response()->json([
+//                            "status" => "error",
+//                            "message" => "The Album Cover must be a valid image (jpeg, png, jpg, gif)."
+//                ]);
+//            }
+//
+//            list($width, $height) = getimagesize($image->getPathname());
+//            if ($width < 1400 || $height < 1400) {
+//                return response()->json([
+//                            "status" => "error",
+//                            "message" => "The Album Cover dimensions must be at least 1400x1400 pixels."
+//                ]);
+//            }
 
 
-            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $pathPublic = public_path("images/album_covers/");
-            $fullPathFile = "$pathPublic$imageName";
-            $image->move($pathPublic, $imageName);
-            $cdnCmd = "gbak upload-r2 --input $fullPathFile --server automusic-image";
-            Log::info("addAlbum upload cdn cmd $cdnCmd");
-            $ul = shell_exec($cdnCmd);
-            Log::info("addAlbum upload cdn result $ul");
-            if ($ul != null && $ul != "") {
-                $direct = trim($ul);
-                Log::info($direct);
-                unlink($fullPathFile);
+//            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+//            $pathPublic = public_path("images/album_covers/");
+//            $fullPathFile = "$pathPublic$imageName";
+//            $image->move($pathPublic, $imageName);
+//            $cdnCmd = "gbak upload-r2 --input $fullPathFile --server automusic-image";
+//            Log::info("addAlbum upload cdn cmd $cdnCmd");
+//            $ul = shell_exec($cdnCmd);
+//            Log::info("addAlbum upload cdn result $ul");
+//            if ($ul != null && $ul != "") {
+//                $direct = trim($ul);
+//                Log::info($direct);
+//                unlink($fullPathFile);
                 $album = new BomAlbum();
                 $album->username = $user->user_name;
                 $album->genre_id = $request->genre;
@@ -2812,7 +2813,8 @@ class BomController extends Controller {
                 $album->artist = $artist->artist_name;
                 $album->desc = $request->description ?? null;
                 $album->release_date = $request->releaseDate ?? null;
-                $album->album_cover = $direct;
+//                $album->album_cover = $direct;
+                $album->album_cover = $request->uploaded_image_url;
                 $album->created = Utils::timeToStringGmT7(time());
                 $album->instruments = json_encode($instruments);
                 $album->save();
@@ -2821,12 +2823,12 @@ class BomController extends Controller {
                             'message' => 'Album created successfully',
                             'album' => $album
                 ]);
-            } else {
-                return response()->json([
-                            'status' => "error",
-                            'message' => 'Upload Album Cover fail'
-                ]);
-            }
+//            } else {
+//                return response()->json([
+//                            'status' => "error",
+//                            'message' => 'Upload Album Cover fail'
+//                ]);
+//            }
         }
     }
 
@@ -2864,6 +2866,17 @@ class BomController extends Controller {
             $albumDb->updated = Utils::timeToStringGmT7(time());
             $albumDb->save();
             return response()->json(['status' => "success", 'message' => 'Request successful, please wait for admin confirmation']);
+        }
+
+        //đếm xem số lượng isrc còn đủ dùng không
+        $isrcCount = RequestHelper::callAPI("GET", "$api/api/salad/isrc/get/count", []);
+        if (!empty($isrcCount->isrcCount)) {
+            Log::info("remaining isrc=" . $isrcCount->isrcCount);
+            if (count($bomTracks) > $isrcCount->isrcCount) {
+                return response()->json(['status' => "success", 'message' => 'Not enough ISRC, please wait for the system to synchronize more']);
+            }
+        } else {
+            Log::info("can not count isrc");
         }
         if (count($bomTracks) == 1) {
             $format = "Single";
@@ -3042,11 +3055,58 @@ class BomController extends Controller {
         return response()->json($songs);
     }
 
+//    public function getListAlbum(Request $request) {
+//        $user = Auth::user();
+//        DB::enableQueryLog();
+//        $albumId = $request->id;
+//
+//        $query = DB::table('bom_albums as a')
+//                ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
+//                ->select(
+//                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', DB::raw('GROUP_CONCAT(b.id) as songs')
+//                )
+//                ->groupBy('a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist');
+//        $query->where('a.status', 1);
+//        // Nếu có id thì chỉ lấy album đó
+//        if (!empty($albumId)) {
+//            $query->where('a.id', $albumId);
+//        }
+//        if (!$request->is_admin_music) {
+//            $query->where('a.username', $user->user_name);
+//        }
+//        $query->orderBy("a.release_date", "asc");
+//        $albums = $query->get();
+//        // Lấy danh sách artist duy nhất
+//        $artistNames = $albums->pluck('artist')->filter()->unique()->values()->all();
+//        $artistTotalStreams = [];
+//        if (!empty($artistNames)) {
+//            // Gọi API lấy tổng streams cho tất cả artist
+//            $apiUrl = 'https://distro.360promo.fm/api/artists/total-streams?names=' . urlencode(implode(',', $artistNames));
+//
+//            $apiResult = \App\Common\Network\RequestHelper::callAPI2('GET', $apiUrl, []);
+//
+//            if (is_array($apiResult)) {
+//                foreach ($apiResult as $item) {
+//                    if (isset($item->artist) && isset($item->total_streams)) {
+//                        $artistTotalStreams[$item->artist] = $item->total_streams;
+//                    }
+//                }
+//            }
+//        }
+//        // Chuyển danh sách bài hát từ chuỗi sang mảng và gán tổng streams cho từng album
+//        $albums = $albums->map(function ($album) use ($artistTotalStreams) {
+//            $album->songs = $album->songs ? explode(',', $album->songs) : [];
+//            $album->artist_total_streams = isset($artistTotalStreams[$album->artist]) ? $artistTotalStreams[$album->artist] : null;
+//            return $album;
+//        });
+//
+//        return response()->json($albums);
+//    }
+
     public function getListAlbum(Request $request) {
         $user = Auth::user();
         DB::enableQueryLog();
         $albumId = $request->id;
-
         $query = DB::table('bom_albums as a')
                 ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
                 ->select(
@@ -3063,14 +3123,21 @@ class BomController extends Controller {
         }
         $query->orderBy("a.release_date", "asc");
         $albums = $query->get();
+
         // Lấy danh sách artist duy nhất
         $artistNames = $albums->pluck('artist')->filter()->unique()->values()->all();
         $artistTotalStreams = [];
-        if (!empty($artistNames)) {
-            // Gọi API lấy tổng streams cho tất cả artist
-            $apiUrl = 'https://distro.360promo.fm/api/artists/total-streams?names=' . urlencode(implode(',', $artistNames));
 
-            $apiResult = \App\Common\Network\RequestHelper::callAPI2('GET', $apiUrl, []);
+        if (!empty($artistNames)) {
+            sort($artistNames); // Sắp xếp để đảm bảo thứ tự nhất quán
+            $cacheKey = 'artist_streams_' . hash('sha256', implode('|', $artistNames));
+
+            // Kiểm tra cache trước, nếu có thì dùng, không thì gọi API và cache lại
+            $apiResult = Cache::remember($cacheKey, 3600, function () use ($artistNames) {
+                        // Gọi API lấy tổng streams cho tất cả artist
+                        $apiUrl = 'https://distro.360promo.fm/api/artists/total-streams?names=' . urlencode(implode(',', $artistNames));
+                        return RequestHelper::callAPI2('GET', $apiUrl, []);
+                    });
 
             if (is_array($apiResult)) {
                 foreach ($apiResult as $item) {
@@ -3080,6 +3147,7 @@ class BomController extends Controller {
                 }
             }
         }
+
         // Chuyển danh sách bài hát từ chuỗi sang mảng và gán tổng streams cho từng album
         $albums = $albums->map(function ($album) use ($artistTotalStreams) {
             $album->songs = $album->songs ? explode(',', $album->songs) : [];
@@ -3524,6 +3592,109 @@ class BomController extends Controller {
             return response()->json(['status' => 'valid', 'message' => 'Artist name is valid']);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Error checking artist: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getOrCreateArtist(Request $request) {
+        Log::info("BomController.getOrCreateArtist|request=" . json_encode($request->all()));
+
+        try {
+            // Validate input
+            if (!isset($request->username) || empty(trim($request->username))) {
+                return response()->json([
+                            "status" => "error",
+                            "message" => "Username cannot be empty",
+                            "data" => null
+                ]);
+            }
+
+            if (!isset($request->artist_name) || empty(trim($request->artist_name))) {
+                return response()->json([
+                            "status" => "error",
+                            "message" => "Artist name cannot be empty",
+                            "data" => null
+                ]);
+            }
+
+            $username = trim($request->username);
+            $artist_name = trim($request->artist_name);
+
+            // Artist name validation từ checkAlbumArtist
+            if (strlen($artist_name) < 2) {
+                return response()->json([
+                            "status" => "error",
+                            "message" => "Artist name is too short",
+                            "data" => null
+                ]);
+            }
+
+            if (preg_match('/[<>\/\\\\]/', $artist_name)) {
+                return response()->json([
+                            "status" => "error",
+                            "message" => "Artist name contains invalid characters",
+                            "data" => null
+                ]);
+            }
+
+            // Call Spotify API to check if artist exists
+            $encodedArtistName = urlencode($artist_name);
+            $url = "http://source.automusic.win/spotify/search/custom/{$encodedArtistName}/artist";
+            $response = file_get_contents($url);
+            $data = json_decode($response, true);
+
+            // Check if artist exists on Spotify
+            if (isset($data['artists']) && isset($data['artists']['items'])) {
+                foreach ($data['artists']['items'] as $artist) {
+                    if (strtolower($artist['name']) === strtolower($artist_name)) {
+                        return response()->json([
+                                    "status" => "error",
+                                    "message" => "This artist already exists on Spotify.",
+                                    "data" => null
+                        ]);
+                    }
+                }
+            }
+
+            // Kiểm tra xem artist đã tồn tại trong database chưa
+            $existingArtist = BomArtist::where("artist_name", $artist_name)->first();
+
+            if ($existingArtist) {
+                // Nếu đã có, trả về thông tin đầy đủ
+                return response()->json([
+                            "status" => "success",
+                            "message" => "Artist found",
+                            "data" => [
+                                "id" => $existingArtist->id,
+                                "username" => $existingArtist->username,
+                                "artist_name" => $existingArtist->artist_name,
+                                "created" => $existingArtist->created
+                            ]
+                ]);
+            } else {
+                // Nếu chưa có, tạo mới
+                $newArtist = new BomArtist();
+                $newArtist->username = $username;
+                $newArtist->artist_name = $artist_name;
+                $newArtist->created = Utils::timeToStringGmT7(time());
+                $newArtist->save();
+
+                return response()->json([
+                            "status" => "success",
+                            "message" => "Artist created successfully",
+                            "data" => [
+                                "id" => $newArtist->id,
+                                "username" => $newArtist->username,
+                                "artist_name" => $newArtist->artist_name,
+                                "created" => $newArtist->created
+                            ]
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                        "status" => "error",
+                        "message" => "Error processing artist: " . $e->getMessage(),
+                        "data" => null
+            ]);
         }
     }
 

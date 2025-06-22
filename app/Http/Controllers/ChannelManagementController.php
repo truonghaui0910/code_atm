@@ -3242,7 +3242,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         }
         $locker = new Locker(67899);
         $locker->lock();
-
+        Logger::logUpload("getChannelForComment");
         $limit = 50;
         if (isset($request->limit)) {
             $limit = $request->limit;

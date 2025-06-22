@@ -488,14 +488,15 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/addBomToGroup', 'BomController@addBomToGroup')->name('addBomToGroup');
         Route::get('/addPriority', 'BomController@addPriority')->name('addPriority');
 
+        Route::post('/album/upload-image-link', 'ImageUploadController@getUploadImageLink')->name('getUploadImageLink');
+        Route::post('/album/validate-image', 'ImageUploadController@validateImageFile')->name('validateImageFile');
         Route::get('/album', 'BomController@indexAlbum')->name('indexAlbum');
         Route::post('/addAlbum', 'BomController@addAlbum')->name('addAlbum');
-        Route::post('/albumUploadImage', 'BomController@albumUploadImage')->name('albumUploadImage');
         Route::get('/albumListArtist', 'BomController@albumListArtist')->name('albumListArtist');
         Route::post('/albumAddArtist', 'BomController@albumAddArtist')->name('albumAddArtist');
         Route::get('/getSongsForRelease', 'BomController@getSongsForRelease')->name('getSongsForRelease');
         Route::get('/getListAlbum', 'BomController@getListAlbum')->name('getListAlbum');
-        Route::get('/addSongToAlbum', 'BomController@addSongToAlbum')->name('addSongToAlbum');
+        Route::post('/addSongsToAlbum', 'BomController@addSongsToAlbum')->name('addSongsToAlbum');
         Route::get('/deleteSongFromAlbum', 'BomController@deleteSongFromAlbum')->name('deleteSongFromAlbum');
         Route::get('/getAlbum', 'BomController@getAlbum')->name('getAlbum');
         Route::get('/getSongsByAlbum', 'BomController@getSongsByAlbum')->name('getSongsByAlbum');
@@ -1103,6 +1104,8 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
 
     Route::get('/convertWav', 'BomController@convertWav')->name('convertWav');
     Route::post('/album/status/update', 'BomController@updateDistroAlbumStatus')->name('updateDistroAlbumStatus');
+    Route::get('/album/scan/distributed', 'BomController@scanDistributedAlbum')->name('scanDistributedAlbum');
+    Route::get('/album/scan/artist', 'BomController@updateArtistStreams')->name('updateArtistStreams');
     
     //tính thưởng cho kênh epid mới
     Route::get('/channel/epid/rewards', 'ChannelManagementController@epidRewards')->name('epidRewards');
@@ -1117,6 +1120,9 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
     Route::get('/spotify/artist-albums-onl/get/{id}', 'ApiController@spotifyGetArtistAlbums')->name('spotifyGetArtistAlbums');
     Route::get('/spotify/album-info/get/{id}', 'ApiController@spotifyGetAlbum')->name('spotifyGetAlbum');
     Route::get('/spotify/playlist-info/get/{id}', 'ApiController@spotifyGetPlaylist')->name('spotifyGetPlaylist');
+    
+    Route::post('/album/artist/create', 'BomController@getOrCreateArtist')->name('getOrCreateArtist');
+    
 });
 
 

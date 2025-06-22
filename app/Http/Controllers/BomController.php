@@ -2773,7 +2773,6 @@ class BomController extends Controller {
 //                            "message" => "The Album Cover is required."
 //                ]);
 //            }
-
 //            $image = $request->file('albumCover');
 //            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
 //            if (!in_array($image->getMimeType(), $allowedMimes)) {
@@ -2790,8 +2789,6 @@ class BomController extends Controller {
 //                            "message" => "The Album Cover dimensions must be at least 1400x1400 pixels."
 //                ]);
 //            }
-
-
 //            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
 //            $pathPublic = public_path("images/album_covers/");
 //            $fullPathFile = "$pathPublic$imageName";
@@ -2804,25 +2801,25 @@ class BomController extends Controller {
 //                $direct = trim($ul);
 //                Log::info($direct);
 //                unlink($fullPathFile);
-                $album = new BomAlbum();
-                $album->username = $user->user_name;
-                $album->genre_id = $request->genre;
-                $album->genre_name = $request->genreText;
-                $album->album_name = trim($request->title);
-                $album->artist_id = $artist->id;
-                $album->artist = $artist->artist_name;
-                $album->desc = $request->description ?? null;
-                $album->release_date = $request->releaseDate ?? null;
+            $album = new BomAlbum();
+            $album->username = $user->user_name;
+            $album->genre_id = $request->genre;
+            $album->genre_name = $request->genreText;
+            $album->album_name = trim($request->title);
+            $album->artist_id = $artist->id;
+            $album->artist = $artist->artist_name;
+            $album->desc = $request->description ?? null;
+            $album->release_date = $request->releaseDate ?? null;
 //                $album->album_cover = $direct;
-                $album->album_cover = $request->uploaded_image_url;
-                $album->created = Utils::timeToStringGmT7(time());
-                $album->instruments = json_encode($instruments);
-                $album->save();
-                return response()->json([
-                            'status' => "success",
-                            'message' => 'Album created successfully',
-                            'album' => $album
-                ]);
+            $album->album_cover = $request->uploaded_image_url;
+            $album->created = Utils::timeToStringGmT7(time());
+            $album->instruments = json_encode($instruments);
+            $album->save();
+            return response()->json([
+                        'status' => "success",
+                        'message' => 'Album created successfully',
+                        'album' => $album
+            ]);
 //            } else {
 //                return response()->json([
 //                            'status' => "error",
@@ -3102,56 +3099,97 @@ class BomController extends Controller {
 //
 //        return response()->json($albums);
 //    }
+//    public function getListAlbum(Request $request) {
+//        $user = Auth::user();
+//        DB::enableQueryLog();
+//        $albumId = $request->id;
+//        $query = DB::table('bom_albums as a')
+//                ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
+//                ->select(
+//                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', DB::raw('GROUP_CONCAT(b.id) as songs')
+//                )
+//                ->groupBy('a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist');
+//        $query->where('a.status', 1);
+//        // Nếu có id thì chỉ lấy album đó
+//        if (!empty($albumId)) {
+//            $query->where('a.id', $albumId);
+//        }
+//        if (!$request->is_admin_music) {
+//            $query->where('a.username', $user->user_name);
+//        }
+//        $query->orderBy("a.release_date", "asc");
+//        $albums = $query->get();
+//
+//        // Lấy danh sách artist duy nhất
+//        $artistNames = $albums->pluck('artist')->filter()->unique()->values()->take(30)->all();
+//        $artistTotalStreams = [];
+//
+//        if (!empty($artistNames)) {
+//            sort($artistNames); // Sắp xếp để đảm bảo thứ tự nhất quán
+//            $cacheKey = 'artist_streams_' . hash('sha256', implode('|', $artistNames));
+//            $apiResult = [];
+//            // Kiểm tra cache trước, nếu có thì dùng, không thì gọi API và cache lại
+//            $apiResult = Cache::remember($cacheKey, 3600, function () use ($artistNames) {
+//                        // Gọi API lấy tổng streams cho tất cả artist
+//                        $apiUrl = 'https://distro.360promo.fm/api/artists/total-streams?names=' . urlencode(implode(',', $artistNames));
+//                        return RequestHelper::callAPI2('GET', $apiUrl, []);
+//                    });
+//
+//            if (is_array($apiResult)) {
+//                foreach ($apiResult as $item) {
+//                    if (isset($item->artist) && isset($item->total_streams)) {
+//                        $artistTotalStreams[$item->artist] = $item->total_streams;
+//                    }
+//                }
+//            }
+//        }
+//
+//        // Chuyển danh sách bài hát từ chuỗi sang mảng và gán tổng streams cho từng album
+//        $albums = $albums->map(function ($album) use ($artistTotalStreams) {
+//            $album->songs = $album->songs ? explode(',', $album->songs) : [];
+//            $album->artist_total_streams = isset($artistTotalStreams[$album->artist]) ? $artistTotalStreams[$album->artist] : null;
+//            return $album;
+//        });
+//
+//        return response()->json($albums);
+//    }
 
     public function getListAlbum(Request $request) {
         $user = Auth::user();
         DB::enableQueryLog();
         $albumId = $request->id;
+
         $query = DB::table('bom_albums as a')
                 ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
+                ->leftJoin('bom_artists as ar', 'a.artist', '=', 'ar.artist_name') // Join với bảng bom_artists
                 ->select(
-                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', DB::raw('GROUP_CONCAT(b.id) as songs')
+                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', 'ar.artist_total_streams', // Lấy từ bảng bom_artists
+                        DB::raw('GROUP_CONCAT(b.id) as songs')
                 )
-                ->groupBy('a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist');
+                ->groupBy(
+                'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams'
+        );
+
         $query->where('a.status', 1);
+
         // Nếu có id thì chỉ lấy album đó
         if (!empty($albumId)) {
             $query->where('a.id', $albumId);
         }
+
         if (!$request->is_admin_music) {
             $query->where('a.username', $user->user_name);
+            $query->orderBy("a.id", "desc");
+        } else {
+
+            $query->orderBy("a.release_date", "asc");
         }
-        $query->orderBy("a.release_date", "asc");
+
         $albums = $query->get();
 
-        // Lấy danh sách artist duy nhất
-        $artistNames = $albums->pluck('artist')->filter()->unique()->values()->all();
-        $artistTotalStreams = [];
-
-        if (!empty($artistNames)) {
-            sort($artistNames); // Sắp xếp để đảm bảo thứ tự nhất quán
-            $cacheKey = 'artist_streams_' . hash('sha256', implode('|', $artistNames));
-
-            // Kiểm tra cache trước, nếu có thì dùng, không thì gọi API và cache lại
-            $apiResult = Cache::remember($cacheKey, 3600, function () use ($artistNames) {
-                        // Gọi API lấy tổng streams cho tất cả artist
-                        $apiUrl = 'https://distro.360promo.fm/api/artists/total-streams?names=' . urlencode(implode(',', $artistNames));
-                        return RequestHelper::callAPI2('GET', $apiUrl, []);
-                    });
-
-            if (is_array($apiResult)) {
-                foreach ($apiResult as $item) {
-                    if (isset($item->artist) && isset($item->total_streams)) {
-                        $artistTotalStreams[$item->artist] = $item->total_streams;
-                    }
-                }
-            }
-        }
-
-        // Chuyển danh sách bài hát từ chuỗi sang mảng và gán tổng streams cho từng album
-        $albums = $albums->map(function ($album) use ($artistTotalStreams) {
+        // Chuyển danh sách bài hát từ chuỗi sang mảng
+        $albums = $albums->map(function ($album) {
             $album->songs = $album->songs ? explode(',', $album->songs) : [];
-            $album->artist_total_streams = isset($artistTotalStreams[$album->artist]) ? $artistTotalStreams[$album->artist] : null;
             return $album;
         });
 
@@ -3265,30 +3303,192 @@ class BomController extends Controller {
         }
     }
 
-    public function addSongToAlbum(Request $request) {
+//    public function addSongToAlbum(Request $request) {
+//        $user = Auth::user();
+//        Log::info("$user->user_name|BomController.addSongToAlbum|request=" . json_encode($request->all()));
+//        $song = Bom::where("id", $request->song_id)->where("username", $user->user_name)->first();
+//        if (!$song) {
+//            return response()->json(["status" => "error", "message" => "Song is not exists"]);
+//        }
+//        $album = BomAlbum::where("id", $request->album_id)->where("is_released", 0)->first();
+//        if (!$album) {
+//            return response()->json(["status" => "error", "message" => "Album is not exists"]);
+//        }
+//
+//        $allArtistAlbum = BomAlbum::where("artist_id", $album->artist_id)->pluck("id");
+//        $boms = Bom::whereIn("album_id", $allArtistAlbum)->get();
+//        foreach ($boms as $b) {
+//            if ($b->song_name == $song->song_name) {
+//                return response()->json(["status" => "error", "message" => "Song name $song->song_name exists. Please choose another song or rename the song"]);
+//            }
+//        }
+//
+//        $song->artist = $album->artist;
+//        $song->album_id = $request->album_id;
+//        $song->save();
+//        return response()->json(["status" => "success", "message" => "Success"]);
+//    }
+    public function addSongsToAlbum(Request $request) {
         $user = Auth::user();
-        Log::info("$user->user_name|BomController.addSongToAlbum|request=" . json_encode($request->all()));
-        $song = Bom::where("id", $request->song_id)->where("username", $user->user_name)->first();
-        if (!$song) {
-            return response()->json(["status" => "error", "message" => "Song is not exists"]);
-        }
-        $album = BomAlbum::where("id", $request->album_id)->where("is_released", 0)->first();
-        if (!$album) {
-            return response()->json(["status" => "error", "message" => "Album is not exists"]);
+        Log::info("$user->user_name|BomController.addSongsToAlbum|request=" . json_encode($request->all()));
+
+        // Validate input - hỗ trợ cả song_ids array và song_id single
+        $validator = Validator::make($request->all(), [
+                    'album_id' => 'required|integer'
+        ]);
+
+        // Xử lý song_ids - hỗ trợ cả trường hợp gửi 1 song hoặc nhiều songs
+        $songIds = [];
+        if ($request->has('song_ids') && is_array($request->song_ids)) {
+            $songIds = $request->song_ids;
+        } elseif ($request->has('song_id')) {
+            $songIds = [$request->song_id];
+        } else {
+            return response()->json([
+                        "status" => "error",
+                        "message" => "song_ids or song_id is required"
+            ]);
         }
 
-        $allArtistAlbum = BomAlbum::where("artist_id", $album->artist_id)->pluck("id");
-        $boms = Bom::whereIn("album_id", $allArtistAlbum)->get();
-        foreach ($boms as $b) {
-            if ($b->song_name == $song->song_name) {
-                return response()->json(["status" => "error", "message" => "Song name $song->song_name exists. Please choose another song or rename the song"]);
+        if (empty($songIds)) {
+            return response()->json([
+                        "status" => "error",
+                        "message" => "At least one song must be selected"
+            ]);
+        }
+
+        // Validate song IDs are integers
+        foreach ($songIds as $songId) {
+            if (!is_numeric($songId)) {
+                return response()->json([
+                            "status" => "error",
+                            "message" => "Invalid song ID format"
+                ]);
             }
         }
 
-        $song->artist = $album->artist;
-        $song->album_id = $request->album_id;
-        $song->save();
-        return response()->json(["status" => "success", "message" => "Success"]);
+        if ($validator->fails()) {
+            return response()->json([
+                        "status" => "error",
+                        "message" => $validator->errors()->first()
+            ]);
+        }
+
+        $albumId = $request->album_id;
+
+        // Kiểm tra album tồn tại và chưa được release
+        $album = BomAlbum::where("id", $albumId)
+                ->where("is_released", 0)
+                ->first();
+        if (!$album) {
+            return response()->json([
+                        "status" => "error",
+                        "message" => "Album does not exist or has already been released"
+            ]);
+        }
+
+        // Lấy tất cả bài hát theo song_ids và kiểm tra quyền sở hữu
+        $songs = Bom::whereIn("id", $songIds)
+                ->where("username", $user->user_name)
+                ->whereNull("album_id") // Chỉ lấy bài hát chưa có album
+                ->get();
+
+        if ($songs->count() !== count($songIds)) {
+            return response()->json([
+                        "status" => "error",
+                        "message" => "Some songs do not exist, do not belong to you, or are already in an album"
+            ]);
+        }
+
+        // Lấy danh sách tên bài hát hiện tại trong album này
+        $existingSongNames = Bom::where("album_id", $albumId)
+                ->pluck("song_name")
+                ->map(function($name) {
+                    return strtolower(trim($name));
+                })
+                ->toArray();
+
+        // Validate trùng tên trong request hiện tại
+        $requestSongNames = $songs->pluck("song_name")
+                ->map(function($name) {
+                    return strtolower(trim($name));
+                })
+                ->toArray();
+
+        // Kiểm tra trùng tên trong chính request này
+        $duplicatesInRequest = array_diff_assoc($requestSongNames, array_unique($requestSongNames));
+        if (!empty($duplicatesInRequest)) {
+            $duplicateNames = [];
+            $processedNames = [];
+
+            foreach ($songs as $song) {
+                $normalizedName = strtolower(trim($song->song_name));
+                if (in_array($normalizedName, $processedNames)) {
+                    $duplicateNames[] = $song->song_name;
+                }
+                $processedNames[] = $normalizedName;
+            }
+
+            return response()->json([
+                        "status" => "error",
+                        "message" => "Duplicate song names in request: " . implode(", ", array_unique($duplicateNames))
+            ]);
+        }
+
+        // Validate trùng tên với bài hát đã có trong album này
+        $conflictingSongs = array_intersect($requestSongNames, $existingSongNames);
+        if (!empty($conflictingSongs)) {
+            // Lấy tên bài hát gốc (không lowercase) để hiển thị
+            $conflictingOriginalNames = $songs->filter(function($song) use ($conflictingSongs) {
+                        return in_array(strtolower(trim($song->song_name)), $conflictingSongs);
+                    })->pluck("song_name")->toArray();
+
+            return response()->json([
+                        "status" => "error",
+                        "message" => "These song names already exist in this album: " . implode(", ", $conflictingOriginalNames)
+            ]);
+        }
+
+        // Bắt đầu transaction
+        DB::beginTransaction();
+
+        try {
+            $successCount = 0;
+            $addedSongs = [];
+
+            foreach ($songs as $song) {
+                // Cập nhật bài hát
+                $song->artist = $album->artist;  // Cập nhật artist theo album
+                $song->album_id = $albumId;
+                $song->save();
+
+                $successCount++;
+                $addedSongs[] = [
+                    'id' => $song->id,
+                    'song_name' => $song->song_name,
+                    'artist' => $song->artist
+                ];
+            }
+
+            DB::commit();
+
+            return response()->json([
+                        "status" => "success",
+                        "message" => "Successfully added {$successCount} songs to album",
+                        "data" => [
+                            "added_songs" => $addedSongs,
+                            "count" => $successCount
+                        ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error adding songs to album: " . $e->getMessage());
+
+            return response()->json([
+                        "status" => "error",
+                        "message" => "An error occurred while adding songs to album"
+            ]);
+        }
     }
 
     public function deleteSongFromAlbum(Request $request) {
@@ -3695,6 +3895,189 @@ class BomController extends Controller {
                         "message" => "Error processing artist: " . $e->getMessage(),
                         "data" => null
             ]);
+        }
+    }
+
+    // tiến trình quét spotify link của album đã distribute
+    public function scanDistributedAlbum() {
+        try {
+            // Lấy tất cả album có trạng thái Distributed (is_released = 3)
+            $albums = BomAlbum::where("status", 1)
+                    ->where("is_released", 3) // Trạng thái Distributed
+                    ->where("release_date", "<=", now()->format('Y-m-d')) // Ngày hiện tại >= release_date
+                    ->where("distro_status", 5)
+                    ->get();
+
+            if ($albums->isEmpty()) {
+                return response()->json([
+                            'success' => false,
+                            'message' => 'No distributed albums found'
+                                ], 404);
+            }
+
+            $totalAlbums = count($albums);
+            $albumsUpdated = 0;
+            $totalSongsScanned = 0;
+            $totalSongsUpdated = 0;
+            $results = [];
+
+            // Xử lý từng album
+            foreach ($albums as $album) {
+                $albumResult = [
+                    'album_id' => $album->id,
+                    'album_title' => $album->title,
+                    'songs_scanned' => 0,
+                    'songs_updated' => 0,
+                    'album_updated' => false
+                ];
+                error_log("scanDistributedAlbum $album->id");
+                // Lấy tất cả bài hát trong album chưa có spotify_id
+                $songs = Bom::where("album_id", $album->id)->whereNull("spotify_id")->get();
+                $albumResult['songs_scanned'] = count($songs);
+                $totalSongsScanned += count($songs);
+
+                if (count($songs) > 0) {
+                    $isUpdateAlbum = false;
+                    $songsUpdated = 0;
+
+                    // Xử lý từng bài hát trong album
+                    foreach ($songs as $song) {
+                        // Thực hiện quét Spotify bằng ISRC
+                        if ($song->isrc != null) {
+                            $spotifyInfo = $this->searchSpotify($song->isrc);
+
+                            // Cập nhật spotify_id cho bài hát nếu tìm thấy
+                            if ($spotifyInfo && isset($spotifyInfo["track_id"])) {
+                                $song->spotify_id = $spotifyInfo["track_id"];
+                                $song->log = $song->log . PHP_EOL . Utils::timeToStringGmT7(time()) . " system update spotify_id=$song->spotify_id";
+                                $song->save();
+                                $songsUpdated++;
+
+                                // Cập nhật thông tin Spotify cho album (chỉ lần đầu tiên)
+                                if (!$isUpdateAlbum) {
+                                    $album->spotify_info = json_encode((object) [
+                                                "album_id" => $spotifyInfo["album_id"] ?? null,
+                                                "artist_id" => $spotifyInfo["artist_id"] ?? null
+                                    ]);
+
+                                    // Chuyển trạng thái thành Online khi tìm thấy Spotify
+                                    $album->is_released = 5;
+                                    $album->save();
+                                    $isUpdateAlbum = true;
+                                    $albumsUpdated++;
+                                }
+                            }
+                        }
+
+                        // Thêm delay nhỏ để tránh rate limit
+                        usleep(100000); // 100ms
+                    }
+
+                    $albumResult['songs_updated'] = $songsUpdated;
+                    $albumResult['album_updated'] = $isUpdateAlbum;
+                    $totalSongsUpdated += $songsUpdated;
+                }
+
+                $results[] = $albumResult;
+
+                // Delay giữa các album để tránh overload
+                usleep(200000); // 200ms
+            }
+
+            return response()->json([
+                        'success' => true,
+                        'message' => 'Distributed albums scan completed successfully',
+                        'summary' => [
+                            'total_albums_processed' => $totalAlbums,
+                            'albums_updated_to_online' => $albumsUpdated,
+                            'total_songs_scanned' => $totalSongsScanned,
+                            'total_songs_updated' => $totalSongsUpdated
+                        ],
+                        'details' => $results
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Distributed albums Spotify scan error: ' . $e->getMessage());
+
+            return response()->json([
+                        'success' => false,
+                        'message' => 'Error scanning distributed albums: ' . $e->getMessage()
+                            ], 500);
+        }
+    }
+
+    // tiến trình quét view của nghệ sỹ đã distribute
+    public function updateArtistStreams() {
+        try {
+            error_log("updateArtistStreams: Starting artist streams update...");
+
+            // Lấy tất cả artist unique từ bảng bom_albums
+            $artists = DB::table('bom_albums')
+                    ->select('artist')
+                    ->where('status', 1)
+                    ->whereNotNull('artist')
+                    ->where('artist', '!=', '')
+                    ->distinct()
+                    ->pluck('artist')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+
+            if (empty($artists)) {
+                error_log("updateArtistStreams: No artists found to update.");
+                return;
+            }
+
+            error_log("updateArtistStreams: Found " . count($artists) . " artists to update.");
+
+            // Chia thành các batch để tránh URL quá dài
+            $batches = array_chunk($artists, 30);
+            $updatedCount = 0;
+
+            foreach ($batches as $batchIndex => $batch) {
+//                error_log("updateArtistStreams: Processing batch " . ($batchIndex + 1) . "/" . count($batches) . "...");
+
+                try {
+                    sort($batch); // Sắp xếp để đảm bảo thứ tự nhất quán
+                    // Gọi API lấy tổng streams cho batch artists này
+                    $apiUrl = 'https://distro.360promo.fm/api/artists/total-streams?names=' . urlencode(implode(',', $batch));
+                    $apiResult = RequestHelper::callAPI2('GET', $apiUrl, []);
+
+                    // Update last_update cho tất cả artist trong batch này
+                    $currentTime = Utils::timeToStringGmT7(time());
+                    foreach ($batch as $artistName) {
+                        $artist = BomArtist::where('artist_name', $artistName)->first();
+
+                        if ($artist) {
+                            $artist->last_update = $currentTime;
+
+                            // Nếu có trong API result thì update streams, không thì giữ nguyên
+                            if (is_array($apiResult)) {
+                                foreach ($apiResult as $item) {
+                                    if (isset($item->artist) && isset($item->total_streams) && $item->artist === $artistName) {
+                                        $artist->artist_total_streams = $item->total_streams;
+//                                        error_log("updateArtistStreams: Updated {$artistName} - {$item->total_streams} streams");
+                                        break;
+                                    }
+                                }
+                            }
+
+                            $artist->save();
+                            $updatedCount++;
+                        }
+                    }
+
+                    // Nghỉ 1 giây giữa các batch để tránh spam API
+                    sleep(1);
+                } catch (\Exception $e) {
+                    error_log("updateArtistStreams: Error processing batch " . ($batchIndex + 1) . ": " . $e->getMessage());
+                    continue;
+                }
+            }
+
+            error_log("updateArtistStreams: Artist streams update completed. Updated: {$updatedCount} artists.");
+        } catch (\Exception $e) {
+            error_log("updateArtistStreams: Error updating artist streams: " . $e->getMessage());
         }
     }
 

@@ -1191,47 +1191,47 @@
 //khóa DevTools
 @if(!$is_admin_music )
 @if($user_login->user_name!='quocgiangmusic')
-window.devtools = (function () {
-    const devtools = {
-        open: false,
-        orientation: null,
-    };
-
-    const threshold = 160;
-
-    const emitEvent = (state, orientation) => {
-        devtools.open = state;
-        devtools.orientation = orientation;
-        const event = new CustomEvent('devtoolschange', {
-            detail: { open: state, orientation: orientation },
-        });
-        window.dispatchEvent(event);
-    };
-
-    setInterval(() => {
-        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-        const orientation = widthThreshold ? 'vertical' : 'horizontal';
-
-        if (!(heightThreshold && widthThreshold) && (widthThreshold || heightThreshold)) {
-            if (!devtools.open || devtools.orientation !== orientation) {
-                emitEvent(true, orientation);
-            }
-        } else {
-            if (devtools.open) {
-                emitEvent(false, null);
-            }
-        }
-    }, 500);
-
-    return devtools;
-})(); 
-    window.addEventListener('devtoolschange', function (e) {
-        if (e.detail.open) {
-            // DevTools đang mở
-            window.location.href = 'https://moonseo.app/images/stop.png';
-        }
-    }); 
+//window.devtools = (function () {
+//    const devtools = {
+//        open: false,
+//        orientation: null,
+//    };
+//
+//    const threshold = 160;
+//
+//    const emitEvent = (state, orientation) => {
+//        devtools.open = state;
+//        devtools.orientation = orientation;
+//        const event = new CustomEvent('devtoolschange', {
+//            detail: { open: state, orientation: orientation },
+//        });
+//        window.dispatchEvent(event);
+//    };
+//
+//    setInterval(() => {
+//        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+//        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+//        const orientation = widthThreshold ? 'vertical' : 'horizontal';
+//
+//        if (!(heightThreshold && widthThreshold) && (widthThreshold || heightThreshold)) {
+//            if (!devtools.open || devtools.orientation !== orientation) {
+//                emitEvent(true, orientation);
+//            }
+//        } else {
+//            if (devtools.open) {
+//                emitEvent(false, null);
+//            }
+//        }
+//    }, 500);
+//
+//    return devtools;
+//})(); 
+//    window.addEventListener('devtoolschange', function (e) {
+//        if (e.detail.open) {
+//            // DevTools đang mở
+//            window.location.href = 'https://moonseo.app/images/stop.png';
+//        }
+//    }); 
 @endif
 @endif
 

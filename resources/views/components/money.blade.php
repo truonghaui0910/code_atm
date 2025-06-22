@@ -341,7 +341,7 @@
                                         Claims Indiy
                                     </a>
                                 </li>
-                                <li class="nav-item">
+<!--                                <li class="nav-item">
                                     <a href="#claim-5-b1" data-toggle="tab" aria-expanded="false" class="nav-link">
                                         Claims Adrev
                                     </a>
@@ -350,7 +350,7 @@
                                     <a href="#meta-b1" data-toggle="tab" aria-expanded="false" class="nav-link">
                                         Moonaz
                                     </a>
-                                </li>
+                                </li>-->
                                 <li class="nav-item tab-epic">
                                     <a href="#epid-b1" data-toggle="tab" aria-expanded="false" class="nav-link">
                                         Epidemic

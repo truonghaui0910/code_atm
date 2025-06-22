@@ -1529,7 +1529,7 @@
         background-color: transparent; 
         border-radius: 0;               
         box-shadow: none;               
-        overflow: visible;             
+        overflow-x: auto;             
     }
 
     .albums-table {
@@ -2888,17 +2888,19 @@
         });
     }
 
-    function addSongToAlbum(songId, albumId) {
-        return $.ajax({
-            url: '/addSongToAlbum',
-            type: 'GET',
-            data: {
-                song_id: songId,
-                album_id: albumId
-            },
-            dataType: 'json'
-        });
-    }
+//    function addMultipleSongsToAlbumAPI(songIds, albumId) {
+//        console.log('addSongsToAlbum called with:', {songIds, albumId}); // Debug log
+//        return $.ajax({
+//            url: '/addSongsToAlbum',
+//            type: 'POST',
+//            data: {
+//                song_ids: songIds,
+//                album_id: albumId,
+//               _token: $('input[name="_token"]').attr('value')
+//            },
+//            dataType: 'json'
+//        });
+//    }
 
     function removeSongFromAlbum(songId, albumId) {
         return $.ajax({
@@ -2912,8 +2914,13 @@
         });
     }
 
-    function handleAddSongsToAlbum() {
+    function handleAddMultipleSongsToAlbum() {
+        console.log('handleAddMultipleSongsToAlbum called');
+        console.log('selectedSongs:', selectedSongs);
+        console.log('currentAlbumId:', currentAlbumId);
+
         if (selectedSongs.length === 0 || !currentAlbumId) {
+            console.log('Validation failed');
             showNotification('Please select at least one song', 'warning');
             return;
         }
@@ -2921,14 +2928,26 @@
         // Hiển thị loading
         $('#add-songs-btn').html('<i class="fas fa-spinner fa-spin"></i> Adding...').prop('disabled', true);
 
-        // Tạo mảng promises để xử lý các request
-        const addPromises = selectedSongs.map(songId => {
-            return addSongToAlbum(songId, currentAlbumId);
-        });
+        const requestData = {
+            song_ids: selectedSongs,
+            album_id: currentAlbumId,
+            _token: $('input[name="_token"]').attr('value')
+        };
 
-        // Xử lý tất cả các request
-        Promise.all(addPromises)
-                .then(results => {
+        console.log('About to send request with data:', requestData);
+
+        // Gọi AJAX trực tiếp
+        $.ajax({
+            url: '/addSongsToAlbum',
+            type: 'POST',
+            data: requestData,
+            dataType: 'json',
+            beforeSend: function(xhr) {
+                console.log('Request about to be sent');
+            },
+            success: function(response) {
+                console.log('Response received:', response);
+                if (response.status === 'success') {
                     // Lưu lại filters hiện tại
                     const currentGroupId = $('#group-filter').val();
 
@@ -2941,13 +2960,11 @@
                                 albums[albumIndex] = album;
                             }
 
-                            // Render lại album details (ở phía sau modal)
+                            // Render lại album details
                             showAlbumDetails(currentAlbumId);
 
-                            // Render lại danh sách album (ở phía sau modal)
+                            // Render lại danh sách album
                             renderAlbums();
-
-                            // KHÔNG đóng modal
 
                             // Clear selected songs but keep filters
                             selectedSongs = [];
@@ -2957,19 +2974,57 @@
                             renderAvailableSongs(currentGroupId);
 
                             // Hiển thị thông báo thành công
-                            showNotification(`Added ${results.length} songs to album successfully`, 'success');
+                            showNotification(response.message, 'success');
                         }
                     });
-                })
-                .catch(error => {
-                    console.error('Error adding songs to album:', error);
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', {xhr, status, error});
+
+                // Xử lý lỗi validation cụ thể
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    showNotification(xhr.responseJSON.message, 'error');
+                } else {
                     showNotification('Failed to add songs to album. Please try again.', 'error');
-                })
-                .finally(() => {
-                    // Reset button state
-                    $('#add-songs-btn').html('Add Songs').prop('disabled', false);
-                });
+                }
+            },
+            complete: function() {
+                // Reset button state
+                $('#add-songs-btn').html('Add Songs').prop('disabled', false);
+            }
+        });
     }
+    
+    function validateSelectedSongs() {
+        if (selectedSongs.length === 0) {
+            showNotification('Please select at least one song', 'warning');
+            return false;
+        }
+
+        // Kiểm tra trùng tên trong danh sách đã chọn
+        const selectedSongElements = $('.modal-song-item.selected');
+        const songNames = [];
+        const duplicates = [];
+
+        selectedSongElements.each(function() {
+            const songName = $(this).find('.modal-song-title').text().trim().toLowerCase();
+            if (songNames.includes(songName)) {
+                duplicates.push($(this).find('.modal-song-title').text().trim());
+            } else {
+                songNames.push(songName);
+            }
+        });
+
+        if (duplicates.length > 0) {
+            showNotification('You have selected songs with duplicate names: ' + duplicates.join(', '), 'warning');
+            return false;
+        }
+
+        return true;
+    }    
 
     function handleRemoveSongFromAlbum(songId, albumId) {
 
@@ -5252,7 +5307,7 @@
             const artistAlbumCount = getArtistAlbumCount(album.artist);
             const artistAlbumCountText = artistAlbumCount > 1 ? 
                  `<span class="artist-album-count-table">${artistAlbumCount} albums</span>` : '';
-            const artistTotalStreamsText = album.artist_total_streams !== undefined ? 
+            const artistTotalStreamsText = album.artist_total_streams !== null ? 
                 `<span class="artist-total-streams ml-2" title="Total Streams">
                     <i class="fas fa-headphones"></i> ${album.artist_total_streams.toLocaleString()}
                 </span>` : '';                 
@@ -5520,7 +5575,11 @@
             updateSelectedCount();
         });
 
-        $('#add-songs-btn').click(handleAddSongsToAlbum);
+        $('#add-songs-btn').on('click', function() {
+            if (validateSelectedSongs()) {
+                handleAddMultipleSongsToAlbum();
+            }
+        });
 
         setupAlbumSearch();
 

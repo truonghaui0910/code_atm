@@ -145,9 +145,9 @@ class ApiController extends Controller {
             }
         }
         RequestHelper::getUrl("https://api.telegram.org/bot1219728711:AAFhXltFn829Vuw1Lf20JLnR4dIkeKSH3kc/sendMessage?chat_id=-400738833&text=Start scan channel 6 floor thread-$threadId", 0);
-        $channels = AccountInfo::where(DB::raw("id % $numberThreadInit"), $threadId)->whereNotNull("otp_key")->where("del_status", 0)->get();
+        $channels = AccountInfo::where(DB::raw("id % $numberThreadInit"), $threadId)->whereNotNull("otp_key")->where("del_status", 0)->where("chanel_id","like","%UC%")->get();
 //        $channels = AccountInfo::where(DB::raw("id % $numberThreadInit"), $threadId)->whereIn("is_music_channel", [1, 2])->where("del_status", 0)->get();
-//        $channels = AccountInfo::where("id", 319038)->get();
+//        $channels = AccountInfo::where("id", 321283)->get();
 //        $channels = AccountInfo::where("tags", "like", "%MAIN%")->orWhere("tags", "like", "%BIG%")->get();
 //        $channels = AccountInfo::where(DB::raw("id % $numberThreadInit"), $threadId)->whereNotIn("is_music_channel", [1, 2])->where("emp_code","5sCtGqqJxSfUKOKW1497079684")->get();
 
@@ -305,7 +305,7 @@ class ApiController extends Controller {
             if (!Utils::containString($channel->channel_clickup, "https://yt3.ggpht.com/")) {
                 $thumb = "";
                 $thumbItem = RequestHelper::getUrl("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$channel->chanel_id&fields=items/snippet/thumbnails&key=AIzaSyAnfl6tyoZukXLFuZMoqd20dpZlUk1y0J8");
-                if ($thumbItem != null && $thumbItem != "") {
+                if ($thumbItem != null && $thumbItem != "" && !Utils::containString($thumbItem, "DOCTYPE html")) {
                     $items = json_decode($thumbItem);
                     if (!empty($items->items[0]->snippet->thumbnails->medium->url)) {
                         $thumb = $items->items[0]->snippet->thumbnails->medium->url;

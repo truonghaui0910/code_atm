@@ -2589,6 +2589,19 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="action-item">
+                                <button class="btn btn-sm btn-outline-secondary action-btn" data-value="41"
+                                    data-requires-form="true" data-form="deleteVideosForm">Delete Videos</button>
+                                <div id="deleteVideosForm" class="action-form">
+                                    <h6 class="mb-3">Delete Videos by Views</h6>
+                                    <div class="form-group">
+                                        <label for="views_delete">Views threshold</label>
+                                        <input id="views_delete" class="form-control" type="number" 
+                                               name="views_delete" placeholder="Enter view count (e.g. 1000)" min="0">
+                                        <small class="form-text text-muted">Videos with views less than this number will be deleted (oldest first)</small>
+                                    </div>
+                                </div>
+                            </div>
                             <button class="btn btn-sm btn-outline-secondary action-btn" data-value="3">Check
                                 Views</button>
                             <button class="btn btn-sm btn-outline-secondary action-btn" data-value="30">Create

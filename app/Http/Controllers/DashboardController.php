@@ -2392,15 +2392,11 @@ class DashboardController extends Controller {
                     "func_name" => "del_with_filter",
                     "params" => [
                         (object) [
-                            "name" => "keyword",
+                            "name" => "views",
                             "type" => "string",
                             "value" => $request->views_delete,
                         ], (object) [
-                            "name" => "location",
-                            "type" => "string",
-                            "value" => $request->pages_delete,
-                        ], (object) [
-                            "name" => "tag",
+                            "name" => "order",
                             "type" => "string",
                             "value" => "VIDEO_ORDER_DISPLAY_TIME_ASC",
                         ]

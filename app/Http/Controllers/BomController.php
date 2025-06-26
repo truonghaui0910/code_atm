@@ -3153,6 +3153,47 @@ class BomController extends Controller {
 //
 //        return response()->json($albums);
 //    }
+//    public function getListAlbum(Request $request) {
+//        $user = Auth::user();
+//        DB::enableQueryLog();
+//        $albumId = $request->id;
+//
+//        $query = DB::table('bom_albums as a')
+//                ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
+//                ->leftJoin('bom_artists as ar', 'a.artist', '=', 'ar.artist_name') // Join với bảng bom_artists
+//                ->select(
+//                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', 'ar.artist_total_streams', // Lấy từ bảng bom_artists
+//                        DB::raw('GROUP_CONCAT(b.id) as songs')
+//                )
+//                ->groupBy(
+//                'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams'
+//        );
+//
+//        $query->where('a.status', 1);
+//
+//        // Nếu có id thì chỉ lấy album đó
+//        if (!empty($albumId)) {
+//            $query->where('a.id', $albumId);
+//        }
+//
+//        if (!$request->is_admin_music) {
+//            $query->where('a.username', $user->user_name);
+//            $query->orderBy("a.id", "desc");
+//        } else {
+//
+//            $query->orderBy("a.release_date", "asc");
+//        }
+//
+//        $albums = $query->get();
+//
+//        // Chuyển danh sách bài hát từ chuỗi sang mảng
+//        $albums = $albums->map(function ($album) {
+//            $album->songs = $album->songs ? explode(',', $album->songs) : [];
+//            return $album;
+//        });
+//
+//        return response()->json($albums);
+//    }
 
     public function getListAlbum(Request $request) {
         $user = Auth::user();
@@ -3164,10 +3205,11 @@ class BomController extends Controller {
                 ->leftJoin('bom_artists as ar', 'a.artist', '=', 'ar.artist_name') // Join với bảng bom_artists
                 ->select(
                         'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', 'ar.artist_total_streams', // Lấy từ bảng bom_artists
+                        'ar.last_update', // Thêm cột last_update từ bảng bom_artists
                         DB::raw('GROUP_CONCAT(b.id) as songs')
                 )
                 ->groupBy(
-                'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams'
+                'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams', 'ar.last_update' // Thêm vào groupBy
         );
 
         $query->where('a.status', 1);
@@ -3181,15 +3223,42 @@ class BomController extends Controller {
             $query->where('a.username', $user->user_name);
             $query->orderBy("a.id", "desc");
         } else {
-
             $query->orderBy("a.release_date", "asc");
         }
 
         $albums = $query->get();
 
-        // Chuyển danh sách bài hát từ chuỗi sang mảng
+        // Chuyển danh sách bài hát từ chuỗi sang mảng và tính toán thời gian
         $albums = $albums->map(function ($album) {
             $album->songs = $album->songs ? explode(',', $album->songs) : [];
+
+            // Tính toán thời gian "time ago" từ last_update
+            if ($album->last_update) {
+                try {
+                    // Tạo DateTime object từ last_update (GMT+7)
+                    $lastUpdate = new \DateTime($album->last_update, new \DateTimeZone('Asia/Ho_Chi_Minh'));
+                    $now = new \DateTime('now', new \DateTimeZone('Asia/Ho_Chi_Minh'));
+
+                    // Tính khoảng cách thời gian
+                    $interval = $now->diff($lastUpdate);
+
+                    // Format thời gian theo yêu cầu
+                    if ($interval->d > 0) {
+                        $album->last_update_ago = $interval->d . 'd ago';
+                    } elseif ($interval->h > 0) {
+                        $album->last_update_ago = $interval->h . 'h ago';
+                    } elseif ($interval->i > 0) {
+                        $album->last_update_ago = $interval->i . 'm ago';
+                    } else {
+                        $album->last_update_ago = 'just now';
+                    }
+                } catch (\Exception $e) {
+                    $album->last_update_ago = 'unknown';
+                }
+            } else {
+                $album->last_update_ago = 'never updated';
+            }
+
             return $album;
         });
 

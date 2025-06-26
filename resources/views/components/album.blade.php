@@ -1737,7 +1737,6 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* THÊM MỚI - Songs header panel */
 .songs-header-panel {
     /*background: #f8f9fa;*/
     border-radius: 12px;
@@ -1762,7 +1761,6 @@
     max-width: 300px;
 }
 
-/* THÊM MỚI - Songs content panel */
 .songs-content-panel {
     /*background: #f8f9fa;*/
     border-radius: 12px;
@@ -1773,7 +1771,6 @@
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* THÊM MỚI - Audio player trong panel */
 .songs-content-panel .audio-player {
     background-color: #fff;
     border-radius: 8px;
@@ -1840,8 +1837,15 @@
     margin-left: 4px;
 }
 
-.album-row:hover .artist-album-count-table {
-    background-color: #e2e6ea;
+.artist-album-count-table:hover {
+    background-color: #007bff;
+    color: white;
+    transform: scale(1.1);
+}
+
+.artist-album-count-table.clicked {
+    background-color: #28a745 !important;
+    transform: scale(0.95);
 }
 .artist-total-streams {
     display: inline-flex;
@@ -1859,86 +1863,42 @@
     color: #1976d2;
 }
 
-/*.preview-image {
-    position: relative;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px dashed #e0e0e0;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+.album-id-cell {
+    width: 70px;
+    text-align: center;
 }
 
-.preview-image:hover {
-    border-color: #007bff;
-    transform: scale(1.02);
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+.album-id-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    min-width: 40px;
+    text-align: center;
 }
 
-.preview-image.uploading {
-    border-color: #28a745;
-    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
-}
-
-.preview-image.error {
-    border-color: #dc3545;
-    background: linear-gradient(135deg, #fdf2f2 0%, #f8d7da 100%);
-}
-
-.preview-image .position-absolute {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.8); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.fa-spinner.fa-spin {
-    animation: spin 1s linear infinite;
-}
-
-.custom-file-input.disp-none {
+.album-id-badge-grid {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 10;
+    top: 10px;
+    right: 45px; 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 5;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.preview-image img {
-    transition: all 0.3s ease;
-}
 
-.preview-image:hover img {
-    filter: brightness(1.1);
+.album-meta .album-meta-item:first-child {
+    color: #667eea;
+    font-weight: 600;
 }
-
-.preview-image .text-danger {
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
-}
-
-.preview-image .text-primary {
-    color: #007bff !important;
-}
-
-.preview-image .text-muted {
-    font-size: 0.875rem;
-    font-weight: 500;
-}*/
 
 </style>
 <style>
@@ -2888,20 +2848,6 @@
         });
     }
 
-//    function addMultipleSongsToAlbumAPI(songIds, albumId) {
-//        console.log('addSongsToAlbum called with:', {songIds, albumId}); // Debug log
-//        return $.ajax({
-//            url: '/addSongsToAlbum',
-//            type: 'POST',
-//            data: {
-//                song_ids: songIds,
-//                album_id: albumId,
-//               _token: $('input[name="_token"]').attr('value')
-//            },
-//            dataType: 'json'
-//        });
-//    }
-
     function removeSongFromAlbum(songId, albumId) {
         return $.ajax({
             url: '/deleteSongFromAlbum',
@@ -3224,6 +3170,9 @@
                     <h6 class="album-title">${album.name}</h6>
                     
                     <div class="album-meta">
+                        <div class="album-meta-item">
+                            <i class="fas fa-hashtag"></i> ID: ${album.id}
+                        </div>    
                         <div class="album-meta-item">
                             <i class="fas fa-user"></i> ${album.artist}
                         </div>
@@ -4672,7 +4621,7 @@
         <h6 class="mb-2">Filter by Genre</h6>
         <div id="genre-filters" class="mb-2">
             <button class="genre-filter-btn active" data-genre="all">All Genres</button>
-            <!-- Genre buttons will be added dynamically -->
+           
         </div>
     </div>
     <form id="modal-songs-search-form" class="form-group search-container mb-3">
@@ -4690,10 +4639,10 @@
         </div>
     </form>
     <div class="modal-songs-list" id="available-songs-list">
-        <!-- Available songs will be listed here -->
+        
     </div>
         
-    <!-- Audio Player for modal -->
+   
     <div class="audio-player mt-3 d-none" id="modal-audio-player">
         <div class="player-controls mb-2">
             <button class="btn btn-play" id="modal-player-play-btn">
@@ -5080,6 +5029,7 @@
                 const row = $(this);
 
                 // Lấy dữ liệu từ các cột (chú ý index của cột)
+                const albumId = row.find('.album-id-badge').text().toLowerCase();
                 const albumTitle = row.find('td').eq(1).text().toLowerCase(); // Cột 2 - Title
                 const albumArtist = row.find('td').eq(2).text().toLowerCase(); // Cột 3 - Artist
                 const albumGenre = row.find('td').eq(3).text().toLowerCase(); // Cột 4 - Genre
@@ -5090,6 +5040,7 @@
 
                 // Check search match
                 const matchesSearch = searchTerm === '' ||
+                        albumId.includes(searchTerm) ||
                         albumTitle.includes(searchTerm) ||
                         albumArtist.includes(searchTerm) ||
                         albumGenre.includes(searchTerm) ||
@@ -5137,6 +5088,7 @@
                 const parentElement = cardElement.closest('.col-md-3');
 
                 // Get album data
+                const albumId = cardElement.find('.album-meta-item').eq(0).text().toLowerCase();
                 const albumTitle = cardElement.find('.album-title').text().toLowerCase();
                 const albumArtist = cardElement.find('.album-meta-item').eq(0).text().toLowerCase();
                 const albumDate = cardElement.find('.album-meta-item').eq(1).text().toLowerCase();
@@ -5148,6 +5100,7 @@
                 // Check search match
                 const matchesSearch = searchTerm === '' ||
                         albumTitle.includes(searchTerm) ||
+                        albumId.includes(searchTerm) ||
                         albumArtist.includes(searchTerm) ||
                         albumDate.includes(searchTerm) ||
                         albumSongs.includes(searchTerm) ||
@@ -5245,6 +5198,7 @@
             <table class="albums-table">
                 <thead>
                     <tr>
+                        <th class="album-id-cell">ID</th>
                         <th class="album-cover-cell"></th>
                         <th>Album</th>
                         <th>Genre</th>
@@ -5306,13 +5260,16 @@
                 ` : '';
             const artistAlbumCount = getArtistAlbumCount(album.artist);
             const artistAlbumCountText = artistAlbumCount > 1 ? 
-                 `<span class="artist-album-count-table">${artistAlbumCount} albums</span>` : '';
+                `<span class="artist-album-count-table" data-artist="${album.artist}" title="Click to search this artist">${artistAlbumCount} albums</span>` : '';
             const artistTotalStreamsText = album.artist_total_streams !== null ? 
-                `<span class="artist-total-streams ml-2" title="Total Streams">
-                    <i class="fas fa-headphones"></i> ${album.artist_total_streams.toLocaleString()}
-                </span>` : '';                 
+    `<span class="artist-total-streams ml-2" title="Total stream, last update ${album.last_update_ago || 'unknown'}">
+        <i class="fas fa-headphones"></i> ${album.artist_total_streams.toLocaleString()}
+    </span>` : '';
             tableHTML += `
             <tr class="album-row" data-album-id="${album.id}">
+                   <td class="album-id-cell">
+        <span class="album-id-badge">#${album.id}</span>
+    </td>
                 <td class="album-cover-cell">
                     <img src="${album.coverImg}" class="album-cover-small" alt="${album.name}">
                 </td>
@@ -5358,7 +5315,11 @@
             // Prevent opening album detail if clicking on artist stats button
             if (
                 $(e.target).closest('.btn-artist-stats').length > 0 ||
-                $(e.target).hasClass('btn-artist-stats')
+                $(e.target).hasClass('btn-artist-stats') ||
+                $(e.target).closest('.artist-album-count-table').length > 0 || 
+                $(e.target).hasClass('artist-album-count-table') || 
+                $(e.target).closest('.artist-total-streams').length > 0 || 
+                $(e.target).hasClass('artist-total-streams')         
             ) {
                 return;
             }
@@ -5401,6 +5362,7 @@
         // Apply filters after rendering
         setTimeout(() => {
             applyFilters();
+            setupArtistCountClick();
         }, 100);
     }
 
@@ -5550,6 +5512,36 @@
         }
 
         uploadImageToCDN(file);
+    }
+
+    function setupArtistCountClick() {
+        // Xóa event cũ để tránh trùng lặp
+        $(document).off('click', '.artist-album-count-table');
+
+        // Thêm event handler cho click vào artist count
+        $(document).on('click', '.artist-album-count-table', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+
+            const artistName = $(this).data('artist');
+            if (artistName) {
+                // Nhập tên nghệ sỹ vào ô search
+                $('#album-search').val(artistName);
+
+                // Trigger search
+                $('#album-search').trigger('input');
+
+                // Optional: Focus vào ô search và highlight text
+                $('#album-search').focus().select();
+
+                // Optional: Thêm visual feedback
+                $(this).addClass('clicked');
+                setTimeout(() => {
+                    $(this).removeClass('clicked');
+                }, 200);
+            }
+        });
     }
 
     $(document).ready(function () {

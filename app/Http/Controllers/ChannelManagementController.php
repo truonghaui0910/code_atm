@@ -873,7 +873,7 @@ class ChannelManagementController extends Controller {
                         if ($request->error_type == "upload") {
                             $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve statusUpload=0,lastUpload=empty";
                         } else {
-                            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve last_change_pass=".time();
+                            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name resolve last_change_pass=" . time();
                         }
                     } else if ($request->action_type == "not_resolve") {
                         if ($request->error_type == "upload") {
@@ -1307,6 +1307,28 @@ class ChannelManagementController extends Controller {
                 $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $user->user_name set last_change_pass=7";
                 $result = AccountInfo::whereIn('id', $listChannelIds)->update(['last_change_pass' => 7, "log" => DB::raw("CONCAT(log,'$log')")]);
                 array_push($content, str_replace(':values', $result, "Success :values channels"));
+            } else if ($request->action == 41) {
+                // Delete videos by views
+                if (!isset($request->views_delete) || !is_numeric($request->views_delete)) {
+                    array_push($content, "Views threshold is required and must be a number");
+                    return array('status' => 'error', 'content' => $content);
+                }
+
+                $viewsThreshold = intval($request->views_delete);
+                $count = 0;
+                $channels = AccountInfo::whereIn('id', $listChannelIds)->get();
+                $time = time();
+
+                foreach ($channels as $channel) {
+                    $result = $this->sendCommandDeleteVideos($channel, $viewsThreshold, $time, $user->user_name);
+
+                    if ($result['success']) {
+                        $count++;
+                        $time += 60; // Cách nhau 1 phút để tránh spam
+                    }
+                }
+
+                array_push($content, str_replace(':values', $count, "Delete videos command sent successfully for :values channels"));
             }
 //            Log::info(DB::getQueryLog());
             //chuyển kênh sang channel_bass để tính tiền
@@ -1664,7 +1686,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             ]);
         }
         $header = array("platform: autowin");
-        $data = RequestHelper::callAPI2("GET", "http://gmail.69hot.info/manager/google-reco/verify/$account->reco_email/$account->note", [],$header);
+        $data = RequestHelper::callAPI2("GET", "http://gmail.69hot.info/manager/google-reco/verify/$account->reco_email/$account->note", [], $header);
         Log::info(json_encode($data));
         if ($data->status == "success") {
             return response()->json([
@@ -2919,6 +2941,77 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $channel->log = $channel->log . PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " change info job_id=$jobId old_pass=$oldPass";
             $channel->save();
         }
+    }
+
+    //hàm gửi lệnh xóa video
+    public function sendCommandDeleteVideos($channel, $viewsThreshold, $runTime = 0, $userName = '') {
+        $taskLists = [];
+
+        $login = (object) [
+                    "script_name" => "profile",
+                    "func_name" => "login",
+                    "params" => []
+        ];
+        $taskLists[] = $login;
+
+        $delVideo = (object) [
+                    "script_name" => "upload",
+                    "func_name" => "del_with_filter",
+                    "params" => [
+                        (object) [
+                            "name" => "views",
+                            "type" => "string",
+                            "value" => (string) $viewsThreshold,
+                        ],
+                        (object) [
+                            "name" => "order",
+                            "type" => "string",
+                            "value" => "VIDEO_ORDER_DISPLAY_TIME_ASC",
+                        ],
+                        (object) [
+                            "name" => "handle",
+                            "type" => "string",
+                            "value" => $channel->handle,
+                        ],
+                        (object) [
+                            "name" => "channel_id",
+                            "type" => "string",
+                            "value" => $channel->chanel_id,
+                        ]
+                    ]
+        ];
+        $taskLists[] = $delVideo;
+
+        $req = (object) [
+                    "gmail" => $channel->note,
+                    "task_list" => json_encode($taskLists),
+                    "run_time" => $runTime,
+                    "type" => 691,
+                    "piority" => 10,
+                    "timeout" => 20,
+                    "studio_id" => $channel->id,
+                    "call_back" => ""
+        ];
+
+        $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
+
+        if (!empty($res->job_id)) {
+            $log = PHP_EOL . gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " $userName delete videos with views < $viewsThreshold, job_id=" . $res->job_id;
+            $channel->log = $channel->log . $log;
+            $channel->save();
+
+            return [
+                'success' => true,
+                'job_id' => $res->job_id,
+                'message' => "Command sent successfully"
+            ];
+        }
+
+        return [
+            'success' => false,
+            'job_id' => null,
+            'message' => "Failed to send command"
+        ];
     }
 
     public function sendCommandAuth($channel) {

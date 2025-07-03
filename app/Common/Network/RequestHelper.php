@@ -289,12 +289,12 @@ class RequestHelper {
         die;
     }
 
-    public static function callAPI2($method, $url, $data, $header = array("Content-type: application/json", "platform: AutoWin")) {
+    public static function callAPI2($method, $url, $data, $header = array("Content-type: application/json", "platform: AutoWin"),$timeout = 10000) {
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_HEADER, false);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 0);
-        curl_setopt($curl, CURLOPT_TIMEOUT_MS, 10000);
+        curl_setopt($curl, CURLOPT_TIMEOUT_MS, $timeout);
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 
@@ -629,22 +629,55 @@ class RequestHelper {
         return $response;
     }
 
-    public static function getDriveFiles($folderId) {
-        $key = ["AIzaSyB0QH1MoohfCLR746NU5hNffzGPMDMAAxQ"];
-        $url = "https://www.googleapis.com/drive/v3/files?q='$folderId'+in+parents&key=" . $key[rand(0, count($key) - 1)];
+    public static function getDriveFiles($folderId, $pageToken = null) {
+        $key = ["AIzaSyAnfl6tyoZukXLFuZMoqd20dpZlUk1y0J8"];
+
+        // Tạo URL với pagination support
+        $url = "https://www.googleapis.com/drive/v3/files?q='$folderId'+in+parents&pageSize=1000&key=" . $key[rand(0, count($key) - 1)];
+
+        // Thêm pageToken nếu có
+        if ($pageToken) {
+            $url .= "&pageToken=" . urlencode($pageToken);
+        }
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Tăng timeout cho các folder lớn
         $response = curl_exec($ch);
-//        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+
+        if ($httpCode !== 200) {
+            Log::error("Google Drive API error: HTTP $httpCode, Response: $response");
+            return (object) ['files' => [], 'nextPageToken' => null];
+        }
 
         $data = json_decode($response);
 
-        return response()->json($data);
+        // Trả về object thay vì JSON response
+        return $data;
+    }
+
+    public static function getAllDriveFiles($folderId) {
+        $allFiles = [];
+        $pageToken = null;
+
+        do {
+            $files = self::getDriveFiles($folderId, $pageToken);
+
+            if (isset($files->files)) {
+                $allFiles = array_merge($allFiles, $files->files);
+            }
+
+            // Lấy nextPageToken nếu có
+            $pageToken = isset($files->nextPageToken) ? $files->nextPageToken : null;
+
+            Log::info("Retrieved " . count($files->files ?? []) . " files from folder $folderId, nextPageToken: " . ($pageToken ?? 'null'));
+        } while ($pageToken !== null);
+
+        Log::info("Total files retrieved from folder $folderId: " . count($allFiles));
+        return $allFiles;
     }
 
 }

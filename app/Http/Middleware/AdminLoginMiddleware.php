@@ -27,6 +27,8 @@ class AdminLoginMiddleware {
             $is_admin_music = 0;
             $is_supper_admin = 0;
             $is_admin_calendar = 0;
+            $is_admin_assistant = 0;
+            $is_dev_tool = 0;
             if (in_array('1', explode(",", $user->role)) || in_array('20', explode(",", $user->role))) {
                 $is_admin_music = 1;
             }
@@ -36,12 +38,22 @@ class AdminLoginMiddleware {
             if(in_array('27', explode(",", $user->role))){
                 $is_admin_calendar = 1;
             }
+            if(in_array('30', explode(",", $user->role))){
+                $is_admin_assistant = 1;
+            }
+            if(in_array('31', explode(",", $user->role))){
+                $is_dev_tool = 1;
+            }
             view()->share("is_admin_music", $is_admin_music);
             view()->share("is_supper_admin", $is_supper_admin);
             view()->share("is_admin_calendar", $is_admin_calendar);
+            view()->share("is_admin_assistant", $is_admin_assistant);
+            view()->share("is_dev_tool", $is_dev_tool);
             $request['is_supper_admin'] = $is_supper_admin;
             $request['is_admin_music'] = $is_admin_music;
             $request['is_admin_calendar'] = $is_admin_calendar;
+            $request['is_admin_assistant'] = $is_admin_assistant;
+            $request['is_dev_tool'] = $is_dev_tool;
 //            DB::enableQueryLog();
 //            $notify = Notification::where('status', 1)->where('start_date', '<', time())->where('end_date', '>', time())->where('user_id', Auth::user()->id)->orderBy('start_date', 'desc')->limit(5)->get();
 //            $notifyAll = Notification::where('status', 1)->where('start_date', '<', time())->where('end_date', '>', time())->where('type', 1)->get();

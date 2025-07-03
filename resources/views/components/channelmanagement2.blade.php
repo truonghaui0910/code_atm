@@ -692,20 +692,16 @@
             }
         }
 
-        /* Các điều chỉnh cho màn hình mobile */
+
         @media (max-width: 768px) {
             .action-panel {
                 width: calc(100% - 2rem);
-                /* Chiếm hầu hết chiều rộng màn hình */
                 right: 1rem;
                 left: 1rem;
                 max-height: 80vh;
                 top: auto;
-                /* Không dùng căn giữa theo chiều dọc */
                 bottom: 1rem;
-                /* Gắn panel ở dưới màn hình */
                 transform: none;
-                /* Bỏ transform translateY */
                 border-radius: 0.75rem;
             }
 
@@ -766,6 +762,18 @@
             .action-panel-header h5 {
                 font-size: 1rem;
             }
+            
+            .mini-channel-avatar {
+                width: 24px;
+                height: 24px;
+                margin-left: -4px;
+            }
+    
+    .more-channels-indicator {
+        width: 24px;
+        height: 24px;
+        margin-left: -4px;
+    }
         }
 
         /* Điều chỉnh cho màn hình rất nhỏ */
@@ -877,27 +885,6 @@
             /* Red for brand error */
         }
 
-        /* Edit button overlay - positioned center like the example image */
-        /*        .avatar-edit-btn {
-                position: absolute;
-                bottom: 50%;
-                right: 50%;
-                transform: translate(50%, 50%);
-                background: rgba(255, 255, 255, 0.9);
-                color: #212529;
-                border: none;
-                border-radius: 50%;
-                width: 36px;
-                height: 36px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 16px;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-                opacity: 0;
-                transition: opacity 0.2s ease;
-            }*/
-
         .channel-avatar-v1:hover .avatar-edit-btn {
             opacity: 1;
         }
@@ -945,12 +932,6 @@
             cursor: pointer;
         }
 
-        /*        .avatar-sync-btn:hover {
-                transform: rotate(180deg);
-                background: white;
-                color: #3a56d4;
-                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-            }*/
         .avatar-sync-btn:hover {
             background: white;
             transform: translate(-50%, -50%) rotate(180deg);
@@ -1961,30 +1942,6 @@
     }
 }
 
-/*    .btn-finish-recovery {
-        width: 30px; 
-        height: 30px; 
-        border-radius: 50%; 
-        border: none; 
-        background: linear-gradient(45deg, #45AF49, #7ce17c); 
-        color: white; 
-        display: inline-flex; 
-        align-items: center; 
-        justify-content: center; 
-        box-shadow: 0 3px 8px rgba(69, 175, 73, 0.5); 
-        transition: all 0.3s ease; 
-        vertical-align: middle;
-        outline: none;
-        position: relative;
-        z-index: 10;
-        margin-left: 8px;
-    }
-    
-    .btn-finish-recovery:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 12px rgba(69, 175, 73, 0.7);
-    }*/
-
     .btn-finish-recovery {
         width: 30px; 
         height: 30px; 
@@ -2045,7 +2002,103 @@
     @keyframes btn-loading-animation {
         from { width: 0; }
         to { width: 100%; }
-    }    
+    }
+
+.email-with-channels {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.email-text {
+    display: flex;
+    align-items: center;
+}
+
+.channel-avatars-container {
+    display: flex;
+    align-items: center;
+    margin-left: 8px;
+}
+
+.mini-channel-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid;
+    margin-left: -6px;
+    position: relative;
+    background-color: #fff;
+    object-fit: cover;
+    z-index: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mini-channel-avatar:first-child {
+    margin-left: 0;
+}
+
+.mini-channel-avatar:hover {
+    z-index: 10;
+    transform: scale(1.3);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* Brand status colors */
+.mini-channel-avatar.branded {
+    border-color: #45AF49;
+}
+
+.mini-channel-avatar.not-branded {
+    border-color: #fb8500;
+}
+
+.mini-channel-avatar.brand-error {
+    border-color: #ef233c;
+}
+
+/* Gmail count update */
+/*.gmail-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 6px;
+    min-width: 20px;
+}*/
+
+/* More channels indicator */
+.more-channels-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    color: white;
+    border: 2px solid #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    margin-left: -6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.more-channels-indicator:hover {
+    background-color: #495057;
+    transform: scale(1.2);
+    z-index: 10;
+}    
     </style>
 
     <div id="filterPanel" class="filter-panel">
@@ -2738,7 +2791,7 @@
                     </div>
 
                     <!-- Special Features -->
-                    <div class="action-group" data-category="special" style="margin-bottom: 50px">
+                    <div class="action-group" data-category="special" >
                         <div class="action-group-title">
                             <i class="fas fa-rocket"></i> Special Features
                         </div>
@@ -2768,14 +2821,24 @@
                                 Active</button>
                             <button class="btn btn-sm btn-outline-secondary action-btn" data-value="23">Boom VIP
                                 Inactive</button>
+                                <button class="btn btn-sm btn-outline-secondary action-btn" data-value="34">Add to Social</button>
                             @if ($is_admin_music)
                                 <button class="btn btn-sm btn-outline-secondary action-btn" data-value="33">YT Device OAuth</button>
-                                <button class="btn btn-sm btn-outline-secondary action-btn" data-value="34">Add to Social</button>
                                 <button class="btn btn-sm btn-outline-secondary action-btn" data-value="39">Set Cant Resolved Change Info</button>
                                 <button class="btn btn-sm btn-outline-secondary action-btn" data-value="40">Set Sent user to check Change Info</button>
                             @endif
                         </div>
                     </div>
+                    
+                    <div class="action-group" data-category="studio" style="margin-bottom: 70px">
+                        <div class="action-group-title">
+                            <i class="fas fa-project-diagram"></i> Studio
+                        </div>
+                        <div class="action-btn-group">
+                            <button class="btn btn-sm btn-outline-secondary action-btn" data-value="4">Show</button>
+                            <button class="btn btn-sm btn-outline-secondary action-btn" data-value="31">Hide</button>
+                        </div>
+                    </div>                    
                 </div>
 
 
@@ -2998,20 +3061,38 @@
                                                         </div>
                                                         <?php
                                                         $gCountText = '';
-                                                        foreach ($gmailCounts as $gCount) {
-                                                            if ($data->note == $gCount->note) {
-                                                                $gCountText = "<span class='gmail-count'>$gCount->total</span>";
-                                                                break;
-                                                            }
-                                                        }
-                                                        ?>
-                                                        <div class="detail-item">
+//                                                        foreach ($gmailCounts as $gCount) {
+//                                                            if ($data->note == $gCount->note) {
+//                                                                $gCountText = "<span class='gmail-count'>$gCount->total</span>";
+//                                                                break;
+//                                                            }
+//                                                        }
+//                                                        ?>
+<!--                                                        <div class="detail-item">
                                                             <i class="fas fa-envelope fa-fw text-muted mr-2"></i> <span
                                                                 class="copyable-text"
                                                                 data-copy="{{ $data->note }}">{{ $data->note }}</span>
                                                             {!! $gCountText !!}
 
+                                                        </div>-->
+                                                    <div class="detail-item">
+                                                        <i class="fas fa-envelope fa-fw text-muted mr-2"></i>
+
+                                                        <div class="email-with-channels">
+                                                            <div class="email-text">
+                                                                <span class="copyable-text" data-copy="{{ $data->note }}">{{ $data->note }}</span>
+                                                                @php
+                                                                    $emailChannels = $channelsByEmail[$data->note] ?? collect();
+                                                                    $channelCount = $emailChannels->count();
+                                                                @endphp
+
+                                                                @if($channelCount > 1)
+                                                                    <span class="gmail-count">{{ $channelCount }}</span>
+                                                                @endif
+                                                            </div>
+
                                                         </div>
+                                                    </div>
                                                     </div>
                                                     <div class="detail-row d-flex text-muted">
                                                         <div class="detail-item">
@@ -3026,10 +3107,68 @@
                                                                 }
                                                             }
                                                             ?>
+                                                            @if($groupName!="")
                                                             <i class="fas fa-users fa-fw text-muted mr-2"></i>
-                                                            <a
-                                                                href="/channelmanagement/v2?c3={{ $data->group_channel_id }}">{{ $groupName }}</a>
+                                                            <a href="/channelmanagement/v2?c3={{ $data->group_channel_id }}">{{ $groupName }}</a>
+                                                            @endif
                                                         </div>
+                                                        <div class="detail-item">
+                                                            @if($channelCount > 1)
+                                                                <div class="channel-avatars-container" title="Channels in this email">
+                                                                    @php
+                                                                        $maxAvatarsToShow = 4;
+                                                                        $channelsToShow = $emailChannels->take($maxAvatarsToShow);
+                                                                        $remainingChannels = $channelCount - $maxAvatarsToShow;
+                                                                    @endphp
+
+                                                                    @foreach($channelsToShow as $channel)
+                                                                        @php
+                                                                            $brandClass = 'not-branded';
+                                                                            if(isset($channel->brand_status)) {
+                                                                                switch($channel->brand_status) {
+                                                                                    case 'branded':
+                                                                                    case 1:
+                                                                                        $brandClass = 'branded';
+                                                                                        break;
+                                                                                    case 'error':
+                                                                                    case -1:
+                                                                                        $brandClass = 'brand-error';
+                                                                                        break;
+                                                                                    default:
+                                                                                        $brandClass = 'not-branded';
+                                                                                }
+                                                                            }
+
+                                                                            $avatarUrl = $channel->avatar_url;
+                                                                            if(empty($avatarUrl)) {
+                                                                                $firstLetter = strtoupper(substr($channel->chanel_name, 0, 1));
+                                                                                $avatarUrl = "https://via.placeholder.com/48x48/6c757d/ffffff?text=" . urlencode($firstLetter);
+                                                                            }
+
+                                                                            $shortChannelName = strlen($channel->chanel_name) > 20 
+                                                                                ? substr($channel->chanel_name, 0, 20) . '...' 
+                                                                                : $channel->chanel_name;
+                                                                        @endphp
+
+                                                                        <img src="{{ $avatarUrl }}" 
+                                                                             alt="{{ $channel->chanel_name }}" 
+                                                                             class="mini-channel-avatar {{ $brandClass }}"
+                                                                             title="{{ $shortChannelName }} ({{ $brandClass }})"
+                                                                             data-channel-id="{{ $channel->chanel_id }}"
+                                                                             onclick="showChannelDetail('{{ $channel->chanel_id }}')">
+                                                                    @endforeach
+
+                                                                    @if($remainingChannels > 0)
+                                                                        <div class="more-channels-indicator" 
+                                                                             title="{{ $remainingChannels }} more channels"
+                                                                             onclick="showAllChannelsModal('{{ $data->note }}')">
+                                                                            +{{ $remainingChannels }}
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            @endif
+    
+</div>
                                                     </div>
                                                 </div>
                                                 <div class="action-buttons mt-3">
@@ -3303,7 +3442,68 @@
 
 @section('script')
     <script type="text/javascript">
+function showAllChannelsModal(email) {
+    console.log('Show all channels for email:', email);
+    
+    // Lấy tất cả channels của email này
+    @if(isset($channelsByEmail))
+        const allChannels = @json($channelsByEmail);
+        const emailChannels = allChannels[email] || [];
         
+        // Tạo modal content
+        let modalContent = `
+            <div class="modal fade" id="allChannelsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">All Channels for ${email}</h5>
+                            <button type="button" class="close" data-dismiss="modal">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+        `;
+        
+        emailChannels.forEach(channel => {
+            const brandClass = channel.brand_status === 'branded' || channel.brand_status === 1 ? 'branded' 
+                             : channel.brand_status === 'error' || channel.brand_status === -1 ? 'brand-error' 
+                             : 'not-branded';
+            
+            const avatarUrl = channel.avatar_url || `https://via.placeholder.com/64x64/6c757d/ffffff?text=${encodeURIComponent(channel.chanel_name.charAt(0).toUpperCase())}`;
+            
+            modalContent += `
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex align-items-center p-2 border rounded">
+                        <img src="${avatarUrl}" 
+                             class="mini-channel-avatar ${brandClass} mr-3" 
+                             style="width: 48px; height: 48px; margin-left: 0;"
+                             alt="${channel.chanel_name}">
+                        <div>
+                            <div class="font-weight-bold">${channel.chanel_name}</div>
+                            <small class="text-muted">${channel.chanel_id}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        modalContent += `
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Xóa modal cũ nếu có
+        $('#allChannelsModal').remove();
+        
+        // Thêm modal mới và hiển thị
+        $('body').append(modalContent);
+        $('#allChannelsModal').modal('show');
+    @endif
+}        
     function handleFinishRecovery(channelId) {
         var button = $('.btn-finish-recovery[data-id="' + channelId + '"]');
 
@@ -5894,37 +6094,6 @@ function updateLocalStorageOrder() {
     updateChartButtonBadge();
 }
 
-//        function generateChartHtml(channel_id, channel_name, data) {
-//            return `
-//                <div class="row">
-//                    <div class="col-md-6">
-//                        <div id="chartHour-wrap-${channel_id}" class="chart-container">
-//                            <canvas id="chartHour-${channel_id}"></canvas>
-//                        </div>
-//                    </div>
-//                    <div class="col-md-6">
-//                        <div id="chartMinute-wrap-${channel_id}" class="chart-container">
-//                            <canvas id="chartMinute-${channel_id}"></canvas>
-//                        </div>
-//                    </div>
-//                </div>
-//                <div class="row mt-2">
-//                    <div class="col-md-6">
-//                        <div class="text-center">
-//                            <span>Views (Last 48 hours): </span>
-//                            <strong id="last-48-hour-${channel_id}">${number_format(data.data48hour.total48, 0, ',', '.')}</strong>
-//                        </div>
-//                    </div>
-//                    <div class="col-md-6">
-//                        <div class="text-center">
-//                            <span>Views (Last 60 minutes): </span>
-//                            <strong id="last-60-minute-${channel_id}">${number_format(data.data60minutes.total60, 0, ',', '.')}</strong>
-//                        </div>
-//                    </div>
-//                </div>
-//            `;
-//        }
-
         function updateModalTitle(processed, success, total) {
             const titleElement = $('#modal_multi_chart_realtime .modal-title');
             const isLoading = processed < total;
@@ -6047,6 +6216,12 @@ function updateLocalStorageOrder() {
         $(document).ready(function() {
             updateAllTrackButtons();
             updateChartButtonBadge();
+            $('.mini-channel-avatar').on('error', function() {
+                // Nếu avatar load lỗi, thay bằng placeholder
+                const channelName = $(this).attr('alt');
+                const firstLetter = channelName ? channelName.charAt(0).toUpperCase() : '?';
+                $(this).attr('src', `https://via.placeholder.com/48x48/6c757d/ffffff?text=${encodeURIComponent(firstLetter)}`);
+            });
         });
     </script>
 @endsection

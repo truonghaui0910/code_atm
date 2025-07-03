@@ -3128,7 +3128,7 @@ class ApiController extends Controller {
         $access_token = $token_data['access_token'];
 
         // API 2: Lấy danh sách album của artist
-        $albums_url = "https://api.spotify.com/v1/artists/{$id}/albums?limit=50";
+        $albums_url = "https://api.spotify.com/v1/artists/{$id}/albums?limit=50&include_groups=album,single,compilation";
 
         $curl2 = curl_init();
         curl_setopt_array($curl2, array(

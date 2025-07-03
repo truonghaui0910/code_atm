@@ -263,7 +263,11 @@ class MoonshotsController extends Controller {
                 }
                 $params[] = $param;
             }
-
+            $params[] = (object) [
+                        "name" => "channel_id",
+                        "type" => "string",
+                        "value" => $channel->chanel_id,
+            ];
             $reupload = (object) [
                         "script_name" => $script_name,
                         "func_name" => $func_name,
@@ -726,6 +730,11 @@ class MoonshotsController extends Controller {
                         }
                         $params[] = $param;
                     }
+                    $params[] = (object) [
+                                "name" => "channel_id",
+                                "type" => "string",
+                                "value" => $channel->chanel_id,
+                    ];
                     //2024/10/07 nếu là user check claim thì sử dụng callback chỗ tùng
                     $callBack = "http://automusic.win/callback/upload";
                     if ($channel->user_name == 'check_claim_1728285682') {

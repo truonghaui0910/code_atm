@@ -649,7 +649,7 @@
                                                                                                                                     </div>
                                                                                                                                     </div>
 
-                                                                                                                                    @if(in_array('20',explode(",", $user_login->role)) || in_array('1',explode(",",$user_login->role)))
+                                                                                                                                    @if($is_admin_music || $is_supper_admin || $is_admin_assistant)
                                                                                                                                     <div class="row">
                                                                                                                                         <div class="col-md-12">
                                                                                                                                             <div class="form-group">

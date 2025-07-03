@@ -1123,6 +1123,9 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
     
     Route::post('/album/artist/create', 'BomController@getOrCreateArtist')->name('getOrCreateArtist');
     
+    Route::get('/syncSunoLyric', 'BomController@syncSunoLyric')->name('syncSunoLyric');
+    Route::get('/makeLyricTimestamp', 'BomController@makeLyricTimestamp')->name('makeLyricTimestamp');
+    
 });
 
 

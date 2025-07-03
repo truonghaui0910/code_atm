@@ -65,7 +65,7 @@ class ClaimController extends Controller {
             $datas = CampaignStatistics::where("type", 2)->orderBy("id", "desc");
         }
 
-        if ($request->is_admin_music) {
+        if ($request->is_admin_music || $request->is_admin_assistant) {
             $datas = $datas->get();
         } else {
             $datas = $datas->where("username", $user->user_name)->get();
@@ -516,8 +516,8 @@ class ClaimController extends Controller {
         $curr = time();
         Log::info($user->user_name . '|ClaimController.addClaim|request=' . json_encode($request->all()));
 //        $listCampaign = DB::select("select campaign_name from campaign_statistics where type = 2 and status = 1");
-        if (!$request->is_admin_music) {
-            return response()->json(['status' => "error", 'message' => "You are not an admin"]);
+        if (!$request->is_admin_music && !$request->is_admin_assistant) {
+            return response()->json(['status' => "error", 'content' => "You are not an admin"]);
         }
         if ($request->campaign_name == null || $request->campaign_name == "") {
             return array("status" => "error", "content" => "Campaign can not be empty", "contentedit" => "Success");
@@ -2848,7 +2848,7 @@ class ClaimController extends Controller {
                 'cost_percent' => 10,
                 'bass_percent' => 30
             ],
-            'WMG/Sparta' => [
+            'AudioSalad' => [
                 'tax_percent' => 20,
                 'artist_percent' => 40,
                 'cost_percent' => 10,
@@ -2889,7 +2889,7 @@ class ClaimController extends Controller {
                         $rev->cost_percent = $claim->cost_percent;
                     }
                     //từ tháng 3/2024 tăng cost lên 30%, tháng 2.3/2025 giảm còn 10%
-                    if ($claim->distributor == "Orchard" && ($request->period == '202503' ||$request->period == '202502' )) {
+                    if ($claim->distributor == "Orchard" && ($request->period == '202503' || $request->period == '202502' )) {
                         $rev->cost_percent = 10;
                     }
 
@@ -3463,7 +3463,7 @@ class ClaimController extends Controller {
                         if (isset($info->receivedClaims[0]->asset->metadata->soundRecording->title)) {
                             $title = $info->receivedClaims[0]->asset->metadata->soundRecording->title;
                         }
-                        if (isset($info->receivedClaims[0]->asset->metadata->soundRecording->title)) {
+                        if (isset($info->receivedClaims[0]->asset->metadata->soundRecording->artists)) {
                             $artists = $info->receivedClaims[0]->asset->metadata->soundRecording->artists;
                         }
                         if (isset($info->receivedClaims[0]->assetId)) {
@@ -3472,7 +3472,7 @@ class ClaimController extends Controller {
                         if (isset($info->contentOwners[0]->displayName)) {
                             $distributor = $info->contentOwners[0]->displayName;
                         }
-                        if(isset($info->error)){
+                        if (isset($info->error)) {
                             $status = "error";
                             $message = isset($info->error->message) ? $info->error->message : "Unknown Error";
                         }
@@ -3487,7 +3487,7 @@ class ClaimController extends Controller {
                         $claim->asset_id = $assetId;
                     }
                     $claim->save();
-                    
+
                     if ($artists == []) {
                         $status = "error";
                     }
@@ -3598,7 +3598,11 @@ class ClaimController extends Controller {
                     "value" => $uploadChannel->handle];
         $params[] = $param3;
         $params[] = $param4;
-
+        $params[] = (object) [
+                    "name" => "channel_id",
+                    "type" => "string",
+                    "value" => $uploadChannel->chanel_id,
+        ];
         $reupload = (object) [
                     "script_name" => "upload",
                     "func_name" => "upload",

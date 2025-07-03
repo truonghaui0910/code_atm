@@ -4,11 +4,17 @@ namespace App\Console\Commands;
 
 use App\Common\Network\RequestHelper;
 use App\Common\Utils;
+use App\Http\Controllers\BomController;
 use App\Http\Models\AccountInfo;
+use App\Http\Models\Bom;
 use App\Http\Models\MooncoinContent;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Log;
+use function GuzzleHttp\json_decode;
+use function GuzzleHttp\json_encode;
+use function response;
 
 class Test2 extends Command {
 
@@ -19,7 +25,7 @@ class Test2 extends Command {
      * dis = Orchard, Indiy...
      * channels = channel_id1,channel_id2
      */
-    protected $signature = 'app:test2 {fn}';
+    protected $signature = 'app:test2 {fn} {param}';
 
     /**
      * The console command description.
@@ -46,11 +52,19 @@ class Test2 extends Command {
         set_time_limit(0);
         error_log("run commnad");
         $functionName = $this->argument('fn');
-
-        if (method_exists($this, $functionName)) {
-            $this->$functionName(); // Gọi hàm dựa vào tham số
+        $param = $this->argument('param');
+        if (isset($param)) {
+            if (method_exists($this, $functionName)) {
+                $this->$functionName($param); // Gọi hàm dựa vào tham số
+            } else {
+                $this->error("Hàm '$functionName' không tồn tại.");
+            }
         } else {
-            $this->error("Hàm '$functionName' không tồn tại.");
+            if (method_exists($this, $functionName)) {
+                $this->$functionName(); // Gọi hàm dựa vào tham số
+            } else {
+                $this->error("Hàm '$functionName' không tồn tại.");
+            }
         }
     }
 
@@ -822,7 +836,7 @@ class Test2 extends Command {
                 try {
                     // Chuẩn bị data để gửi
                     $postData = json_encode([
-                        'email' => "$user->email"."@moonshots.vn",
+                        'email' => "$user->email" . "@moonshots.vn",
                         'password' => $user->password // Hoặc password mặc định nếu cần
                     ]);
 
@@ -882,7 +896,7 @@ class Test2 extends Command {
 
                     // Tạm dừng giữa các request để tránh spam API
                     usleep(500000); // 0.5 giây
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Log::error("Exception for {$user->email}: " . $e->getMessage());
                     $results[] = [
                         'email' => $user->email,
@@ -903,7 +917,7 @@ class Test2 extends Command {
                         ],
                         'details' => $results
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("syncUsersToExternalSystem error: " . $e->getMessage());
             return response()->json([
                         'status' => 'error',
@@ -911,6 +925,34 @@ class Test2 extends Command {
                         'data' => null
             ]);
         }
+    }
+
+    public function testSunoLyric($id) {
+        $bom = new BomController();
+        return $bom->getSunoLyrics($id);
+    }
+
+    public function test() {
+        $data = Bom::where("id", 24089)->first();
+        error_log("makeLyricTimestamp $data->id saved lyric_text to https://cdn.soundhex.com/api/v1/timestamp/$data->local_id");
+        $lyricPro = json_decode($data->lyric_pro);
+        $lyricSyncText = (json_encode($lyricPro->lyricSync));
+        $lyricText = "";
+        foreach ($lyricPro->lyricSync as $line) {
+            $lyricText .= $line->line . PHP_EOL;
+        }
+        $dataCdn = (object) [
+                    "lyric" => $lyricText,
+                    "lyric_sync" => $lyricSyncText,
+                    "id" => $data->local_id
+        ];
+        error_log("dataCdn " . json_encode($dataCdn));
+        $rs = RequestHelper::callAPI2("PUT", "https://cdn.soundhex.com/api/v1/timestamp/$data->local_id/", $dataCdn, array('Content-Type: application/json'), 10000);
+        if (isset($rs->id)) {
+            $data->is_real_lyric = 1;
+            $data->save();
+        }
+        error_log("rs Cnd " . json_encode($rs));
     }
 
 }

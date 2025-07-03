@@ -471,7 +471,7 @@
                                             </div>
                                         </th>
                                         <th style="width: 6%;text-align: center">@sortablelink('id', 'ID')</th>
-                                        <th style="width: 7%;text-align: center">Genre</th>
+                                        <th style="width: 10%;text-align: center">Genre</th>
                                         <th style="width: 7%;text-align: left">Username</th>
                                         <th style="width: 15%;text-align: left">Song Name</th>
                                         <th style="width: 7%;text-align: center">Deezer/Local ID</th>
@@ -626,6 +626,11 @@
                                                             data-mutiple="0" onclick="javascript:void(0)"><i
                                                                 class="ion-trash-a"></i>
                                                             Delete Song</a>
+                                                        <a class="dropdown-item  cur-poiter" target="blank" href="{{$data->direct_link}}"
+                                                            data-boom-id="{{ $data->id }}" 
+                                                            ><i
+                                                                class="fa fa-share-alt"></i>
+                                                            Direct</a>
                                                     </div>
                                                 </span>
                                             </td>
@@ -1696,28 +1701,28 @@
             e.preventDefault();
             clearForm2();
             groupList(0, 0, 1);
-            toggleSelectSkeletonLoading(true);
+//            toggleSelectSkeletonLoading(true);
             $(".select-container .search_select").hide();
-            $.ajax({
-                type: "GET",
-                url: "/getOvertonePlaylist",
-                //            url: "/getOverTonePlaylistId",
-                data: {},
-                dataType: 'text',
-                success: function(data) {
-                    $('#overtone_playlist_id').html(data);
-                    $('#overtone_playlist_id').selectpicker('destroy');
-                    $('#overtone_playlist_id').selectpicker('render');
-                    toggleSelectSkeletonLoading(false);
-                    $(".select-container .search_select").show();
-                },
-                error: function(data) {
-                    console.log('Error:', data);
-                    toggleSelectSkeletonLoading(false);
-
-
-                }
-            });
+//            $.ajax({
+//                type: "GET",
+//                url: "/getOvertonePlaylist",
+//                //            url: "/getOverTonePlaylistId",
+//                data: {},
+//                dataType: 'text',
+//                success: function(data) {
+//                    $('#overtone_playlist_id').html(data);
+//                    $('#overtone_playlist_id').selectpicker('destroy');
+//                    $('#overtone_playlist_id').selectpicker('render');
+//                    toggleSelectSkeletonLoading(false);
+//                    $(".select-container .search_select").show();
+//                },
+//                error: function(data) {
+//                    console.log('Error:', data);
+//                    toggleSelectSkeletonLoading(false);
+//
+//
+//                }
+//            });
             $('#dialog_import_noclaim').modal({
                 backdrop: false
             });

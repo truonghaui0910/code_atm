@@ -48,7 +48,12 @@ class ChannelManagementController extends Controller {
             $datas = AccountInfo::where('del_status', 0);
             $listUser = $this->genListUserForMoveChannel($user, $request, 2);
         } else {
-            $datas = AccountInfo::where('user_name', $user->user_code)->where('del_status', 0);
+//            $datas = AccountInfo::where('user_name', $user->user_code)->where('del_status', 0);
+            //is_autoseo =3 => kênh share cho tất cả mọi người
+            $datas = AccountInfo::where('del_status', 0)->where(function($query) use ($user) {
+                $query->where('user_name', $user->user_code)
+                        ->orWhere('is_autoseo', 3);
+            });
             $listUser = [];
         }
 
@@ -58,6 +63,13 @@ class ChannelManagementController extends Controller {
                 ->groupBy('note')
                 ->having('total', '>', 1)
                 ->get();
+        $channelsByEmailTmp = clone $datas;
+        $channelsByEmail = $channelsByEmailTmp->select('note', 'chanel_id', 'chanel_name', 'channel_clickup as avatar_url', 'status', 'is_rebrand')
+                ->whereIn('note', $gmailCounts->pluck('note'))
+                ->orderBy('note')
+                ->orderBy('id')
+                ->get()
+                ->groupBy('note');
         $queries = [];
 
         $errorCountTmp = clone $datas;
@@ -311,6 +323,7 @@ class ChannelManagementController extends Controller {
             'isUpdateOtp' => $this->genIsUpdateOpt($request),
             'stats' => $stats,
             'gmailCounts' => $gmailCounts,
+            'channelsByEmail' => $channelsByEmail,
             'errorCountChangeInfo' => $errorCountChangeInfo,
             'errorCountUpload' => $errorCountUpload
         ]);
@@ -1562,7 +1575,13 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         if ($request->is_admin_music) {
             $accountInfo = AccountInfo::where("hash_pass", $request->hash)->first(['id', 'gologin', 'note', 'hash_pass']);
         } else {
-            $accountInfo = AccountInfo::where("hash_pass", $request->hash)->where("user_name", $user->user_code)->first(['id', 'gologin', 'note', 'hash_pass']);
+//            $accountInfo = AccountInfo::where("hash_pass", $request->hash)->where("user_name", $user->user_code)->first(['id', 'gologin', 'note', 'hash_pass']);
+            $accountInfo = AccountInfo::where("hash_pass", $request->hash)
+                    ->where(function($query) use ($user) {
+                        $query->where("user_name", $user->user_code)
+                        ->orWhere('is_autoseo', 3);
+                    })
+                    ->first(['id', 'gologin', 'note', 'hash_pass']);
         }
         if (!$accountInfo) {
             return array("status" => "error");
@@ -3126,7 +3145,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $info->birthday = Utils::randomBirthday();
             $dobArr = explode("-", $info->birthday);
             $id = rand(0, 2);
-            $acc = AccountInfo::where("user_name", "recovery_email_1730865536")->orderByRaw('RAND()')->first(["note"]);
+            $acc = AccountInfo::where("user_name", "recovery_email_1730865536")->where("status", 1)->where("del_status", 0)->orderByRaw('RAND()')->first(["note"]);
             $info->recovery = Utils::genRecovery($acc->note);
             $lastFullEmail = $info->username . Utils::getFirstNameLowercase($info->name) . $dobArr[$id];
             $info->last_full_email = $lastFullEmail;

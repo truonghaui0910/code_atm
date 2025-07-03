@@ -1193,7 +1193,7 @@ class CallbackController extends Controller {
                 if (isset($info->receivedClaims[0]->asset->metadata->soundRecording->title)) {
                     $title = $info->receivedClaims[0]->asset->metadata->soundRecording->title;
                 }
-                if (isset($info->receivedClaims[0]->asset->metadata->soundRecording->title)) {
+                if (isset($info->receivedClaims[0]->asset->metadata->soundRecording->artists)) {
                     $artists = $info->receivedClaims[0]->asset->metadata->soundRecording->artists;
                 }
                 if (isset($info->receivedClaims[0]->assetId)) {

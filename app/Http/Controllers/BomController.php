@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\Logger;
 use App\Common\Network\EpidemicSoundHelper;
 use App\Common\Network\RequestHelper;
 use App\Common\Process\ProcessUtils;
@@ -13,7 +14,6 @@ use App\Http\Models\BomArtist;
 use App\Http\Models\BomGroups;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Log;
 use TheSeer\Tokenizer\Exception;
@@ -1576,15 +1576,12 @@ class BomController extends Controller {
                         ];
                         Log::info("videoIds file " . json_encode($videoIds));
                     } elseif ($driveInfo->type == "folder") {
-                        $folders = RequestHelper::getDriveFiles($driveInfo->drive_id);
+                        $folders = RequestHelper::getAllDriveFiles($driveInfo->drive_id);
                         Log::info("folder " . json_encode($folders));
                         $listMp3 = [];
-                        if (isset($folders->original->files)) {
-                            foreach ($folders->original->files as $file) {
-//                                Log::info(json_encode($file));
-                                if ($file->kind == "drive#file" && Utils::containString($file->mimeType, "audio")) {
-                                    $listMp3[] = $file->id;
-                                }
+                        foreach ($folders as $file) {
+                            if ($file->kind == "drive#file" && Utils::containString($file->mimeType, "audio")) {
+                                $listMp3[] = $file->id;
                             }
                         }
                         if (count($listMp3) == 0) {
@@ -1866,6 +1863,15 @@ class BomController extends Controller {
                     $data->user = $user->user_name;
                     $data->genre = $request->genre;
                     $data->id = $noclaim->id;
+                    //đồng bộ lyric SUNO
+                    if ($sourceType == "SUNO") {
+                        $lyric = $this->getSunoLyrics($noclaim->song_id);
+                        if ($lyric != "") {
+                            $noclaim->is_sync_lyric = 1;
+                            $noclaim->lyric_text = $lyric;
+                            $noclaim->save();
+                        }
+                    }
                 } else {
                     $fail++;
                     $check->log = $check->log . PHP_EOL . "$curr $user->user_name dupticate";
@@ -2065,39 +2071,49 @@ class BomController extends Controller {
     }
 
     public function convertWav() {
-        $curr = gmdate("Y/m/d H:i:s", time() + 7 * 3600);
-        $boms = Bom::where("status", 1)->where("sync", 1)->whereNotNull("direct_link")->whereNull("direct_wav")->where("is_releasable", 1)->get();
-        $total = count($boms);
-        foreach ($boms as $index => $bom) {
-            $cmdConvert = "sudo ffmpeg -i \"$bom->direct_link\" -acodec pcm_s24le -ar 44100 $bom->id.wav";
-            $saved_converted = "$bom->id.wav";
+        $processName = "convert-wav";
+        if (ProcessUtils::isfreeProcess($processName, 10)) {
+            ProcessUtils::lockProcess($processName);
+            $curr = gmdate("Y/m/d H:i:s", time() + 7 * 3600);
+            $boms = Bom::where("status", 1)->where("sync", 1)->whereNotNull("direct_link")->whereNull("direct_wav")->where("is_releasable", 1)->take(20)->get();
+            $total = count($boms);
+            error_log("convertWav total=$total");
+            foreach ($boms as $index => $bom) {
+                $cmdConvert = "sudo ffmpeg -i \"$bom->direct_link\" -acodec pcm_s24le -ar 44100 $bom->id.wav";
+                $saved_converted = "$bom->id.wav";
 
-            error_log("convertWav $index/$total $cmdConvert");
-            shell_exec($cmdConvert);
-            if (count(glob($saved_converted)) > 0) {
-                //kiểm tra trên shazam
-                $shazam = $this->recognizeSong($saved_converted);
-                error_log("convertWav $index/$total shazam" . json_encode($shazam));
-                if ($shazam["exists"] == 1) {
-                    $bom->log .= PHP_EOL . "$curr this song exists " . json_encode($shazam);
-                    $bom->is_releasable = 2;
-                    $bom->save();
-                    unlink($saved_converted);
-                    continue;
-                }
+                error_log("convertWav $index/$total $cmdConvert");
+                shell_exec($cmdConvert);
+                if (count(glob($saved_converted)) > 0) {
+                    //kiểm tra trên shazam
+                    $shazam = $this->recognizeSong($saved_converted);
+                    error_log("convertWav $index/$total shazam" . json_encode($shazam));
+                    if ($shazam["exists"] == 1) {
+                        $bom->log .= PHP_EOL . "$curr this song exists " . json_encode($shazam);
+                        $bom->is_releasable = 2;
+                        $bom->save();
+                        unlink($saved_converted);
+                        continue;
+                    }
 
-                $cdnCmd = "gbak upload-r2 --input $saved_converted --server automusic-audio";
-                error_log("convertWav $index/$total $bom->id upload cdn cmd $cdnCmd");
-                $ul = shell_exec($cdnCmd);
-                error_log("convertWav $index/$total $bom->id upload cdn result $ul");
-                if ($ul != null && $ul != "") {
-                    $direct = trim($ul);
-                    unlink($saved_converted);
-                    $bom->direct_wav = $direct;
-                    $bom->save();
+                    $cdnCmd = "gbak upload-r2 --input $saved_converted --server automusic-audio";
+                    error_log("convertWav $index/$total $bom->id upload cdn cmd $cdnCmd");
+                    $ul = shell_exec($cdnCmd);
+                    error_log("convertWav $index/$total $bom->id upload cdn result $ul");
+                    if ($ul != null && $ul != "") {
+                        $direct = trim($ul);
+                        if (file_exists($saved_converted)) {
+                            unlink($saved_converted);
+                        }
+                        $bom->direct_wav = $direct;
+                        $bom->save();
+                    }
+                    error_log("noclaimSync $index/$total $bom->id finish");
                 }
-                error_log("noclaimSync $index/$total $bom->id finish");
             }
+            ProcessUtils::unLockProcess($processName);
+        } else {
+            error_log("$processName is locked");
         }
     }
 
@@ -2456,6 +2472,52 @@ class BomController extends Controller {
         } while (count($allSongs) < $total);
 
         return $allSongs;
+    }
+
+    public function getSunoLyrics($song_id) {
+        // Gửi request
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => "https://suno.com/song/{$song_id}",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTPHEADER => array(
+                'accept: */*',
+                'accept-language: vi,en-US;q=0.9,en;q=0.8',
+                'dnt: 1',
+                'next-router-state-tree: %5B%22%22%2C%7B%22children%22%3A%5B%22(root)%22%2C%7B%22children%22%3A%5B%22song%22%2C%7B%22children%22%3A%5B%5B%22slug%22%2C%22' . $song_id . '%22%2C%22d%22%5D%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%5D%7D%5D%7D%5D%7D%2Cnull%2Cnull%2Ctrue%5D%7D%2Cnull%2Cnull%5D',
+                'priority: u=1, i',
+                'rsc: 1',
+                'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ),
+        ));
+
+        $response = curl_exec($curl);
+        $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+
+        if ($response === false || $http_code !== 200) {
+            return false;
+        }
+
+        error_log("Response length: " . strlen($response));
+
+        $lyrics_raw = "";
+        if (preg_match('/(\d+):T[^,]*,(.+?)(?=\d+:\[)/s', $response, $matches)) {
+            $lyrics_raw = $matches[2];
+            return trim($lyrics_raw);
+        }
+
+        if (preg_match('/"prompt":"([^"]*(?:\\.[^"]*)*)"/', $response, $matches)) {
+            $lyrics_raw = $matches[1];
+            // Decode escape sequences
+            $lyrics = json_decode('"' . $lyrics_raw . '"');
+            if ($lyrics) {
+                return $lyrics;
+            }
+        }
+        return false;
     }
 
     //sử dụng my-playlist
@@ -4147,6 +4209,97 @@ class BomController extends Controller {
             error_log("updateArtistStreams: Artist streams update completed. Updated: {$updatedCount} artists.");
         } catch (\Exception $e) {
             error_log("updateArtistStreams: Error updating artist streams: " . $e->getMessage());
+        }
+    }
+
+    public function syncSunoLyric() {
+        $datas = Bom::where("status", 1)->where("is_sync_lyric", 0)->where("source_type", "SUNO")->get();
+        $i = 0;
+        $total = count($datas);
+        foreach ($datas as $data) {
+            $hasLyric = "fail";
+            $i++;
+            $data->is_sync_lyric = 1;
+            $lyric = $this->getSunoLyrics($data->song_id);
+            if ($lyric != "") {
+                $data->lyric_text = $lyric;
+                $hasLyric = "succces";
+            }
+            $data->save();
+            error_log("$i/$total syncSunoLyric $data->id $hasLyric");
+            usleep(200000);
+        }
+    }
+
+    public function makeLyricTimestamp() {
+//        $datas = Bom::where("status", 1)
+//                        ->where("is_sync_lyric", 1)
+//                        ->where("source_type", "SUNO")
+//                        ->where("is_releasable", 1)
+//                        ->whereNotNull("lyric_text")
+//                        ->whereNull("lyric_pro")->take(50)
+//                        ->orderBy("id", "desc")->get();
+        $datas = Bom::where("id",24042)->get();
+        $total = count($datas);
+        $i = 0;
+        foreach ($datas as $data) {
+            $timeStart = time();
+            $i++;
+            error_log("makeLyricTimestamp $i/$total $data->id");
+     
+            $input = (object) [
+                        "file_url" => $data->source_id
+            ];
+            $lyricRaw = null;
+            if ($data->lyric_raw == null || $data->lyric_raw == "" || $data->lyric_raw == "null") {
+                $lyricRaw = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/speech-to-text", $input, array("Content-type: application/json", "platform: AutoWin"), 300000);
+            } else {
+                error_log("data->lyric_raw ".$data->lyric_raw);
+                $lyricRaw = json_decode($data->lyric_raw);
+            }
+//            Log::info("rs" . json_encode($result));
+            $input2 = (object) [
+                        "lyrics_raw" => $lyricRaw,
+                        "lyrics_text" => $data->lyric_text
+            ];
+            error_log(json_encode($lyricRaw));
+            if (empty($lyricRaw)) {
+                error_log("makeLyricTimestamp continue");
+                continue;
+            }
+            $data->lyric_raw = json_encode($lyricRaw);
+            $data->save();
+            $time = time();
+            error_log("makeLyricTimestamp $i/$total $data->id saved lyric_raw");
+            error_log("makeLyricTimestamp $i/$total $data->id call http://ai.moonshots.vn/api/lyrics-pro");
+            $result2 = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/lyrics-pro", $input2, array("Content-type: application/json", "platform: AutoWin"), 300000);
+            $data->lyric_pro = json_encode($result2);
+            $data->save();
+            error_log("makeLyricTimestamp $i/$total $data->id saved lyric_pro time=" . (time() - $time) . "s");
+            if (isset($data->local_id) && isset($result2->lyricSync)) {
+                error_log("makeLyricTimestamp $i/$total $data->id saved lyric_text to https://cdn.soundhex.com/api/v1/timestamp/$data->local_id");
+                $lyricSyncText = json_encode($result2->lyricSync);
+                $lyricText = "";
+                foreach ($result2->lyricSync as $line) {
+                    $lyricText .= $line->line . PHP_EOL;
+                }
+                $dataCdn = (object) [
+                            "lyric" => $lyricText,
+                            "lyric_sync" => $lyricSyncText,
+                            "id" => $data->local_id
+                ];
+//                error_log("dataCdn " . json_encode($dataCdn));
+                $rs = RequestHelper::callAPI2("PUT", "https://cdn.soundhex.com/api/v1/timestamp/$data->local_id/", $dataCdn, array('Content-Type: application/json'), 10000);
+                if (isset($rs->id)) {
+                    $data->is_real_lyric = 1;
+                    $data->save();
+                }
+//                error_log("rs Cnd " . json_encode($rs));
+            }
+            $data->log = $data->log . PHP_EOL . Utils::timeToStringGmT7(time()) . " system made lyric_pro";
+            $data->save();
+            error_log("makeLyricTimestamp $i/$total $data->id finished time=" . (time() - $timeStart) . "s");
+//            return $data->lyric_pro;
         }
     }
 

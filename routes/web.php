@@ -1125,6 +1125,9 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
     
     Route::get('/syncSunoLyric', 'BomController@syncSunoLyric')->name('syncSunoLyric');
     Route::get('/makeLyricTimestamp', 'BomController@makeLyricTimestamp')->name('makeLyricTimestamp');
+    Route::get('/musicToText', 'BomController@musicToText')->name('musicToText');
+    
+    Route::post('/api/email/status/update', 'ChannelManagementController@updateEmailMake')->name('updateEmailMake');
     
 });
 

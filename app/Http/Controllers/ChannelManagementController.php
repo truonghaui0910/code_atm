@@ -10,12 +10,12 @@ use App\Common\Network\RequestHelper;
 use App\Common\Utils;
 use App\Common\Youtube\YoutubeHelper;
 use App\Http\Models\AccountInfo;
+use App\Http\Models\AccountInfoMaking;
 use App\Http\Models\BrandManager;
 use App\Http\Models\CardEndsCommand;
 use App\Http\Models\CardEndsConfig;
 use App\Http\Models\ChannelTags;
 use App\Http\Models\GroupChannel;
-use App\Http\Models\MoonshotsStats;
 use App\Http\Models\RebrandChannel;
 use App\Http\Models\RebrandChannelCmd;
 use App\Http\Models\Strikes;
@@ -141,6 +141,23 @@ class ChannelManagementController extends Controller {
         if (isset($request->c8) && $request->c8 != '-1') {
             $datas = $datas->where('wakeup_type', $request->c8);
             $queries['c8'] = $request->c8;
+        }
+        if (isset($request->email_frequency) && !empty($request->email_frequency)) {
+            $emailFrequencies = is_array($request->email_frequency) ? $request->email_frequency : [$request->email_frequency];
+
+            // Lấy danh sách email từ bảng đã pre-computed
+            $validEmails = DB::table('accountinfo_email_count')
+                    ->whereIn('channel_count', $emailFrequencies)
+                    ->pluck('email');
+
+            if ($validEmails->isNotEmpty()) {
+                $datas = $datas->whereIn('note', $validEmails);
+            } else {
+                // Nếu không có email nào match, return empty result
+                $datas = $datas->whereRaw('1 = 0');
+            }
+
+            $queries['email_frequency'] = $request->email_frequency;
         }
         if (isset($request->brand) && $request->brand != '-1') {
             $datas = $datas->where('is_rebrand', $request->brand);
@@ -3122,6 +3139,11 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
     }
 
     function genEmailInfo() {
+        $username = "api";
+        $user = Auth::user();
+        if (isset($user)) {
+            $username = $user->user_name;
+        }
         $string = shell_exec("/home/tools/env/bin/faker --lang=en_US profile");
         Log::info($string);
         if ($string != null) {
@@ -3149,6 +3171,14 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $info->recovery = Utils::genRecovery($acc->note);
             $lastFullEmail = $info->username . Utils::getFirstNameLowercase($info->name) . $dobArr[$id];
             $info->last_full_email = $lastFullEmail;
+            $account = new AccountInfoMaking();
+            $account->user = $username;
+            $account->email = $lastFullEmail;
+            $account->password = $info->pass;
+            $account->recovery = $info->recovery;
+            $account->full_info = json_encode($info);
+            $account->created = Utils::timeToStringGmT7(time());
+            $account->save();
             return response()->json($info);
         }
     }
@@ -3707,6 +3737,30 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             "data48hour" => $data48hour,
             "data60minutes" => $data60minutes
         ];
+    }
+
+    public function updateEmailMake(Request $request) {
+        Log::info("updateEmailMake|request=" . json_encode($request->all()));
+        $platform = $request->header('platform');
+        if ($platform != "autowin") {
+            return response()->json(["status" => "error", "message" => "Wrong system"]);
+        }
+        $data = AccountInfoMaking::where("email", $request->email)->first();
+        if (!$data) {
+            return response()->json(["status" => "error", "message" => "Not found email"]);
+        }
+        if (isset($request->status_email)) {
+            $data->status_email = $request->status_email;
+        }
+        if (isset($request->status_channel)) {
+            $data->status_channel = $request->status_channel;
+        }
+        if (isset($request->profile_id)) {
+            $data->profile_id = trim($request->profile_id);
+        }
+        $data->updated = Utils::timeToStringGmT7(time());
+        $data->save();
+        return response()->json(["status" => "success", "message" => "Updated successfully"]);
     }
 
     //2025/04/03 tiến trình tự dộng change info sau 2 tuần, tính từ thời điểm chuyển kênh, confirm_time (ngày chuyển kênh)

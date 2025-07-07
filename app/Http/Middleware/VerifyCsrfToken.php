@@ -16,7 +16,8 @@ class VerifyCsrfToken extends Middleware
         '/callback/brand','/callback/brandnew','/callback/upload','/callback/wakeup',
         '/callback/api','/callback/comment','callback/commentauto',
         '/callback/login','/callback/channel/create','/callback/fake','/callback/pass/change','/callback/*',
-        'moonseo/notification/*','/studio/drive/*','/ld/*','/bom/spotify/*','/album/status/update','/album/artist/create'
+        'moonseo/notification/*','/studio/drive/*','/ld/*','/bom/spotify/*','/album/status/update','/album/artist/create',
+        '/api/email/status/update'
         //
     ];
 }

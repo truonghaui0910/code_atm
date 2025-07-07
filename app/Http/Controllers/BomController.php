@@ -4231,30 +4231,70 @@ class BomController extends Controller {
         }
     }
 
+    public function musicToText() {
+        $datas = Bom::where("status", 1)
+                        ->where("is_sync_lyric", 1)
+                        ->where("source_type", "SUNO")
+                        ->where("is_releasable", 1)
+                        ->whereNotNull("lyric_text")
+                        ->whereNull("lyric_raw")->take(2000)
+                        ->orderBy("id", "desc")->get();
+//        $datas = Bom::where("id",24042)->get();
+        $total = count($datas);
+        $i = 0;
+        foreach ($datas as $data) {
+            $timeStart = time();
+            $i++;
+            error_log("musicToText $i/$total $data->id");
+
+            $input = (object) [
+                        "file_url" => $data->source_id
+            ];
+            $lyricRaw = null;
+            if ($data->lyric_raw == null || $data->lyric_raw == "" || $data->lyric_raw == "null") {
+                $lyricRaw = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/music-to-text", $input, array("Content-type: application/json", "platform: AutoWin"), 300000);
+            } else {
+//                error_log("data->lyric_raw ".$data->lyric_raw);
+                $lyricRaw = json_decode($data->lyric_raw);
+            }
+
+            if (empty($lyricRaw)) {
+                error_log("musicToText continue");
+                continue;
+            }
+            $data->lyric_raw = json_encode($lyricRaw);
+            $data->save();
+            error_log("musicToText $i/$total $data->id finished time=" . (time() - $timeStart) . "s");
+        }
+    }
+
     public function makeLyricTimestamp() {
-//        $datas = Bom::where("status", 1)
-//                        ->where("is_sync_lyric", 1)
-//                        ->where("source_type", "SUNO")
-//                        ->where("is_releasable", 1)
-//                        ->whereNotNull("lyric_text")
-//                        ->whereNull("lyric_pro")->take(50)
-//                        ->orderBy("id", "desc")->get();
-        $datas = Bom::where("id",24042)->get();
+        $datas = Bom::where("status", 1)
+                        ->where("is_sync_lyric", 1)
+                        ->where("source_type", "SUNO")
+                        ->where("is_releasable", 1)
+                        ->whereNotNull("lyric_raw")
+                        ->whereNull("lyric_pro")->take(500)
+                        ->orderBy("id", "desc")->get();
+//        $datas = Bom::where("id",24042)->get();
         $total = count($datas);
         $i = 0;
         foreach ($datas as $data) {
             $timeStart = time();
             $i++;
             error_log("makeLyricTimestamp $i/$total $data->id");
-     
+
             $input = (object) [
                         "file_url" => $data->source_id
             ];
             $lyricRaw = null;
             if ($data->lyric_raw == null || $data->lyric_raw == "" || $data->lyric_raw == "null") {
-                $lyricRaw = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/speech-to-text", $input, array("Content-type: application/json", "platform: AutoWin"), 300000);
+                $lyricRaw = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/music-to-text", $input, array("Content-type: application/json", "platform: AutoWin"), 300000);
+                $data->lyric_raw = json_encode($lyricRaw);
+                $data->save();
+                error_log("makeLyricTimestamp $i/$total $data->id saved lyric_raw");
             } else {
-                error_log("data->lyric_raw ".$data->lyric_raw);
+//                error_log("data->lyric_raw ".$data->lyric_raw);
                 $lyricRaw = json_decode($data->lyric_raw);
             }
 //            Log::info("rs" . json_encode($result));
@@ -4262,15 +4302,14 @@ class BomController extends Controller {
                         "lyrics_raw" => $lyricRaw,
                         "lyrics_text" => $data->lyric_text
             ];
-            error_log(json_encode($lyricRaw));
+//            error_log(json_encode($lyricRaw));
             if (empty($lyricRaw)) {
                 error_log("makeLyricTimestamp continue");
                 continue;
             }
-            $data->lyric_raw = json_encode($lyricRaw);
-            $data->save();
+
             $time = time();
-            error_log("makeLyricTimestamp $i/$total $data->id saved lyric_raw");
+
             error_log("makeLyricTimestamp $i/$total $data->id call http://ai.moonshots.vn/api/lyrics-pro");
             $result2 = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/lyrics-pro", $input2, array("Content-type: application/json", "platform: AutoWin"), 300000);
             $data->lyric_pro = json_encode($result2);

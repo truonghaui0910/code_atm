@@ -626,11 +626,20 @@
                                                             data-mutiple="0" onclick="javascript:void(0)"><i
                                                                 class="ion-trash-a"></i>
                                                             Delete Song</a>
+                                                        @if(!empty($data->direct_link))
                                                         <a class="dropdown-item  cur-poiter" target="blank" href="{{$data->direct_link}}"
                                                             data-boom-id="{{ $data->id }}" 
                                                             ><i
                                                                 class="fa fa-share-alt"></i>
-                                                            Direct</a>
+                                                            Direct .mp3</a>
+                                                        @endif
+                                                        @if($data->source_type=="SUNO" && !empty($data->direct_wav))
+                                                        <a class="dropdown-item  cur-poiter" target="blank" href="{{$data->direct_wav}}"
+                                                            data-boom-id="{{ $data->id }}" 
+                                                            ><i
+                                                                class="fa fa-share-alt"></i>
+                                                            Direct .wav</a>
+                                                        @endif
                                                     </div>
                                                 </span>
                                             </td>

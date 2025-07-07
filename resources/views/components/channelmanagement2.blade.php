@@ -1335,8 +1335,13 @@
             font-size: 11px;
             font-weight: normal;
             margin-left: 5px;
+            cursor: pointer; 
+            transition: all 0.1s ease; 
         }
-
+        .gmail-count:hover {
+            background-color: #dc3545;
+            transform: scale(1.1);
+        }
 
         .tag-suggestions-list {
             max-height: 200px;
@@ -2059,21 +2064,7 @@
     border-color: #ef233c;
 }
 
-/* Gmail count update */
-/*.gmail-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    background-color: #007bff;
-    color: white;
-    border-radius: 50%;
-    font-size: 11px;
-    font-weight: bold;
-    margin-left: 6px;
-    min-width: 20px;
-}*/
+
 
 /* More channels indicator */
 .more-channels-indicator {
@@ -2098,7 +2089,57 @@
     background-color: #495057;
     transform: scale(1.2);
     z-index: 10;
-}    
+}
+
+.email-frequency-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.frequency-option {
+    position: relative;
+}
+
+.frequency-option input[type="checkbox"] {
+    display: none;
+}
+
+.frequency-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px 10px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 60px;
+    text-align: center;
+}
+
+.frequency-label:hover {
+    border-color: #007bff;
+    background-color: #f8f9ff;
+}
+
+.frequency-option input[type="checkbox"]:checked + .frequency-label {
+    border-color: #007bff;
+    background-color: #007bff;
+    color: white;
+}
+
+.frequency-number {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.frequency-text {
+    font-size: 11px;
+    opacity: 0.8;
+}
     </style>
 
     <div id="filterPanel" class="filter-panel">
@@ -2150,6 +2191,7 @@
                                         </div>
                                     </div>
                                 </div>
+
 
                                 @if ($is_admin_music)
                                     <div class="col-md-6">
@@ -2246,6 +2288,71 @@
                                         </div>
                                     </div>
                                 </div>
+<!--                                <div class="col-md-6">
+                                    <div class="form-group row">
+                                        <label class="col-8 col-form-label">Email Frequency</label>
+                                        <div class="col-12">
+                                            <select id="email_frequency" class="form-control" 
+                                                    name="email_frequency[]" multiple
+                                                    multiple style="height: 140px">>
+                                                <option value="1" {{ in_array('1', $request->email_frequency ?? []) ? 'selected' : '' }}>1 channel</option>
+                                                <option value="2" {{ in_array('2', $request->email_frequency ?? []) ? 'selected' : '' }}>2 channels</option>
+                                                <option value="3" {{ in_array('3', $request->email_frequency ?? []) ? 'selected' : '' }}>3 channels</option>
+                                                <option value="4" {{ in_array('4', $request->email_frequency ?? []) ? 'selected' : '' }}>4 channels</option>
+                                                <option value="5" {{ in_array('5', $request->email_frequency ?? []) ? 'selected' : '' }}>5 channels</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>-->
+                                <div class="col-md-6">
+                                    <div class="form-group row">
+                                        <label class="col-8 col-form-label">Email Frequency</label>
+                                        <div class="col-12">
+                                            <div class="email-frequency-container">
+                                                <div class="frequency-option">
+                                                    <input type="checkbox" id="freq_1" name="email_frequency[]" value="1" 
+                                                           {{ in_array('1', $request->email_frequency ?? []) ? 'checked' : '' }}>
+                                                    <label for="freq_1" class="frequency-label">
+                                                        <span class="frequency-number">1</span>
+                                                        <span class="frequency-text">channel</span>
+                                                    </label>
+                                                </div>
+                                                <div class="frequency-option">
+                                                    <input type="checkbox" id="freq_2" name="email_frequency[]" value="2"
+                                                           {{ in_array('2', $request->email_frequency ?? []) ? 'checked' : '' }}>
+                                                    <label for="freq_2" class="frequency-label">
+                                                        <span class="frequency-number">2</span>
+                                                        <span class="frequency-text">channels</span>
+                                                    </label>
+                                                </div>
+                                                <div class="frequency-option">
+                                                    <input type="checkbox" id="freq_3" name="email_frequency[]" value="3"
+                                                           {{ in_array('3', $request->email_frequency ?? []) ? 'checked' : '' }}>
+                                                    <label for="freq_3" class="frequency-label">
+                                                        <span class="frequency-number">3</span>
+                                                        <span class="frequency-text">channels</span>
+                                                    </label>
+                                                </div>
+                                                <div class="frequency-option">
+                                                    <input type="checkbox" id="freq_4" name="email_frequency[]" value="4"
+                                                           {{ in_array('4', $request->email_frequency ?? []) ? 'checked' : '' }}>
+                                                    <label for="freq_4" class="frequency-label">
+                                                        <span class="frequency-number">4</span>
+                                                        <span class="frequency-text">channels</span>
+                                                    </label>
+                                                </div>
+                                                <div class="frequency-option">
+                                                    <input type="checkbox" id="freq_5" name="email_frequency[]" value="5"
+                                                           {{ in_array('5', $request->email_frequency ?? []) ? 'checked' : '' }}>
+                                                    <label for="freq_5" class="frequency-label">
+                                                        <span class="frequency-number">5</span>
+                                                        <span class="frequency-text">channels</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+</div>
 
                             </div>
                         </div>
@@ -6216,12 +6323,35 @@ function updateLocalStorageOrder() {
         $(document).ready(function() {
             updateAllTrackButtons();
             updateChartButtonBadge();
-            $('.mini-channel-avatar').on('error', function() {
-                // Nếu avatar load lỗi, thay bằng placeholder
-                const channelName = $(this).attr('alt');
-                const firstLetter = channelName ? channelName.charAt(0).toUpperCase() : '?';
-                $(this).attr('src', `https://via.placeholder.com/48x48/6c757d/ffffff?text=${encodeURIComponent(firstLetter)}`);
+
+//            $(document).on('click', '.gmail-count', function(e) {
+//                e.preventDefault();
+//                e.stopPropagation();
+//
+//                var count = $(this).text(); // Lấy số count (1, 2, 3, ...)
+//
+//                // Set giá trị cho selectbox email_frequency
+//                $('#email_frequency').val([count]);
+//
+//                // Trigger form submit để filter
+//                $('#form-search').submit();
+//            });
+            $(document).on('click', '.gmail-count', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var count = $(this).text();
+
+                // Clear tất cả checkbox trước
+                $('input[name="email_frequency[]"]').prop('checked', false);
+
+                // Check checkbox tương ứng
+                $('input[name="email_frequency[]"][value="' + count + '"]').prop('checked', true);
+
+                // Submit form
+                $('#form-search').submit();
             });
+            $('.gmail-count').attr('title', 'Click to filter by this email count');
         });
     </script>
 @endsection

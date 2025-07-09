@@ -205,49 +205,53 @@
             max-width: 100%;
             display: block;
         }
-        
-    .action-buttons .btn {
-    transition: all 0.3s ease;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .action-buttons .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-    .stat-box {
-        border-radius: 8px;
-        padding: 10px 20px;
-        margin-right: 10px;
-        text-align: center;
-        background-color: #f8f9fa;
-    }
-    .shadow-sm {
-        box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
-    }
 
-    .preview-image {
-        width: 100%;
-        min-height: 200px;
-        object-fit: cover;
-        border-radius: 5px;
-        border: 1px dashed #ced4da;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #6c757d;
-        background-color: #f8f9fa;
-    }
-    .group_item{
-        padding-top: 5px;
-        padding-bottom: 5px;
-    }
-    .group_item:hover{
-        background: #ccc;
-        border-radius: 10px;
-    }
+        .action-buttons .btn {
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
 
+        .action-buttons .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-box {
+            border-radius: 8px;
+            padding: 10px 20px;
+            margin-right: 10px;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+
+        .shadow-sm {
+            box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
+        }
+
+        .preview-image {
+            width: 100%;
+            min-height: 200px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px dashed #ced4da;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            background-color: #f8f9fa;
+        }
+
+        .group_item {
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        .group_item:hover {
+            background: #ccc;
+            border-radius: 10px;
+        }
     </style>
     <div class="row">
         <div class="col-sm-12">
@@ -260,16 +264,10 @@
                             class="fa fa-music"></i></button>
                     <button data-toggle="tooltip" data-placement="top" data-original-title="Export to csv" type="button"
                         class=" m-l-5 btn btn-outline-info btn-export"><i class="fa fa-file-excel-o"></i></button>
-                        @if($is_admin_music)
-                    <button data-toggle="tooltip" 
-                            data-placement="top" 
-                            data-original-title="Create Album" 
-                            type="button"
-                            onclick='albumModal()'
-                            class=" m-l-5 btn btn-outline-info">
-                        <i class="fas fa-compact-disc"></i>
+                    <button data-toggle="tooltip" data-placement="top" data-original-title="Get Lyrics" type="button"
+                        onclick='getLyricsModal()' class=" m-l-5 btn btn-outline-info">
+                        <i class="fas fa-microphone-alt"></i>
                     </button>
-                        @endif
                 </h4>
                 <ol class="breadcrumb float-right">
                     <li class="breadcrumb-item"><a href="#">Automusic</a></li>
@@ -351,8 +349,8 @@
                                 <div class="form-group row">
                                     <label class="col-6 col-form-label">User</label>
                                     <div class="col-12">
-                                        <select class="form-control search_select" name="c5" data-show-subtext="true" value="{{$request->c5}}"
-                                            data-live-search="true">
+                                        <select class="form-control search_select" name="c5" data-show-subtext="true"
+                                            value="{{ $request->c5 }}" data-live-search="true">
                                             {!! $list_users !!}
                                         </select>
                                     </div>
@@ -427,8 +425,8 @@
                                         </p>
                                     </div>
                                 </div>
-                                <a id="btn-edit-gr" style="right: 30px;bottom: 0px;"
-                                    class="cur-poiter position-absolute" data-type="edit_group"
+                                <a id="btn-edit-gr" style="right: 30px;bottom: 0px;" class="cur-poiter position-absolute"
+                                    data-type="edit_group"
                                     onclick="showEditBomGroup({{ $selected_group->id }}, '{{ base64_encode($selected_group->name) }}', '@if ($selected_group->description != null) {{ base64_encode($selected_group->description) }} @endif')">
                                     <i class="fa fa-pencil"></i></a>
                                 <a style="right: 10px;bottom: 0px;" class="btn-priority-song cur-poiter position-absolute"
@@ -443,16 +441,20 @@
                     <div class="row">
                         <div class="col-md-12">
                             <button id="addToGroupBtn" data-mutiple="1"
-                                class="btn-group-open btn btn-sm btn-secondary"><i class="fa fa-plus mr-2"></i>Add to Group</button>
+                                class="btn-group-open btn btn-sm btn-secondary"><i class="fa fa-plus mr-2"></i>Add to
+                                Group</button>
                             @if ($selected_group != null)
                                 <button id="removeFromGroupBtn" data-mutiple="1"
                                     onclick="deleteFromGroup({{ $selected_group->id }})"
-                                    class="btn btn-sm btn-secondary"><i class="fa fa-minus mr-2"></i>Remove from Group</button>
+                                    class="btn btn-sm btn-secondary"><i class="fa fa-minus mr-2"></i>Remove from
+                                    Group</button>
                             @endif
                             <button id="setReleasableBtn" data-mutiple="1" data-type="set_releasable"
-                                    class="btn btn-sm btn-info btn-remove-song"><i class="fa fa-check-circle mr-1"></i> Set Releasable</button>
+                                class="btn btn-sm btn-info btn-remove-song"><i class="fa fa-check-circle mr-1"></i> Set
+                                Releasable</button>
                             <button id="deleteBtn" data-mutiple="1" data-type="delete_song"
-                                class="btn btn-sm btn-danger btn-remove-song"> <i class="fa fa-trash mr-1"></i> Delete</button>
+                                class="btn btn-sm btn-danger btn-remove-song"> <i class="fa fa-trash mr-1"></i>
+                                Delete</button>
                         </div>
                     </div>
                 </div>
@@ -496,10 +498,10 @@
                                                 </div>
                                             </td>
                                             <td>{{ $data->id }}<br>
-                                                @if($data->direct_wav!=null)
+                                                @if ($data->direct_wav != null)
                                                     <span class="badge badge-success">.wav</span>
                                                 @endif
-                                                @if($data->is_releasable==2)
+                                                @if ($data->is_releasable == 2)
                                                     <span class="badge badge-danger">duplicate</span>
                                                 @endif
                                             </td>
@@ -533,14 +535,15 @@
                                             </td>
                                             <td style="text-align: left" class="text-ellipsis">{{ $data->artist }}</td>
                                             <td style="text-align: left" class="text-ellipsis">
-                                                @if($data->album_cover!=null)
-                                                <img class="rounded-circle img-cover" src="{{$data->album_cover}}" width="40" height="40">
+                                                @if ($data->album_cover != null)
+                                                    <img class="rounded-circle img-cover" src="{{ $data->album_cover }}"
+                                                        width="40" height="40">
                                                 @endif
                                                 {{ $data->album_name }}
                                             </td>
                                             <td>
                                                 {!! nl2br(e(str_replace(' ', "\n", $data->created))) !!}
-                                               
+
                                             </td>
                                             <!--<td>{{ $data->last_used }}</td>-->
                                             <!--<td>{{ $data->user_used }}</td>-->
@@ -616,7 +619,7 @@
                                                                 onclick="javascript:void(0)"><i class="fa fa-times"></i>
                                                                 Remove From Group</a>
                                                         @endif
-                                                         <a class="dropdown-item btn-remove-song cur-poiter"
+                                                        <a class="dropdown-item btn-remove-song cur-poiter"
                                                             data-boom-id="{{ $data->id }}" data-type="set_releasable"
                                                             data-mutiple="0" onclick="javascript:void(0)"><i
                                                                 class="fa fa-check-circle"></i>
@@ -626,19 +629,19 @@
                                                             data-mutiple="0" onclick="javascript:void(0)"><i
                                                                 class="ion-trash-a"></i>
                                                             Delete Song</a>
-                                                        @if(!empty($data->direct_link))
-                                                        <a class="dropdown-item  cur-poiter" target="blank" href="{{$data->direct_link}}"
-                                                            data-boom-id="{{ $data->id }}" 
-                                                            ><i
-                                                                class="fa fa-share-alt"></i>
-                                                            Direct .mp3</a>
+                                                        @if (!empty($data->direct_link))
+                                                            <a class="dropdown-item  cur-poiter" target="blank"
+                                                                href="{{ $data->direct_link }}"
+                                                                data-boom-id="{{ $data->id }}"><i
+                                                                    class="fa fa-share-alt"></i>
+                                                                Direct .mp3</a>
                                                         @endif
-                                                        @if($data->source_type=="SUNO" && !empty($data->direct_wav))
-                                                        <a class="dropdown-item  cur-poiter" target="blank" href="{{$data->direct_wav}}"
-                                                            data-boom-id="{{ $data->id }}" 
-                                                            ><i
-                                                                class="fa fa-share-alt"></i>
-                                                            Direct .wav</a>
+                                                        @if ($data->source_type == 'SUNO' && !empty($data->direct_wav))
+                                                            <a class="dropdown-item  cur-poiter" target="blank"
+                                                                href="{{ $data->direct_wav }}"
+                                                                data-boom-id="{{ $data->id }}"><i
+                                                                    class="fa fa-share-alt"></i>
+                                                                Direct .wav</a>
                                                         @endif
                                                     </div>
                                                 </span>
@@ -724,29 +727,201 @@
     @include('dialog.bom.bomgrouplist')
     @include('dialog.bom.bomgroupadd')
     @include('dialog.bom.add_album')
+    @include('dialog.bom.get_lyrics')
 @endsection
 
 @section('script')
     <script type="text/javascript">
-                    // Handle album cover preview click
-            $('#imagePreview').click(function() {
-                $('#albumCover').click();
-            });
+        function getLyricsModal() {
+            if ($('#dialog_get_lyrics').is(':visible')) {
+                console.log('Get Lyrics Modal is visible');
+            } else {
+                console.log('Get Lyrics Modal is hidden');
+                $('#dialog_get_lyrics').modal("show");
+            }
+        }
+        $('#getLyricsBtn').on('click', function(e) {
+    e.preventDefault();
+    
+    const pageUrl = $('#lyricsUrl').val().trim();
+    
+    // Validate URL
+    if (!pageUrl) {
+        alert('Please enter a valid URL!');
+        return;
+    }
+    
+    if (!pageUrl.includes('letras.com')) {
+        alert('Please enter a valid letras.com URL!');
+        return;
+    }
+    
+    // Show loading state
+    const $btn = $(this);
+    const originalText = $btn.html();
+    $btn.html('<i class="fa fa-spinner fa-spin"></i> Getting Lyrics...');
+    $btn.prop('disabled', true);
+    
+    // Send request to server
+    $.ajax({
+        type: "POST",
+        url: "/getLyrics",
+        data: {
+            page_url: pageUrl,
+            _token: $('input[name="_token"]').val()
+        },
+        dataType: 'json',
+        success: function(data) {
+            if (data.status === 'success') {
+                // Xử lý encoding UTF-8 đúng cách
+                const lyricsText = data.lyrics;
+                
+                // Tạo file với encoding UTF-8 BOM để đảm bảo hiển thị đúng
+                const BOM = '\uFEFF'; // UTF-8 BOM
+                const fileContent = BOM + lyricsText;
+                
+                // Tạo blob với charset UTF-8
+                const blob = new Blob([fileContent], { 
+                    type: 'text/plain;charset=utf-8' 
+                });
+                
+                // Tạo tên file từ URL
+                const urlParts = pageUrl.split('/');
+                const artistName = urlParts[urlParts.length - 2] || 'lyrics';
+                const fileName = `${artistName}_lyrics.txt`;
+                
+                // Download file
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Close modal and reset form
+                $('#dialog_get_lyrics').modal('hide');
+                $('#lyricsUrl').val('');
+                
+                $.Notification.notify('success', 'top center', '', 'Lyrics downloaded successfully!');
+            } else {
+                $.Notification.notify('error', 'top center', '', data.message || 'Error getting lyrics');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('Error:', error);
+            let errorMessage = 'Error: ' + error;
             
-            // Handle file selection for album cover
-            $('#albumCover').change(function() {
-                const file = this.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        $('#imagePreview').html(`
+            // Hiển thị lỗi chi tiết nếu có
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            
+            $.Notification.notify('error', 'top center', '', errorMessage);
+        },
+        complete: function() {
+            // Reset button state
+            $btn.html(originalText);
+            $btn.prop('disabled', false);
+        }
+    });
+});
+
+//        // Handle Get Lyrics form submit
+//        $('#getLyricsBtn').on('click', function(e) {
+//            e.preventDefault();
+//
+//            const pageUrl = $('#lyricsUrl').val().trim();
+//
+//            // Validate URL
+//            if (!pageUrl) {
+//                alert('Please enter a valid URL!');
+//                return;
+//            }
+//
+//            if (!pageUrl.includes('letras.com')) {
+//                alert('Please enter a valid letras.com URL!');
+//                return;
+//            }
+//
+//            // Show loading state
+//            const $btn = $(this);
+//            const originalText = $btn.html();
+//            $btn.html('<i class="fa fa-spinner fa-spin"></i> Getting Lyrics...');
+//            $btn.prop('disabled', true);
+//
+//            // Send request to server
+//            $.ajax({
+//                type: "POST",
+//                url: "/getLyrics",
+//                data: {
+//                    page_url: pageUrl,
+//                    _token: $('input[name="_token"]').val()
+//                },
+//                dataType: 'json',
+//                success: function(data) {
+//                    if (data.status === 'success') {
+//                        // Download the text file
+//                        const blob = new Blob([data.lyrics], {
+//                            type: 'text/plain'
+//                        });
+//                        const url = window.URL.createObjectURL(blob);
+//                        const a = document.createElement('a');
+//                        a.href = url;
+//                        a.download = 'lyrics.txt';
+//                        document.body.appendChild(a);
+//                        a.click();
+//                        window.URL.revokeObjectURL(url);
+//                        document.body.removeChild(a);
+//
+//                        // Close modal and reset form
+//                        $('#dialog_get_lyrics').modal('hide');
+//                        $('#lyricsUrl').val('');
+//
+//                        $.Notification.notify('success', 'top center', '',
+//                            'Lyrics downloaded successfully!');
+//                    } else {
+//                        $.Notification.notify('error', 'top center', '', data.message ||
+//                            'Error getting lyrics');
+//                    }
+//                },
+//                error: function(xhr, status, error) {
+//                    console.log('Error:', error);
+//                    $.Notification.notify('error', 'top center', '', 'Error: ' + error);
+//                },
+//                complete: function() {
+//                    // Reset button state
+//                    $btn.html(originalText);
+//                    $btn.prop('disabled', false);
+//                }
+//            });
+//        });
+
+        // Reset modal when closed
+        $('#dialog_get_lyrics').on('hidden.bs.modal', function() {
+            $('#lyricsUrl').val('');
+        });
+        // Handle album cover preview click
+        $('#imagePreview').click(function() {
+            $('#albumCover').click();
+        });
+
+        // Handle file selection for album cover
+        $('#albumCover').change(function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#imagePreview').html(`
                             <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;">
                         `);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        function albumModal(){
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function albumModal() {
             if ($('#dialog_album_add').is(':visible')) {
                 console.log('Modal is visible');
             } else {
@@ -754,113 +929,113 @@
                 $('#dialog_album_add').modal("show");
             }
         }
-        
-            $('#resetBtn').click(function() {
-                $('#createAlbumForm')[0].reset();
-                $('#imagePreview').html('<i class="fas fa-compact-disc fa-3x music-icon"></i>');
-                $('.custom-file-label').html('Choose image');
-                $('#successMessage').hide();
-                
-                // Remove all tracks except the first one
-                $('#tracksContainer .track-item:not(:first)').remove();
-                
-                // Reset first track
-                const firstTrack = $('#tracksContainer .track-item:first');
-                firstTrack.find('.track-title').val('');
-                firstTrack.find('.track-artist').val('');
-                firstTrack.find('.track-duration').val('');
-                firstTrack.find('.track-file').val('');
-                firstTrack.find('.custom-file-label').html('Choose audio file');
-                firstTrack.find('.remove-track-btn').hide();
-            });
-            
-            // Submit form
-            $('#submitAlbum').on('click', function(e) {
-                e.preventDefault();
-//                var form = $("#form-album").serialize();
-//                const albumCover = $('#albumCover')[0].files[0];
-  
-                // Validate data
-                const albumTitle = $('#albumTitle').val();
-                const albumArtist = $('#albumArtist').val();
-                const albumGenre = $('#albumGenre').val();
-                const albumCover = $('#albumCover')[0].files[0];
-                
-                if (!albumTitle || !albumArtist || !albumGenre || !albumCover) {
-                    alert('Please fill in all required album information!');
-                    return;
-                }
-                
-//                // Validate tracks
-//                let isValid = true;
-//                const tracks = [];
-//                
-//                $('#tracksContainer .track-item').each(function() {
-//                    const trackTitle = $(this).find('.track-title').val();
-//                    if (!trackTitle) {
-//                        alert('Please enter a title for all tracks!');
-//                        isValid = false;
-//                        return false;
-//                    }
-//                    
-//                    const trackData = {
-//                        title: trackTitle,
-//                        artist: $(this).find('.track-artist').val(),
-//                        duration: $(this).find('.track-duration').val(),
-//                        file: $(this).find('.track-file')[0].files[0]
-//                    };
-//                    
-//                    tracks.push(trackData);
-//                });
-//                
-//                if (!isValid) return;
-                
-                // Show loading spinner
-                $('#loadingSpinner').show();
-                $('#submitIcon').hide();
-                $('#submitBtn').attr('disabled', true);
-                
-                // Prepare data
-                const formData = new FormData();
-                formData.append('_token', $('input[name="_token"]').val());
-                formData.append('title', albumTitle);
-                formData.append('artist', albumArtist);
-//                formData.append('description', $('#albumDescription').val());
-                formData.append('genre', albumGenre);
-                formData.append('releaseDate', $('#releaseDate').val());
-//                formData.append('recordLabel', $('#recordLabel').val());
-//                formData.append('tags', $('#albumTags').val());
-//                formData.append('privacy', $('input[name="privacy"]:checked').val());
-                formData.append('albumCover', albumCover);
-                
-//              $.ajax({
-//                type: "POST",
-//                url: "/addAlbum",
-//                data: formData,
-//                dataType: 'json',
-//                success: function(data) {
-//                    $.Notification.autoHideNotify(data.status, 'top right', 'Notify', data.message);
-//                },
-//                error: function(data) {
-//
-//                }
-//            });            
-                
-                
-                
-//                // Add track information
-//                tracks.forEach((track, index) => {
-//                    formData.append(`tracks[${index}][title]`, track.title);
-//                    formData.append(`tracks[${index}][artist]`, track.artist || albumArtist);
-//                    formData.append(`tracks[${index}][duration]`, track.duration);
-//                    if (track.file) {
-//                        formData.append(`tracks[${index}][audioFile]`, track.file);
-//                    }
-//                });
-                
-//                // Call API to create album
-//                // Change URL to match your API
-                fetch('/addAlbum', {
+
+        $('#resetBtn').click(function() {
+            $('#createAlbumForm')[0].reset();
+            $('#imagePreview').html('<i class="fas fa-compact-disc fa-3x music-icon"></i>');
+            $('.custom-file-label').html('Choose image');
+            $('#successMessage').hide();
+
+            // Remove all tracks except the first one
+            $('#tracksContainer .track-item:not(:first)').remove();
+
+            // Reset first track
+            const firstTrack = $('#tracksContainer .track-item:first');
+            firstTrack.find('.track-title').val('');
+            firstTrack.find('.track-artist').val('');
+            firstTrack.find('.track-duration').val('');
+            firstTrack.find('.track-file').val('');
+            firstTrack.find('.custom-file-label').html('Choose audio file');
+            firstTrack.find('.remove-track-btn').hide();
+        });
+
+        // Submit form
+        $('#submitAlbum').on('click', function(e) {
+            e.preventDefault();
+            //                var form = $("#form-album").serialize();
+            //                const albumCover = $('#albumCover')[0].files[0];
+
+            // Validate data
+            const albumTitle = $('#albumTitle').val();
+            const albumArtist = $('#albumArtist').val();
+            const albumGenre = $('#albumGenre').val();
+            const albumCover = $('#albumCover')[0].files[0];
+
+            if (!albumTitle || !albumArtist || !albumGenre || !albumCover) {
+                alert('Please fill in all required album information!');
+                return;
+            }
+
+            //                // Validate tracks
+            //                let isValid = true;
+            //                const tracks = [];
+            //                
+            //                $('#tracksContainer .track-item').each(function() {
+            //                    const trackTitle = $(this).find('.track-title').val();
+            //                    if (!trackTitle) {
+            //                        alert('Please enter a title for all tracks!');
+            //                        isValid = false;
+            //                        return false;
+            //                    }
+            //                    
+            //                    const trackData = {
+            //                        title: trackTitle,
+            //                        artist: $(this).find('.track-artist').val(),
+            //                        duration: $(this).find('.track-duration').val(),
+            //                        file: $(this).find('.track-file')[0].files[0]
+            //                    };
+            //                    
+            //                    tracks.push(trackData);
+            //                });
+            //                
+            //                if (!isValid) return;
+
+            // Show loading spinner
+            $('#loadingSpinner').show();
+            $('#submitIcon').hide();
+            $('#submitBtn').attr('disabled', true);
+
+            // Prepare data
+            const formData = new FormData();
+            formData.append('_token', $('input[name="_token"]').val());
+            formData.append('title', albumTitle);
+            formData.append('artist', albumArtist);
+            //                formData.append('description', $('#albumDescription').val());
+            formData.append('genre', albumGenre);
+            formData.append('releaseDate', $('#releaseDate').val());
+            //                formData.append('recordLabel', $('#recordLabel').val());
+            //                formData.append('tags', $('#albumTags').val());
+            //                formData.append('privacy', $('input[name="privacy"]:checked').val());
+            formData.append('albumCover', albumCover);
+
+            //              $.ajax({
+            //                type: "POST",
+            //                url: "/addAlbum",
+            //                data: formData,
+            //                dataType: 'json',
+            //                success: function(data) {
+            //                    $.Notification.autoHideNotify(data.status, 'top right', 'Notify', data.message);
+            //                },
+            //                error: function(data) {
+            //
+            //                }
+            //            });            
+
+
+
+            //                // Add track information
+            //                tracks.forEach((track, index) => {
+            //                    formData.append(`tracks[${index}][title]`, track.title);
+            //                    formData.append(`tracks[${index}][artist]`, track.artist || albumArtist);
+            //                    formData.append(`tracks[${index}][duration]`, track.duration);
+            //                    if (track.file) {
+            //                        formData.append(`tracks[${index}][audioFile]`, track.file);
+            //                    }
+            //                });
+
+            //                // Call API to create album
+            //                // Change URL to match your API
+            fetch('/addAlbum', {
                     method: 'POST',
                     body: formData,
                     // If authentication is needed
@@ -877,10 +1052,13 @@
                 .then(data => {
                     // Show success message
                     $('#successMessage').show();
-                    
+
                     // Scroll to top
-                    window.scrollTo({top: 0, behavior: 'smooth'});
-                    
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+
                     console.log('Album created successfully:', data);
                 })
                 .catch(error => {
@@ -893,16 +1071,16 @@
                     $('#submitIcon').show();
                     $('#submitBtn').attr('disabled', false);
                 });
-            });        
-        
-        
-        
-        
-        
+        });
+
+
+
+
+
         @if ($selected_group != null)
             $("#editIcon").on("click", function() {
                 $("#groupNameText, #editIcon").hide();
-//                $("#groupNameInput").show().focus();
+                //                $("#groupNameInput").show().focus();
                 let input = $("#groupNameInput").show().focus();
 
                 // Đưa con trỏ xuống cuối nội dung
@@ -934,7 +1112,7 @@
                         if (data.status == "success") {
                             $("#btn-edit-gr").attr("onclick",
                                 `showEditBomGroup(${data.data.id},'${btoa(data.data.name)}','${btoa(data.data.description)}')`
-                                );
+                            );
                         }
                     },
                     error: function() {}
@@ -1157,7 +1335,7 @@
                 $(".div_1_song").hide();
                 $(".div_2_song").show();
                 $(".div_check_udio").hide();
-            }else {
+            } else {
                 $(".div_1_song").show();
                 $(".div_check_udio").hide();
                 $(".div_2_song").hide();
@@ -1302,13 +1480,13 @@
                         $("#group_name").val("");
                         $("#group_des").val("");
                         $("#dialog_bom_group_add").modal("hide");
-                        if(data.is_edit==1){
+                        if (data.is_edit == 1) {
                             $("#groupNameText").html(data.data.name);
                             $("#groupNameInput").val(data.data.name);
                             $("#groupDesText").html(data.data.description);
                             $("#btn-edit-gr").attr("onclick",
                                 `showEditBomGroup(${data.data.id},'${btoa(data.data.name)}','${btoa(data.data.description)}')`
-                                );
+                            );
                         }
                     }
                 },
@@ -1453,7 +1631,8 @@
                     if (data.status == "success") {
                         if (data.type == 'deezer') {
                             window.open('http://lyric.automusic.win?track_id=' + data.id + '&url=' +
-                                data.url + '&username=' + data.username + '&type=noclaim&deezer_art_id=-1&cam_id='+
+                                data.url + '&username=' + data.username +
+                                '&type=noclaim&deezer_art_id=-1&cam_id=' +
                                 data.cam_id, '_blank');
                         } else {
                             window.open('http://lyric.automusic.win?audio_url=' + data.url +
@@ -1463,16 +1642,15 @@
                                 data.id, '_blank'
                             );
                         }
-                        
-                            window.open(`http://lyric.automusic.win?audio_url=${data.url}
+
+                        window.open(`http://lyric.automusic.win?audio_url=${data.url}
                                 &username=${data.username}
                                 &artist=${data.artist}
                                 &title=${data.title}
                                 &lyric=${data.lyric}
                                 &type=noclaim
                                 &deezer_art_id=-1
-                                &cam_id=${data.id}, _blank`
-                            );
+                                &cam_id=${data.id}, _blank`);
                         location.reload();
                     }
 
@@ -1565,7 +1743,7 @@
                                     $.Notification.notify(data.status, 'top center', '',
                                         data.message);
                                     if (data.status == "success") {
-                                        if(type=='delete_song'){
+                                        if (type == 'delete_song') {
                                             if (mutiple == '0') {
                                                 $this.closest("tr").hide();
                                             } else {
@@ -1607,7 +1785,7 @@
                     confirm: {
                         text: 'Confirm',
                         btnClass: 'btn-red',
-                        action: function () {
+                        action: function() {
                             $.ajax({
                                 type: "GET",
                                 url: "boomRemove",
@@ -1619,7 +1797,8 @@
                                 dataType: 'json',
                                 success: function(data) {
                                     $this.html($this.data('original-text'));
-                                    $.Notification.notify(data.status, 'top center', '', data.message);
+                                    $.Notification.notify(data.status, 'top center', '',
+                                        data.message);
                                     if (data.status == "success") {
                                         if (data.is_vip === 1) {
                                             $this.addClass("color-red");
@@ -1641,13 +1820,13 @@
                             });
                         }
                     },
-                    cancel: function () {
+                    cancel: function() {
 
                     }
 
                 }
             });
-            
+
 
 
         });
@@ -1710,28 +1889,28 @@
             e.preventDefault();
             clearForm2();
             groupList(0, 0, 1);
-//            toggleSelectSkeletonLoading(true);
+            //            toggleSelectSkeletonLoading(true);
             $(".select-container .search_select").hide();
-//            $.ajax({
-//                type: "GET",
-//                url: "/getOvertonePlaylist",
-//                //            url: "/getOverTonePlaylistId",
-//                data: {},
-//                dataType: 'text',
-//                success: function(data) {
-//                    $('#overtone_playlist_id').html(data);
-//                    $('#overtone_playlist_id').selectpicker('destroy');
-//                    $('#overtone_playlist_id').selectpicker('render');
-//                    toggleSelectSkeletonLoading(false);
-//                    $(".select-container .search_select").show();
-//                },
-//                error: function(data) {
-//                    console.log('Error:', data);
-//                    toggleSelectSkeletonLoading(false);
-//
-//
-//                }
-//            });
+            //            $.ajax({
+            //                type: "GET",
+            //                url: "/getOvertonePlaylist",
+            //                //            url: "/getOverTonePlaylistId",
+            //                data: {},
+            //                dataType: 'text',
+            //                success: function(data) {
+            //                    $('#overtone_playlist_id').html(data);
+            //                    $('#overtone_playlist_id').selectpicker('destroy');
+            //                    $('#overtone_playlist_id').selectpicker('render');
+            //                    toggleSelectSkeletonLoading(false);
+            //                    $(".select-container .search_select").show();
+            //                },
+            //                error: function(data) {
+            //                    console.log('Error:', data);
+            //                    toggleSelectSkeletonLoading(false);
+            //
+            //
+            //                }
+            //            });
             $('#dialog_import_noclaim').modal({
                 backdrop: false
             });

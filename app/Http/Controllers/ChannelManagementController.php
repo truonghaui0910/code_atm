@@ -3755,12 +3755,27 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         if (isset($request->status_channel)) {
             $data->status_channel = $request->status_channel;
         }
+        if (isset($request->status)) {
+            $data->status = $request->status;
+        }
         if (isset($request->profile_id)) {
             $data->profile_id = trim($request->profile_id);
         }
         $data->updated = Utils::timeToStringGmT7(time());
         $data->save();
         return response()->json(["status" => "success", "message" => "Updated successfully"]);
+    }
+
+    public function getMailMakeByProfileId(Request $request, $profileId) {
+        $platform = $request->header('platform');
+        if ($platform != "autowin") {
+            return response()->json(["status" => "error", "message" => "Wrong system"]);
+        }
+        $data = AccountInfoMaking::where("profile_id", trim($profileId))->first();
+        if ($data) {
+            return response()->json(["status" => "success", "data" => $data]);
+        }
+        return response()->json(["status" => "error", "data" => null]);
     }
 
     //2025/04/03 tiến trình tự dộng change info sau 2 tuần, tính từ thời điểm chuyển kênh, confirm_time (ngày chuyển kênh)

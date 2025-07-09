@@ -474,6 +474,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/boomRemove', 'BomController@boomRemove')->name('boomRemove');
         Route::post('/boomStore', 'BomController@store')->name('store');
         Route::get('/boom', 'BomController@index')->name('bom');
+        Route::post('/getLyrics', 'BomController@getLyrics')->name('getLyrics');
         Route::get('/boom/{id}', 'BomController@find')->name('find');
         Route::get('/noclaim', 'NoclaimController@index')->name('noclaim');
         Route::get('/getOvertonePlaylist', 'BomController@getOvertonePlaylist')->name('getOvertonePlaylist');
@@ -570,7 +571,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/getDataChart', 'ChannelManagementController@getDataChart')->name('getDataChart');
         Route::get('/getDataCharts', 'ChannelManagementController@getDataCharts')->name('getDataCharts');
 
-        
+
         Route::get('/createEmail', 'ChannelManagementController@createEmail')->name('createEmail');
         //add channel vào email đã có sẵn
         Route::get('/addChannel', 'ChannelManagementController@addChannel')->name('addChannel');
@@ -701,6 +702,9 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
             Route::get('/360promo2/loadInvoice', 'Promo360Controller@loadInvoice')->name('loadInvoice');
             Route::get('/360promo2/confirmInvoice', 'Promo360Controller@confirmInvoice')->name('confirmInvoice');
             Route::post('/360promo2/activeCampaign', 'Promo360Controller@activeCampaign')->name('activeCampaign');
+            
+            Route::get('/artist/list', 'BomController@getArtistList')->name('getArtistList');
+            Route::post('/artist/update-youtube-claim', 'BomController@updateArtistYoutubeClaim')->name('updateArtistYoutubeClaim');            
         });
         Route::group(['middleware' => 'supperAdminCheck'], function() {
             Route::get('/mooncoin', 'MoneyController@mooncoinIndex')->name('mooncoinIndex');
@@ -1106,29 +1110,29 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
     Route::post('/album/status/update', 'BomController@updateDistroAlbumStatus')->name('updateDistroAlbumStatus');
     Route::get('/album/scan/distributed', 'BomController@scanDistributedAlbum')->name('scanDistributedAlbum');
     Route::get('/album/scan/artist', 'BomController@updateArtistStreams')->name('updateArtistStreams');
-    
+
     //tính thưởng cho kênh epid mới
     Route::get('/channel/epid/rewards', 'ChannelManagementController@epidRewards')->name('epidRewards');
-    
+
     Route::get('/getChannelByHash', 'ChannelManagementController@getChannelByHash')->name('getChannelByHash');
-    
+
     Route::get('/listUser', 'UserController@listUser')->name('listUser');
-    
+
     Route::get('/genEmailInfo', 'ChannelManagementController@genEmailInfo')->name('genEmailInfo');
-    
-    
+
+
     Route::get('/spotify/artist-albums-onl/get/{id}', 'ApiController@spotifyGetArtistAlbums')->name('spotifyGetArtistAlbums');
     Route::get('/spotify/album-info/get/{id}', 'ApiController@spotifyGetAlbum')->name('spotifyGetAlbum');
     Route::get('/spotify/playlist-info/get/{id}', 'ApiController@spotifyGetPlaylist')->name('spotifyGetPlaylist');
-    
+
     Route::post('/album/artist/create', 'BomController@getOrCreateArtist')->name('getOrCreateArtist');
-    
+
     Route::get('/syncSunoLyric', 'BomController@syncSunoLyric')->name('syncSunoLyric');
     Route::get('/makeLyricTimestamp', 'BomController@makeLyricTimestamp')->name('makeLyricTimestamp');
     Route::get('/musicToText', 'BomController@musicToText')->name('musicToText');
-    
+
     Route::post('/api/email/status/update', 'ChannelManagementController@updateEmailMake')->name('updateEmailMake');
-    
+    Route::get('/api/email/get/{profileId}', 'ChannelManagementController@getMailMakeByProfileId')->name('getMailMakeByProfileId');
 });
 
 

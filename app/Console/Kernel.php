@@ -26,6 +26,9 @@ class Kernel extends ConsoleKernel {
     protected function schedule(Schedule $schedule) {
         $schedule->command('command:email_count')->everyFiveMinutes()->withoutOverlapping(10);
         $schedule->command('command:suno_lyric_sync')->everyFiveMinutes()->withoutOverlapping(10);
+        $bom = new \App\Http\Controllers\BomController();
+        $bom->musicToText();
+        $bom->makeLyricTimestamp();
     }
 
     /**

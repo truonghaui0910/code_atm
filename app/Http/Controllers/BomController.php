@@ -21,11 +21,6 @@ use Validator;
 
 class BomController extends Controller {
 
-//    protected $bomService;
-//    public function __construct(BomService $bomService) {
-//        $this->bomService = $bomService;
-//    }
-
     public function index(Request $request) {
         DB::enableQueryLog();
         $user = Auth::user();
@@ -2895,10 +2890,20 @@ class BomController extends Controller {
         $user = Auth::user();
         Log::info($user->user_name . '|BomController.sendAlbumToSalad|request=' . json_encode($request->all()));
         $api = "https://distro.360promo.fm";
+        $youtubeClaim = 0;
 //        $api = "https://3a7c-2402-800-62d1-95c6-a8b4-f88f-1e83-dbd9.ngrok-free.app";
         $albumDb = BomAlbum::where("id", $request->id)->first();
         if (!$albumDb) {
             return response()->json(['status' => "error", 'message' => 'Not found album']);
+        }
+        //kiểm tra artist_id
+        $artistDb = BomArtist::find($albumDb->artist_id);
+        if (!$artistDb) {
+            return response()->json(['status' => "error", 'message' => 'Not found artist']);
+        }
+        //kiểm tra xem có active youtube claim không
+        if ($artistDb->youtube_claim == 1) {
+            $youtubeClaim = 1;
         }
         $year = $year = substr($albumDb->release_date, 0, 4);
         $bomTracks = Bom::where("album_id", $request->id)->orderBy("order_id")->get();
@@ -3064,7 +3069,8 @@ class BomController extends Controller {
         Log::info(json_encode($album));
         $input = (object) [
                     "user_id" => "b8de06b2-db04-429e-b956-9a03867006d1",
-                    "release" => $album
+                    "release" => $album,
+                    "youtube_claim" => $youtubeClaim
         ];
         $res = RequestHelper::callAPI("POST", "$api/api/release/add", $input);
         Log::info("res " . json_encode($res));
@@ -3113,149 +3119,6 @@ class BomController extends Controller {
 //        Log::info(DB::getQueryLog());
         return response()->json($songs);
     }
-
-//    public function getListAlbum(Request $request) {
-//        $user = Auth::user();
-//        DB::enableQueryLog();
-//        $albumId = $request->id;
-//
-//        $query = DB::table('bom_albums as a')
-//                ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
-//                ->select(
-//                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', DB::raw('GROUP_CONCAT(b.id) as songs')
-//                )
-//                ->groupBy('a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist');
-//        $query->where('a.status', 1);
-//        // Nếu có id thì chỉ lấy album đó
-//        if (!empty($albumId)) {
-//            $query->where('a.id', $albumId);
-//        }
-//        if (!$request->is_admin_music) {
-//            $query->where('a.username', $user->user_name);
-//        }
-//        $query->orderBy("a.release_date", "asc");
-//        $albums = $query->get();
-//        // Lấy danh sách artist duy nhất
-//        $artistNames = $albums->pluck('artist')->filter()->unique()->values()->all();
-//        $artistTotalStreams = [];
-//        if (!empty($artistNames)) {
-//            // Gọi API lấy tổng streams cho tất cả artist
-//            $apiUrl = 'https://distro.360promo.fm/api/artists/total-streams?names=' . urlencode(implode(',', $artistNames));
-//
-//            $apiResult = \App\Common\Network\RequestHelper::callAPI2('GET', $apiUrl, []);
-//
-//            if (is_array($apiResult)) {
-//                foreach ($apiResult as $item) {
-//                    if (isset($item->artist) && isset($item->total_streams)) {
-//                        $artistTotalStreams[$item->artist] = $item->total_streams;
-//                    }
-//                }
-//            }
-//        }
-//        // Chuyển danh sách bài hát từ chuỗi sang mảng và gán tổng streams cho từng album
-//        $albums = $albums->map(function ($album) use ($artistTotalStreams) {
-//            $album->songs = $album->songs ? explode(',', $album->songs) : [];
-//            $album->artist_total_streams = isset($artistTotalStreams[$album->artist]) ? $artistTotalStreams[$album->artist] : null;
-//            return $album;
-//        });
-//
-//        return response()->json($albums);
-//    }
-//    public function getListAlbum(Request $request) {
-//        $user = Auth::user();
-//        DB::enableQueryLog();
-//        $albumId = $request->id;
-//        $query = DB::table('bom_albums as a')
-//                ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
-//                ->select(
-//                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', DB::raw('GROUP_CONCAT(b.id) as songs')
-//                )
-//                ->groupBy('a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist');
-//        $query->where('a.status', 1);
-//        // Nếu có id thì chỉ lấy album đó
-//        if (!empty($albumId)) {
-//            $query->where('a.id', $albumId);
-//        }
-//        if (!$request->is_admin_music) {
-//            $query->where('a.username', $user->user_name);
-//        }
-//        $query->orderBy("a.release_date", "asc");
-//        $albums = $query->get();
-//
-//        // Lấy danh sách artist duy nhất
-//        $artistNames = $albums->pluck('artist')->filter()->unique()->values()->take(30)->all();
-//        $artistTotalStreams = [];
-//
-//        if (!empty($artistNames)) {
-//            sort($artistNames); // Sắp xếp để đảm bảo thứ tự nhất quán
-//            $cacheKey = 'artist_streams_' . hash('sha256', implode('|', $artistNames));
-//            $apiResult = [];
-//            // Kiểm tra cache trước, nếu có thì dùng, không thì gọi API và cache lại
-//            $apiResult = Cache::remember($cacheKey, 3600, function () use ($artistNames) {
-//                        // Gọi API lấy tổng streams cho tất cả artist
-//                        $apiUrl = 'https://distro.360promo.fm/api/artists/total-streams?names=' . urlencode(implode(',', $artistNames));
-//                        return RequestHelper::callAPI2('GET', $apiUrl, []);
-//                    });
-//
-//            if (is_array($apiResult)) {
-//                foreach ($apiResult as $item) {
-//                    if (isset($item->artist) && isset($item->total_streams)) {
-//                        $artistTotalStreams[$item->artist] = $item->total_streams;
-//                    }
-//                }
-//            }
-//        }
-//
-//        // Chuyển danh sách bài hát từ chuỗi sang mảng và gán tổng streams cho từng album
-//        $albums = $albums->map(function ($album) use ($artistTotalStreams) {
-//            $album->songs = $album->songs ? explode(',', $album->songs) : [];
-//            $album->artist_total_streams = isset($artistTotalStreams[$album->artist]) ? $artistTotalStreams[$album->artist] : null;
-//            return $album;
-//        });
-//
-//        return response()->json($albums);
-//    }
-//    public function getListAlbum(Request $request) {
-//        $user = Auth::user();
-//        DB::enableQueryLog();
-//        $albumId = $request->id;
-//
-//        $query = DB::table('bom_albums as a')
-//                ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
-//                ->leftJoin('bom_artists as ar', 'a.artist', '=', 'ar.artist_name') // Join với bảng bom_artists
-//                ->select(
-//                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', 'ar.artist_total_streams', // Lấy từ bảng bom_artists
-//                        DB::raw('GROUP_CONCAT(b.id) as songs')
-//                )
-//                ->groupBy(
-//                'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams'
-//        );
-//
-//        $query->where('a.status', 1);
-//
-//        // Nếu có id thì chỉ lấy album đó
-//        if (!empty($albumId)) {
-//            $query->where('a.id', $albumId);
-//        }
-//
-//        if (!$request->is_admin_music) {
-//            $query->where('a.username', $user->user_name);
-//            $query->orderBy("a.id", "desc");
-//        } else {
-//
-//            $query->orderBy("a.release_date", "asc");
-//        }
-//
-//        $albums = $query->get();
-//
-//        // Chuyển danh sách bài hát từ chuỗi sang mảng
-//        $albums = $albums->map(function ($album) {
-//            $album->songs = $album->songs ? explode(',', $album->songs) : [];
-//            return $album;
-//        });
-//
-//        return response()->json($albums);
-//    }
 
     public function getListAlbum(Request $request) {
         $user = Auth::user();
@@ -3434,31 +3297,6 @@ class BomController extends Controller {
         }
     }
 
-//    public function addSongToAlbum(Request $request) {
-//        $user = Auth::user();
-//        Log::info("$user->user_name|BomController.addSongToAlbum|request=" . json_encode($request->all()));
-//        $song = Bom::where("id", $request->song_id)->where("username", $user->user_name)->first();
-//        if (!$song) {
-//            return response()->json(["status" => "error", "message" => "Song is not exists"]);
-//        }
-//        $album = BomAlbum::where("id", $request->album_id)->where("is_released", 0)->first();
-//        if (!$album) {
-//            return response()->json(["status" => "error", "message" => "Album is not exists"]);
-//        }
-//
-//        $allArtistAlbum = BomAlbum::where("artist_id", $album->artist_id)->pluck("id");
-//        $boms = Bom::whereIn("album_id", $allArtistAlbum)->get();
-//        foreach ($boms as $b) {
-//            if ($b->song_name == $song->song_name) {
-//                return response()->json(["status" => "error", "message" => "Song name $song->song_name exists. Please choose another song or rename the song"]);
-//            }
-//        }
-//
-//        $song->artist = $album->artist;
-//        $song->album_id = $request->album_id;
-//        $song->save();
-//        return response()->json(["status" => "success", "message" => "Success"]);
-//    }
     public function addSongsToAlbum(Request $request) {
         $user = Auth::user();
         Log::info("$user->user_name|BomController.addSongsToAlbum|request=" . json_encode($request->all()));
@@ -4213,132 +4051,386 @@ class BomController extends Controller {
     }
 
     public function syncSunoLyric() {
-        $datas = Bom::where("status", 1)->where("is_sync_lyric", 0)->where("source_type", "SUNO")->get();
-        $i = 0;
-        $total = count($datas);
-        foreach ($datas as $data) {
-            $hasLyric = "fail";
-            $i++;
-            $data->is_sync_lyric = 1;
-            $lyric = $this->getSunoLyrics($data->song_id);
-            if ($lyric != "") {
-                $data->lyric_text = $lyric;
-                $hasLyric = "succces";
+        $processName = "syncSunoLyric";
+        if (ProcessUtils::isfreeProcess($processName)) {
+            ProcessUtils::lockProcess($processName);
+            $datas = Bom::where("status", 1)->where("is_sync_lyric", 0)->where("source_type", "SUNO")->get();
+            $i = 0;
+            $total = count($datas);
+            foreach ($datas as $data) {
+                $hasLyric = "fail";
+                $i++;
+                $data->is_sync_lyric = 1;
+                $lyric = $this->getSunoLyrics($data->song_id);
+                if ($lyric != "") {
+                    $data->lyric_text = $lyric;
+                    $hasLyric = "succces";
+                }
+                $data->save();
+                error_log("$i/$total syncSunoLyric $data->id $hasLyric");
+                usleep(200000);
             }
-            $data->save();
-            error_log("$i/$total syncSunoLyric $data->id $hasLyric");
-            usleep(200000);
+            ProcessUtils::unLockProcess($processName);
+        } else {
+            error_log("$processName is locked");
         }
     }
 
     public function musicToText() {
-        $datas = Bom::where("status", 1)
-                        ->where("is_sync_lyric", 1)
-                        ->where("source_type", "SUNO")
-                        ->where("is_releasable", 1)
-                        ->whereNotNull("lyric_text")
-                        ->whereNull("lyric_raw")->take(2000)
-                        ->orderBy("id", "desc")->get();
+        $processName = "musicToText";
+        if (ProcessUtils::isfreeProcess($processName)) {
+            ProcessUtils::lockProcess($processName);
+            $datas = Bom::where("status", 1)
+                            ->where("is_sync_lyric", 1)
+                            ->where("source_type", "SUNO")
+                            ->where("is_releasable", 1)
+                            ->whereNotNull("lyric_text")
+                            ->whereNull("lyric_raw")->take(2000)
+                            ->orderBy("id", "desc")->get();
 //        $datas = Bom::where("id",24042)->get();
-        $total = count($datas);
-        $i = 0;
-        foreach ($datas as $data) {
-            $timeStart = time();
-            $i++;
-            error_log("musicToText $i/$total $data->id");
+            $total = count($datas);
+            $i = 0;
+            foreach ($datas as $data) {
+                $timeStart = time();
+                $i++;
+                error_log("musicToText $i/$total $data->id");
 
-            $input = (object) [
-                        "file_url" => $data->source_id
-            ];
-            $lyricRaw = null;
-            if ($data->lyric_raw == null || $data->lyric_raw == "" || $data->lyric_raw == "null") {
-                $lyricRaw = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/music-to-text", $input, array("Content-type: application/json", "platform: AutoWin"), 300000);
-            } else {
+                $input = (object) [
+                            "file_url" => $data->source_id
+                ];
+                $lyricRaw = null;
+                if ($data->lyric_raw == null || $data->lyric_raw == "" || $data->lyric_raw == "null") {
+                    $lyricRaw = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/music-to-text", $input, array("Content-type: application/json", "platform: AutoWin"), 300000);
+                } else {
 //                error_log("data->lyric_raw ".$data->lyric_raw);
-                $lyricRaw = json_decode($data->lyric_raw);
-            }
+                    $lyricRaw = json_decode($data->lyric_raw);
+                }
 
-            if (empty($lyricRaw)) {
-                error_log("musicToText continue");
-                continue;
+                if (empty($lyricRaw)) {
+                    error_log("musicToText continue");
+                    continue;
+                }
+                $data->lyric_raw = json_encode($lyricRaw);
+                $data->save();
+                error_log("musicToText $i/$total $data->id finished time=" . (time() - $timeStart) . "s");
             }
-            $data->lyric_raw = json_encode($lyricRaw);
-            $data->save();
-            error_log("musicToText $i/$total $data->id finished time=" . (time() - $timeStart) . "s");
+            ProcessUtils::unLockProcess($processName);
+        } else {
+            error_log("$processName is locked");
         }
     }
 
     public function makeLyricTimestamp() {
-        $datas = Bom::where("status", 1)
-                        ->where("is_sync_lyric", 1)
-                        ->where("source_type", "SUNO")
-                        ->where("is_releasable", 1)
-                        ->whereNotNull("lyric_raw")
-                        ->whereNull("lyric_pro")->take(500)
-                        ->orderBy("id", "desc")->get();
+        $processName = "makeLyricTimestamp";
+        if (ProcessUtils::isfreeProcess($processName)) {
+            ProcessUtils::lockProcess($processName);
+            $datas = Bom::where("status", 1)
+                            ->where("is_sync_lyric", 1)
+                            ->where("source_type", "SUNO")
+                            ->where("is_releasable", 1)
+                            ->whereNotNull("lyric_raw")
+                            ->whereNull("lyric_pro")->take(500)
+                            ->orderBy("id", "desc")->get();
 //        $datas = Bom::where("id",24042)->get();
-        $total = count($datas);
-        $i = 0;
-        foreach ($datas as $data) {
-            $timeStart = time();
-            $i++;
-            error_log("makeLyricTimestamp $i/$total $data->id");
+            $total = count($datas);
+            $i = 0;
+            foreach ($datas as $data) {
+                $timeStart = time();
+                $i++;
+                error_log("makeLyricTimestamp $i/$total $data->id");
 
-            $input = (object) [
-                        "file_url" => $data->source_id
-            ];
-            $lyricRaw = null;
-            if ($data->lyric_raw == null || $data->lyric_raw == "" || $data->lyric_raw == "null") {
-                $lyricRaw = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/music-to-text", $input, array("Content-type: application/json", "platform: AutoWin"), 300000);
-                $data->lyric_raw = json_encode($lyricRaw);
-                $data->save();
-                error_log("makeLyricTimestamp $i/$total $data->id saved lyric_raw");
-            } else {
-//                error_log("data->lyric_raw ".$data->lyric_raw);
-                $lyricRaw = json_decode($data->lyric_raw);
-            }
-//            Log::info("rs" . json_encode($result));
-            $input2 = (object) [
-                        "lyrics_raw" => $lyricRaw,
-                        "lyrics_text" => $data->lyric_text
-            ];
-//            error_log(json_encode($lyricRaw));
-            if (empty($lyricRaw)) {
-                error_log("makeLyricTimestamp continue");
-                continue;
-            }
-
-            $time = time();
-
-            error_log("makeLyricTimestamp $i/$total $data->id call http://ai.moonshots.vn/api/lyrics-pro");
-            $result2 = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/lyrics-pro", $input2, array("Content-type: application/json", "platform: AutoWin"), 300000);
-            $data->lyric_pro = json_encode($result2);
-            $data->save();
-            error_log("makeLyricTimestamp $i/$total $data->id saved lyric_pro time=" . (time() - $time) . "s");
-            if (isset($data->local_id) && isset($result2->lyricSync)) {
-                error_log("makeLyricTimestamp $i/$total $data->id saved lyric_text to https://cdn.soundhex.com/api/v1/timestamp/$data->local_id");
-                $lyricSyncText = json_encode($result2->lyricSync);
-                $lyricText = "";
-                foreach ($result2->lyricSync as $line) {
-                    $lyricText .= $line->line . PHP_EOL;
-                }
-                $dataCdn = (object) [
-                            "lyric" => $lyricText,
-                            "lyric_sync" => $lyricSyncText,
-                            "id" => $data->local_id
+                $input = (object) [
+                            "file_url" => $data->source_id
                 ];
-//                error_log("dataCdn " . json_encode($dataCdn));
-                $rs = RequestHelper::callAPI2("PUT", "https://cdn.soundhex.com/api/v1/timestamp/$data->local_id/", $dataCdn, array('Content-Type: application/json'), 10000);
-                if (isset($rs->id)) {
-                    $data->is_real_lyric = 1;
+                $lyricRaw = null;
+                if ($data->lyric_raw == null || $data->lyric_raw == "" || $data->lyric_raw == "null") {
+                    $lyricRaw = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/music-to-text", $input, array("Content-type: application/json", "platform: AutoWin"), 300000);
+                    $data->lyric_raw = json_encode($lyricRaw);
                     $data->save();
+                    error_log("makeLyricTimestamp $i/$total $data->id saved lyric_raw");
+                } else {
+//                error_log("data->lyric_raw ".$data->lyric_raw);
+                    $lyricRaw = json_decode($data->lyric_raw);
                 }
+//            Log::info("rs" . json_encode($result));
+                $input2 = (object) [
+                            "lyrics_raw" => $lyricRaw,
+                            "lyrics_text" => $data->lyric_text
+                ];
+//            error_log(json_encode($lyricRaw));
+                if (empty($lyricRaw)) {
+                    error_log("makeLyricTimestamp continue");
+                    continue;
+                }
+
+                $time = time();
+
+                error_log("makeLyricTimestamp $i/$total $data->id call http://ai.moonshots.vn/api/lyrics-pro");
+                $result2 = RequestHelper::callAPI2("POST", "http://ai.moonshots.vn/api/lyrics-pro", $input2, array("Content-type: application/json", "platform: AutoWin"), 300000);
+                $data->lyric_pro = json_encode($result2);
+                $data->save();
+                error_log("makeLyricTimestamp $i/$total $data->id saved lyric_pro time=" . (time() - $time) . "s");
+                if (isset($data->local_id) && isset($result2->lyricSync)) {
+                    error_log("makeLyricTimestamp $i/$total $data->id saved lyric_text to https://cdn.soundhex.com/api/v1/timestamp/$data->local_id");
+                    $lyricSyncText = json_encode($result2->lyricSync);
+                    $lyricText = "";
+                    foreach ($result2->lyricSync as $line) {
+                        $lyricText .= $line->line . PHP_EOL;
+                    }
+                    $dataCdn = (object) [
+                                "lyric" => $lyricText,
+                                "lyric_sync" => $lyricSyncText,
+                                "id" => $data->local_id
+                    ];
+//                error_log("dataCdn " . json_encode($dataCdn));
+                    $rs = RequestHelper::callAPI2("PUT", "https://cdn.soundhex.com/api/v1/timestamp/$data->local_id/", $dataCdn, array('Content-Type: application/json'), 10000);
+                    if (isset($rs->id)) {
+                        $data->is_real_lyric = 1;
+                        $data->save();
+                    }
 //                error_log("rs Cnd " . json_encode($rs));
-            }
-            $data->log = $data->log . PHP_EOL . Utils::timeToStringGmT7(time()) . " system made lyric_pro";
-            $data->save();
-            error_log("makeLyricTimestamp $i/$total $data->id finished time=" . (time() - $timeStart) . "s");
+                }
+                $data->log = $data->log . PHP_EOL . Utils::timeToStringGmT7(time()) . " system made lyric_pro";
+                $data->save();
+                error_log("makeLyricTimestamp $i/$total $data->id finished time=" . (time() - $timeStart) . "s");
 //            return $data->lyric_pro;
+            }
+            ProcessUtils::unLockProcess($processName);
+        } else {
+            error_log("$processName is locked");
+        }
+    }
+
+    public function getLyrics(Request $request) {
+        try {
+            $user = Auth::user();
+            Log::info($user->user_name . '|BomController.getLyrics|request=' . json_encode($request->all()));
+
+            // Validate input
+            $validator = Validator::make($request->all(), [
+                        'page_url' => 'required|string'
+            ]);
+
+            if ($validator->fails()) {
+                Log::error('Validation failed: ' . json_encode($validator->errors()));
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Invalid URL provided'
+                                ], 400);
+            }
+
+            $pageUrl = $request->input('page_url');
+
+            // Ensure URL is from letras.com
+            if (strpos($pageUrl, 'letras.com') === false) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'URL must be from letras.com'
+                                ], 400);
+            }
+
+            // Remove trailing slash and add mais_acessadas.html
+            $pageUrl = rtrim($pageUrl, '/') . '/mais_acessadas.html';
+
+            // Prepare API request data
+            $apiData = (object) [
+                        'page_url' => $pageUrl
+            ];
+
+            // Call API using curl
+            $apiUrl = 'http://152.53.83.116:8000/scrape/';
+
+            $curl = curl_init();
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => $apiUrl,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '', // Cho phép tất cả encoding
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => json_encode($apiData),
+                CURLOPT_HTTPHEADER => array(
+                    'Content-Type: application/json',
+                    'Accept: text/plain, */*',
+                    'Accept-Charset: UTF-8'
+                ),
+            ));
+
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($curl);
+            curl_close($curl);
+
+            if ($curlError) {
+                Log::error('Curl error: ' . $curlError);
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Connection error: ' . $curlError
+                                ], 500);
+            }
+
+            if ($httpCode == 200 && $response !== false) {
+                // Đảm bảo response là UTF-8
+                if (!mb_check_encoding($response, 'UTF-8')) {
+                    // Nếu không phải UTF-8, thử convert từ các encoding phổ biến
+                    $encodings = ['ISO-8859-1', 'Windows-1252', 'ASCII'];
+                    foreach ($encodings as $encoding) {
+                        if (mb_check_encoding($response, $encoding)) {
+                            $response = mb_convert_encoding($response, 'UTF-8', $encoding);
+                            break;
+                        }
+                    }
+                }
+
+                // Làm sạch text - loại bỏ các ký tự điều khiển không cần thiết
+                $response = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $response);
+
+                Log::info('Lyrics retrieved successfully, length: ' . strlen($response));
+
+                // Return JSON response với encoding UTF-8
+                return response()->json([
+                            'status' => 'success',
+                            'lyrics' => $response,
+                            'message' => 'Lyrics retrieved successfully'
+                                ], 200, [], JSON_UNESCAPED_UNICODE);
+            } else {
+                Log::error("API call failed - HTTP Code: $httpCode");
+                return response()->json([
+                            'status' => 'error',
+                            'message' => "Failed to retrieve lyrics. HTTP Code: $httpCode"
+                                ], 500);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error in getLyrics: ' . $e->getMessage() . ' | Line: ' . $e->getLine());
+
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'An error occurred: ' . $e->getMessage()
+                            ], 500);
+        }
+    }
+
+    public function getArtistList(Request $request) {
+        $user = Auth::user();
+        Log::info("$user->user_name|BomController.getArtistList|request=" . json_encode($request->all()));
+
+        try {
+            $query = BomArtist::query();
+
+            // Filter theo tên nghệ sỹ
+            if ($request->has('artist_name') && !empty($request->artist_name)) {
+                $query->where('artist_name', 'like', '%' . $request->artist_name . '%');
+            }
+
+            // Filter theo trạng thái youtube_claim
+            if ($request->has('youtube_claim') && $request->youtube_claim !== '' && $request->youtube_claim !== null) {
+                $youtubeClaim = $request->youtube_claim;
+                // Chỉ filter khi có giá trị cụ thể (0 hoặc 1)
+                if (in_array($youtubeClaim, ['0', '1', 0, 1])) {
+                    $query->where('youtube_claim', (int) $youtubeClaim);
+                }
+            }
+
+            // Sắp xếp
+            $sortField = $request->get('sort', 'id');
+            $sortDirection = $request->get('direction', 'desc');
+
+            // Validate sort fields để tránh SQL injection
+            $allowedSortFields = ['artist_name', 'artist_total_streams', 'id', 'username', 'created'];
+            if (!in_array($sortField, $allowedSortFields)) {
+                $sortField = 'id';
+            }
+
+            if (!in_array($sortDirection, ['asc', 'desc'])) {
+                $sortDirection = 'desc';
+            }
+
+            $query->orderBy($sortField, $sortDirection);
+
+            // Phân trang
+            $perPage = $request->get('per_page', 20);
+            if ($perPage > 100) {
+                $perPage = 100; // Giới hạn tối đa
+            }
+
+            $artists = $query->paginate($perPage);
+
+            // Format lại dữ liệu trả về
+            $data = [
+                'data' => $artists->items(),
+                'current_page' => $artists->currentPage(),
+                'last_page' => $artists->lastPage(),
+                'per_page' => $artists->perPage(),
+                'total' => $artists->total(),
+                'from' => $artists->firstItem(),
+                'to' => $artists->lastItem()
+            ];
+
+            return response()->json([
+                        'status' => 'success',
+                        'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            Log::error("$user->user_name|BomController.getArtistList|Error: " . $e->getMessage());
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'Error retrieving artist list: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Cập nhật trạng thái youtube_claim của artist
+     */
+    public function updateArtistYoutubeClaim(Request $request) {
+        $user = Auth::user();
+        Log::info("$user->user_name|BomController.updateArtistYoutubeClaim|request=" . json_encode($request->all()));
+
+        try {
+            if (!$request->has('artist_id') || !$request->has('youtube_claim')) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Artist ID and youtube_claim status are required'
+                ]);
+            }
+
+            $artist = BomArtist::find($request->artist_id);
+            if (!$artist) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Artist not found'
+                ]);
+            }
+
+            // Validate youtube_claim value (should be 0 or 1)
+            $youtubeClaim = $request->youtube_claim;
+            if (!in_array($youtubeClaim, [0, 1, '0', '1'])) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'Invalid youtube_claim value'
+                ]);
+            }
+
+            $artist->youtube_claim = (int) $youtubeClaim;
+            $artist->save();
+
+            return response()->json([
+                        'status' => 'success',
+                        'message' => 'Artist youtube claim status updated successfully',
+                        'data' => [
+                            'id' => $artist->id,
+                            'artist_name' => $artist->artist_name,
+                            'youtube_claim' => $artist->youtube_claim
+                        ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error("$user->user_name|BomController.updateArtistYoutubeClaim|Error: " . $e->getMessage());
+            return response()->json([
+                        'status' => 'error',
+                        'message' => 'Error updating artist: ' . $e->getMessage()
+            ]);
         }
     }
 

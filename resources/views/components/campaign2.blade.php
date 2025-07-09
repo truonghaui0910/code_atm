@@ -192,7 +192,8 @@
                                         <th class="disp-none">KPI Month</th>
                                         <th class="disp-none">Label</th>
                                         <th class="disp-none">Customer</th>
-                                        <th style="width: 10%;text-align: right">{{ trans('label.col.function') }}</th>
+                                        <th class="disp-none">Genre</th>
+                                        <th class="disp-none" style="width: 10%;text-align: right">{{ trans('label.col.function') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -333,27 +334,9 @@
                                             </td>
                                             <td style="text-align: left">{{ strtoupper($data->revshare_client) }}</td>
                                             <!--<td>{{ $data->wake_position }}</td>-->
-                                            <td>{{ $data->genre }}</td>
-                                            <td>{{ $data->campaign_start_date }}</td>
-                                            <td>{{ number_format($data->views_official, 0, '.', ',') }}</td>
-                                            <td>{{ number_format($data->views_compi, 0, '.', ',') }}</td>
-                                            <td>{{ number_format($data->views_lyric, 0, '.', ',') }}<div
-                                                    data-toggle="tooltip" data-placement="top"
-                                                    data-original-title="{{ $data->lyric1000 }}/15 lyric videos > 1000 views"
-                                                    class="cur-poiter <?php echo $data->lyric1000 >= 15 ? 'color-green' : 'color-red'; ?>"><b>{{ $data->lyric1000 }}</b>
-                                                </div>
-                                            </td>
-                                            <td>{{ number_format($data->views_short, 0, '.', ',') }}</td>
-                                            <td>{{ number_format($data->views_compi + $data->views_lyric + $data->views_short, 0, '.', ',') }}
-                                            </td>
-                                            <td>{{ $data->curr_dayleft }}</td>
-                                            <td>{{ $data->curr_percent }}</td>
-                                            <td>{{ $data->type }}</td>
-                                            <td>{{ $data->period }}</td>
-                                            <td>{{ $data->label }}</td>
-                                            <td>{{ $data->campaign_type }}</td>
-                                            <td style="text-align: right;">
-                                                <!--<a class="cur-poiter td-info color-h" target="_blank"  href="{{ $data->audio_url }}"><i data-toggle="tooltip" data-placement="top" data-original-title="Download  music" class="ti-download"></i></a>-->
+                                            <td>{{ $data->genre }}
+                                                <div>
+                                                    
                                                 @if (in_array('20', explode(',', $user_login->role)) || in_array('1', explode(',', $user_login->role)))
                                                     @if ($data->lyric_timestamp_id == null)
                                                         @if ($data->audio_url == null)
@@ -414,7 +397,28 @@
                                                             data-original-title="Login to 360Promo by {{ $data->artis_info_email }}"
                                                             class="ti-new-window"></i></a>
                                                 @endif
+                                                </div>
                                             </td>
+                                            <td>{{ $data->campaign_start_date }}</td>
+                                            <td>{{ number_format($data->views_official, 0, '.', ',') }}</td>
+                                            <td>{{ number_format($data->views_compi, 0, '.', ',') }}</td>
+                                            <td>{{ number_format($data->views_lyric, 0, '.', ',') }}<div
+                                                    data-toggle="tooltip" data-placement="top"
+                                                    data-original-title="{{ $data->lyric1000 }}/15 lyric videos > 1000 views"
+                                                    class="cur-poiter <?php echo $data->lyric1000 >= 15 ? 'color-green' : 'color-red'; ?>"><b>{{ $data->lyric1000 }}</b>
+                                                </div>
+                                            </td>
+                                            <td>{{ number_format($data->views_short, 0, '.', ',') }}</td>
+                                            <td>{{ number_format($data->views_compi + $data->views_lyric + $data->views_short, 0, '.', ',') }}
+                                            </td>
+                                            <td>{{ $data->curr_dayleft }}</td>
+                                            <td>{{ $data->curr_percent }}</td>
+                                            <td>{{ $data->type }}</td>
+                                            <td>{{ $data->period }}</td>
+                                            <td>{{ $data->label }}</td>
+                                            <td>{{ $data->campaign_type }}</td>
+                                            <td>{{ $data->genre }}</td>
+                                            <td style="text-align: right;"></td>
                                         </tr>
                                         @php
                                             $listCampignid[] = $data->id;
@@ -1069,11 +1073,11 @@
                 //            controls: false,
                 collapse: true,
                 //            initCollapsed: true,
-                columns: [14, 4, 11, 12, 13, 15, 16]
+                columns: [14, 17, 11, 12, 13, 15, 16]
             },
             dom: 'Plfrtip',
             columnDefs: [{
-                    "targets": [14, 15, 16],
+                    "targets": [14, 15, 16,17],
                     "visible": false,
                     "searchable": true
                 },
@@ -1083,7 +1087,7 @@
                     "searchable": false
                 },
                 {
-                    "targets": [6, 7, 8, 9],
+                    "targets": [6, 7, 8, 9,4],
                     "visible": true,
                     "searchable": false
                 },
@@ -1098,7 +1102,7 @@
                     searchPanes: {
                         header: 'Genre'
                     },
-                    targets: [4]
+                    targets: [17]
                 },
                 {
                     searchPanes: {

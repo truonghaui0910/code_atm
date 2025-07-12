@@ -799,6 +799,8 @@ class BomController extends Controller {
                 }
                 $boom->sync = 1;
                 $boom->isrc = $isrc;
+                $boom->artist = $response->title;
+                $boom->song_name = $response->artist;
                 $log = $boom->log;
                 $log .= PHP_EOL . "$curr $user->user_name sync";
                 $boom->log = $log;
@@ -2072,8 +2074,10 @@ class BomController extends Controller {
             $curr = gmdate("Y/m/d H:i:s", time() + 7 * 3600);
             $boms = Bom::where("status", 1)->where("sync", 1)->whereNotNull("direct_link")->whereNull("direct_wav")->where("is_releasable", 1)->take(20)->get();
             $total = count($boms);
+            $index = 0;
             error_log("convertWav total=$total");
-            foreach ($boms as $index => $bom) {
+            foreach ($boms as $bom) {
+                $index++;
                 $cmdConvert = "sudo ffmpeg -i \"$bom->direct_link\" -acodec pcm_s24le -ar 44100 $bom->id.wav";
                 $saved_converted = "$bom->id.wav";
 
@@ -2095,7 +2099,7 @@ class BomController extends Controller {
                     error_log("convertWav $index/$total $bom->id upload cdn cmd $cdnCmd");
                     $ul = shell_exec($cdnCmd);
                     error_log("convertWav $index/$total $bom->id upload cdn result $ul");
-                    if ($ul != null && $ul != "") {
+                    if ($ul != null && $ul != "" && trim($ul) != "None" && Utils::containString(trim($ul), "http")) {
                         $direct = trim($ul);
                         if (file_exists($saved_converted)) {
                             unlink($saved_converted);
@@ -2777,7 +2781,7 @@ class BomController extends Controller {
             ]);
         }
 
-        if ($request->has('releaseDate') && !empty($request->releaseDate)) {
+        if (!$request->is_admin_music && $request->has('releaseDate') && !empty($request->releaseDate)) {
             $releaseDate = new \DateTime($request->releaseDate);
             $minDate = new \DateTime();
             $minDate->modify('+7 days');
@@ -2916,12 +2920,13 @@ class BomController extends Controller {
         $releaseDate = new \DateTime($albumDb->release_date);
         $minDate = new \DateTime();
         $minDate->modify('+7 days');
-
-        if ($releaseDate < $minDate) {
-            return response()->json([
-                        "status" => "error",
-                        "message" => "The release date must be at least 7 days from today."
-            ]);
+        if (!$request->is_admin_music) {
+            if ($releaseDate < $minDate) {
+                return response()->json([
+                            "status" => "error",
+                            "message" => "The release date must be at least 7 days from today."
+                ]);
+            }
         }
 
 
@@ -3073,11 +3078,12 @@ class BomController extends Controller {
                     "youtube_claim" => $youtubeClaim
         ];
         $res = RequestHelper::callAPI("POST", "$api/api/release/add", $input);
-        Log::info("res " . json_encode($res));
+        Log::info("sendAlbumToSalad res " . json_encode($res));
         if (isset($res->data->id)) {
             $albumDb->distro_release_id = $res->data->id;
             $albumDb->updated = Utils::timeToStringGmT7(time());
             $albumDb->is_released = 2;
+            $albumDb->youtube_claim = $youtubeClaim;
             $albumDb->save();
             return response()->json(["status" => "success", "message" => "Success"]);
         } else {
@@ -3130,11 +3136,11 @@ class BomController extends Controller {
                 ->leftJoin('bom_artists as ar', 'a.artist', '=', 'ar.artist_name') // Join với bảng bom_artists
                 ->select(
                         'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', 'ar.artist_total_streams', // Lấy từ bảng bom_artists
-                        'ar.last_update', // Thêm cột last_update từ bảng bom_artists
+                        'ar.last_update', 'ar.youtube_claim as artist_youtube_claim', 'a.youtube_claim', // Thêm cột last_update từ bảng bom_artists
                         DB::raw('GROUP_CONCAT(b.id) as songs')
                 )
                 ->groupBy(
-                'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams', 'ar.last_update' // Thêm vào groupBy
+                'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams', 'ar.last_update', 'ar.youtube_claim', 'a.youtube_claim'
         );
 
         $query->where('a.status', 1);

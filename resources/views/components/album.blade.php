@@ -3560,22 +3560,22 @@
             // Check if there are no albums
             if (!albums.length) {
                 const emptyStateHTML = `
-        <div class="col-12">
-            <div class="empty-state-container">
-                <div class="empty-state-icon">
-                    <i class="fas fa-compact-disc"></i>
+                <div class="col-12">
+                    <div class="empty-state-container">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-compact-disc"></i>
+                        </div>
+                        <h3 class="empty-state-title">Your album collection is empty</h3>
+                        <p class="empty-state-description">
+                            Start building your music collection by creating your first album. 
+                            You can add songs, set details, and distribute your albums to share your music with the world.
+                        </p>
+                        <button class="btn btn-create-first-album" data-toggle="modal" data-target="#addAlbumModal">
+                            <i class="fas fa-plus-circle"></i> Create Your First Album
+                        </button>
+                    </div>
                 </div>
-                <h3 class="empty-state-title">Your album collection is empty</h3>
-                <p class="empty-state-description">
-                    Start building your music collection by creating your first album. 
-                    You can add songs, set details, and distribute your albums to share your music with the world.
-                </p>
-                <button class="btn btn-create-first-album" data-toggle="modal" data-target="#addAlbumModal">
-                    <i class="fas fa-plus-circle"></i> Create Your First Album
-                </button>
-            </div>
-        </div>
-    `;
+            `;
                 albumsContainer.html(emptyStateHTML);
 
                 // Assign event for the create album button
@@ -3683,6 +3683,8 @@
                         </div>    
                         <div class="album-meta-item">
                             <i class="fas fa-user"></i> ${album.artist}
+                                    ${album.artist_youtube_claim == 1 ? '<i class="fas fa-check-circle ml-1" style="color: #17a2b8;" data-toggle="tooltip" title="CID enabled for this artist"></i>' : ''}
+                                    ${album.youtube_claim == 1 ? '<i class="fas fa-dollar-sign ml-2" style="color: #28a745;" data-toggle="tooltip" title="CID enabled for this album"></i>' : ''}
                         </div>
                         <div class="album-meta-item">
                             <i class="fas fa-calendar-alt"></i> ${releaseDate}
@@ -4011,6 +4013,12 @@
         </div>
 
         <div class="album-info-grid">
+                            <div class="album-info-item">
+                <div class="album-info-label">ID</div>
+                <div class="album-info-value">
+                    <span class="album-id-badge">#${album.id}</span>
+                </div>
+            </div>
             <div class="album-info-item">
                 <div class="album-info-label">Artist</div>
                 <div class="album-info-value">
@@ -5787,6 +5795,7 @@
                     `<span class="artist-total-streams ml-2" title="Total stream, last update ${album.last_update_ago || 'unknown'}">
                     <i class="fas fa-headphones"></i> ${album.artist_total_streams.toLocaleString()}
                             </span>` : '';
+                const cidColor  = album.youtube_claim == 5?"#28a745":"#ebdb0e";        
                 const coverImgHtml = album.coverImg ? `
                         <div class="table-album-cover-wrapper" style="position: relative; width: 56px; height: 56px;">
                             <div class="table-cover-placeholder" style="
@@ -5861,7 +5870,13 @@
                 </td>
                 <td>
                     <div class="album-title-cell">${album.name}</div>
-                    <div class="album-subtitle">${album.artist} ${artistAlbumCountText} ${artistTotalStreamsText}</div>
+                    <div class="album-subtitle">
+                        ${album.artist}
+                        ${album.artist_youtube_claim == 1 ? '<i class="fas fa-check-circle ml-1" style="color: #17a2b8;" data-toggle="tooltip" title="CID enabled for this artist"></i>' : ''}
+                        ${artistAlbumCountText} 
+                        ${artistTotalStreamsText}
+                        ${album.youtube_claim == 1 ? '<i class="fas fa-dollar-sign ml-2" style="color: '+cidColor+';" data-toggle="tooltip" title="CID enabled for this album"></i>' : ''}
+                    </div>
                 </td>
                 <td>
                     <span class="genre-pill">${album.genre}</span>

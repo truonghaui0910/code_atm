@@ -3259,33 +3259,6 @@ class BomController extends Controller {
             $query->where('a.id', $albumId);
         }
 
-        // Lọc theo search term
-        if ($request->has('search') && !empty($request->search)) {
-            $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('a.album_name', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('a.artist', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('a.genre_name', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('a.username', 'like', '%' . $searchTerm . '%');
-            });
-        }
-
-        // Lọc theo status
-        if ($request->has('status') && $request->status != 'all') {
-            $statusMap = [
-                'not-distributed' => 0,
-                'pending' => 1,
-                'distributing' => 2,
-                'distributed' => 3,
-                'error' => 4,
-                'online' => 5
-            ];
-            
-            if (isset($statusMap[$request->status])) {
-                $query->where('a.is_released', $statusMap[$request->status]);
-            }
-        }
-
         if (!$request->is_admin_music) {
             $query->where('a.username', $user->user_name);
             $query->orderBy("a.id", "desc");
@@ -3293,74 +3266,43 @@ class BomController extends Controller {
             $query->orderBy("a.release_date", "asc");
         }
 
-        // Thiết lập phân trang
-        $perPage = $request->get('per_page', 20);
-        $page = $request->get('page', 1);
+        $albums = $query->get();
 
-        // Nếu có albumId thì không phân trang
-        if (!empty($albumId)) {
-            $albums = $query->get();
-            
-            // Chuyển danh sách bài hát từ chuỗi sang mảng và tính toán thời gian
-            $albums = $albums->map(function ($album) {
-                $album->songs = $album->songs ? explode(',', $album->songs) : [];
-                $this->calculateLastUpdateAgo($album);
-                return $album;
-            });
+        // Chuyển danh sách bài hát từ chuỗi sang mảng và tính toán thời gian
+        $albums = $albums->map(function ($album) {
+            $album->songs = $album->songs ? explode(',', $album->songs) : [];
 
-            return response()->json($albums);
-        } else {
-            // Thực hiện phân trang
-            $albums = $query->paginate($perPage, ['*'], 'page', $page);
-            
-            // Chuyển danh sách bài hát từ chuỗi sang mảng và tính toán thời gian
-            $albums->getCollection()->transform(function ($album) {
-                $album->songs = $album->songs ? explode(',', $album->songs) : [];
-                $this->calculateLastUpdateAgo($album);
-                return $album;
-            });
+            // Tính toán thời gian "time ago" từ last_update
+            if ($album->last_update) {
+                try {
+                    // Tạo DateTime object từ last_update (GMT+7)
+                    $lastUpdate = new \DateTime($album->last_update, new \DateTimeZone('Asia/Ho_Chi_Minh'));
+                    $now = new \DateTime('now', new \DateTimeZone('Asia/Ho_Chi_Minh'));
 
-            return response()->json([
-                'data' => $albums->items(),
-                'pagination' => [
-                    'current_page' => $albums->currentPage(),
-                    'last_page' => $albums->lastPage(),
-                    'per_page' => $albums->perPage(),
-                    'total' => $albums->total(),
-                    'from' => $albums->firstItem(),
-                    'to' => $albums->lastItem()
-                ]
-            ]);
-        }
-    }
+                    // Tính khoảng cách thời gian
+                    $interval = $now->diff($lastUpdate);
 
-    private function calculateLastUpdateAgo($album) {
-        // Tính toán thời gian "time ago" từ last_update
-        if ($album->last_update) {
-            try {
-                // Tạo DateTime object từ last_update (GMT+7)
-                $lastUpdate = new \DateTime($album->last_update, new \DateTimeZone('Asia/Ho_Chi_Minh'));
-                $now = new \DateTime('now', new \DateTimeZone('Asia/Ho_Chi_Minh'));
-
-                // Tính khoảng cách thời gian
-                $interval = $now->diff($lastUpdate);
-
-                // Format thời gian theo yêu cầu
-                if ($interval->d > 0) {
-                    $album->last_update_ago = $interval->d . 'd ago';
-                } elseif ($interval->h > 0) {
-                    $album->last_update_ago = $interval->h . 'h ago';
-                } elseif ($interval->i > 0) {
-                    $album->last_update_ago = $interval->i . 'm ago';
-                } else {
-                    $album->last_update_ago = 'just now';
+                    // Format thời gian theo yêu cầu
+                    if ($interval->d > 0) {
+                        $album->last_update_ago = $interval->d . 'd ago';
+                    } elseif ($interval->h > 0) {
+                        $album->last_update_ago = $interval->h . 'h ago';
+                    } elseif ($interval->i > 0) {
+                        $album->last_update_ago = $interval->i . 'm ago';
+                    } else {
+                        $album->last_update_ago = 'just now';
+                    }
+                } catch (\Exception $e) {
+                    $album->last_update_ago = 'unknown';
                 }
-            } catch (\Exception $e) {
-                $album->last_update_ago = 'unknown';
+            } else {
+                $album->last_update_ago = 'never updated';
             }
-        } else {
-            $album->last_update_ago = 'never updated';
-        }
+
+            return $album;
+        });
+
+        return response()->json($albums);
     }
 
     public function getAlbum(Request $request) {

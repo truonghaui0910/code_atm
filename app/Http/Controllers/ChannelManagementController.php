@@ -3761,6 +3761,9 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         if (isset($request->profile_id)) {
             $data->profile_id = trim($request->profile_id);
         }
+        if (isset($request->moon_profile_id)) {
+            $data->moon_profile_id = trim($request->moon_profile_id);
+        }
         if (isset($request->ip)) {
             $data->ip = trim($request->ip);
         }

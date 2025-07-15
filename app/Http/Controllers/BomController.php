@@ -1052,6 +1052,115 @@ class BomController extends Controller {
         return array("status" => "error", "message" => "Failed");
     }
 
+    public function downloadSongs(Request $request) {
+        $user = Auth::user();
+        Log::info($user->user_name . '|BomController.downloadSongs|request=' . json_encode($request->all()));
+        
+        try {
+            $bomIds = $request->bom_array;
+            if (empty($bomIds)) {
+                return response()->json(['status' => 'error', 'message' => 'No songs selected']);
+            }
+
+            $songs = Bom::whereIn('id', $bomIds)->where('status', 1)->get();
+            if ($songs->isEmpty()) {
+                return response()->json(['status' => 'error', 'message' => 'No valid songs found']);
+            }
+
+            $songInfos = [];
+            $totalSongs = count($songs);
+
+            foreach ($songs as $index => $song) {
+                $downloadUrl = null;
+                $trackInfo = null;
+
+                // Check if song has direct_link first
+                if (!empty($song->direct_link)) {
+                    $downloadUrl = $song->direct_link;
+                    $trackInfo = [
+                        'id' => $song->id,
+                        'song_name' => $song->song_name,
+                        'artist' => $song->artist
+                    ];
+                    Log::info("Using direct_link for song {$song->id}: {$downloadUrl}");
+                } else if (!empty($song->deezer_id)) {
+                    // First try to get from timestamp API (faster)
+                    $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id={$song->deezer_id}");
+                    if ($trackRes) {
+                        $track = json_decode($trackRes);
+                        if ($track->count > 0 && !empty($track->results[0]->url_128)) {
+                            $downloadUrl = $track->results[0]->url_128;
+                            $trackInfo = [
+                                'id' => $song->id,
+                                'song_name' => $track->results[0]->title,
+                                'artist' => $track->results[0]->artist
+                            ];
+                            Log::info("Got download URL from timestamp API for song {$song->id}: {$downloadUrl}");
+                        }
+                    }
+                    
+                    // If timestamp API doesn't have url_128, call deezer API
+                    if (!$downloadUrl) {
+                        Log::info("Calling Deezer API for song {$song->id}, deezer_id: {$song->deezer_id}");
+                        $deezerResponse = RequestHelper::getRequest("http://source.automusic.win/deezer/track/get/{$song->deezer_id}");
+                        
+                        if ($deezerResponse) {
+                            // Try timestamp API again after deezer call
+                            $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id={$song->deezer_id}");
+                            if ($trackRes) {
+                                $track = json_decode($trackRes);
+                                if ($track->count > 0 && !empty($track->results[0]->url_128)) {
+                                    $downloadUrl = $track->results[0]->url_128;
+                                    $trackInfo = [
+                                        'id' => $song->id,
+                                        'song_name' => $track->results[0]->title,
+                                        'artist' => $track->results[0]->artist
+                                    ];
+                                    Log::info("Got download URL after deezer call for song {$song->id}: {$downloadUrl}");
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($downloadUrl && $trackInfo) {
+                    $filename = $this->sanitizeFilename($trackInfo['id'] . '-' . $trackInfo['artist'] . '-' . $trackInfo['song_name'] . '.mp3');
+                    $songInfos[] = [
+                        'id' => $trackInfo['id'],
+                        'url' => $downloadUrl,
+                        'filename' => $filename,
+                        'song_name' => $trackInfo['song_name'],
+                        'artist' => $trackInfo['artist']
+                    ];
+                } else {
+                    Log::error("No download URL found for song {$song->id}");
+                }
+            }
+
+            if (empty($songInfos)) {
+                return response()->json(['status' => 'error', 'message' => 'No songs could be processed for download']);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Songs ready for download',
+                'songs' => $songInfos,
+                'total' => count($songInfos)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Download songs error: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Download failed: ' . $e->getMessage()]);
+        }
+    }    
+    
+    private function sanitizeFilename($filename) {
+        // Remove or replace invalid characters
+        $filename = preg_replace('/[^\w\s\-\.\(\)]/u', '_', $filename);
+        $filename = preg_replace('/\s+/', ' ', $filename);
+        return trim($filename);
+    }    
+    
     public function exportBoom(Request $request) {
         $user = Auth::user();
         Log::info($user->user_name . '|BomController.exportBoom|request=' . json_encode($request->all()));
@@ -3150,6 +3259,33 @@ class BomController extends Controller {
             $query->where('a.id', $albumId);
         }
 
+        // Lọc theo search term
+        if ($request->has('search') && !empty($request->search)) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('a.album_name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('a.artist', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('a.genre_name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('a.username', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // Lọc theo status
+        if ($request->has('status') && $request->status != 'all') {
+            $statusMap = [
+                'not-distributed' => 0,
+                'pending' => 1,
+                'distributing' => 2,
+                'distributed' => 3,
+                'error' => 4,
+                'online' => 5
+            ];
+            
+            if (isset($statusMap[$request->status])) {
+                $query->where('a.is_released', $statusMap[$request->status]);
+            }
+        }
+
         if (!$request->is_admin_music) {
             $query->where('a.username', $user->user_name);
             $query->orderBy("a.id", "desc");
@@ -3157,43 +3293,74 @@ class BomController extends Controller {
             $query->orderBy("a.release_date", "asc");
         }
 
-        $albums = $query->get();
+        // Thiết lập phân trang
+        $perPage = $request->get('per_page', 20);
+        $page = $request->get('page', 1);
 
-        // Chuyển danh sách bài hát từ chuỗi sang mảng và tính toán thời gian
-        $albums = $albums->map(function ($album) {
-            $album->songs = $album->songs ? explode(',', $album->songs) : [];
+        // Nếu có albumId thì không phân trang
+        if (!empty($albumId)) {
+            $albums = $query->get();
+            
+            // Chuyển danh sách bài hát từ chuỗi sang mảng và tính toán thời gian
+            $albums = $albums->map(function ($album) {
+                $album->songs = $album->songs ? explode(',', $album->songs) : [];
+                $this->calculateLastUpdateAgo($album);
+                return $album;
+            });
 
-            // Tính toán thời gian "time ago" từ last_update
-            if ($album->last_update) {
-                try {
-                    // Tạo DateTime object từ last_update (GMT+7)
-                    $lastUpdate = new \DateTime($album->last_update, new \DateTimeZone('Asia/Ho_Chi_Minh'));
-                    $now = new \DateTime('now', new \DateTimeZone('Asia/Ho_Chi_Minh'));
+            return response()->json($albums);
+        } else {
+            // Thực hiện phân trang
+            $albums = $query->paginate($perPage, ['*'], 'page', $page);
+            
+            // Chuyển danh sách bài hát từ chuỗi sang mảng và tính toán thời gian
+            $albums->getCollection()->transform(function ($album) {
+                $album->songs = $album->songs ? explode(',', $album->songs) : [];
+                $this->calculateLastUpdateAgo($album);
+                return $album;
+            });
 
-                    // Tính khoảng cách thời gian
-                    $interval = $now->diff($lastUpdate);
+            return response()->json([
+                'data' => $albums->items(),
+                'pagination' => [
+                    'current_page' => $albums->currentPage(),
+                    'last_page' => $albums->lastPage(),
+                    'per_page' => $albums->perPage(),
+                    'total' => $albums->total(),
+                    'from' => $albums->firstItem(),
+                    'to' => $albums->lastItem()
+                ]
+            ]);
+        }
+    }
 
-                    // Format thời gian theo yêu cầu
-                    if ($interval->d > 0) {
-                        $album->last_update_ago = $interval->d . 'd ago';
-                    } elseif ($interval->h > 0) {
-                        $album->last_update_ago = $interval->h . 'h ago';
-                    } elseif ($interval->i > 0) {
-                        $album->last_update_ago = $interval->i . 'm ago';
-                    } else {
-                        $album->last_update_ago = 'just now';
-                    }
-                } catch (\Exception $e) {
-                    $album->last_update_ago = 'unknown';
+    private function calculateLastUpdateAgo($album) {
+        // Tính toán thời gian "time ago" từ last_update
+        if ($album->last_update) {
+            try {
+                // Tạo DateTime object từ last_update (GMT+7)
+                $lastUpdate = new \DateTime($album->last_update, new \DateTimeZone('Asia/Ho_Chi_Minh'));
+                $now = new \DateTime('now', new \DateTimeZone('Asia/Ho_Chi_Minh'));
+
+                // Tính khoảng cách thời gian
+                $interval = $now->diff($lastUpdate);
+
+                // Format thời gian theo yêu cầu
+                if ($interval->d > 0) {
+                    $album->last_update_ago = $interval->d . 'd ago';
+                } elseif ($interval->h > 0) {
+                    $album->last_update_ago = $interval->h . 'h ago';
+                } elseif ($interval->i > 0) {
+                    $album->last_update_ago = $interval->i . 'm ago';
+                } else {
+                    $album->last_update_ago = 'just now';
                 }
-            } else {
-                $album->last_update_ago = 'never updated';
+            } catch (\Exception $e) {
+                $album->last_update_ago = 'unknown';
             }
-
-            return $album;
-        });
-
-        return response()->json($albums);
+        } else {
+            $album->last_update_ago = 'never updated';
+        }
     }
 
     public function getAlbum(Request $request) {

@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider {
         if (env('REDIRECT_HTTPS') == 1) {
             $url->forceScheme('https');
         }
+        if (config('app.env') === 'production') {
+            \URL::forceScheme('https');
+        }
     }
 
     /**

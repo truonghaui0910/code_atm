@@ -1205,6 +1205,35 @@ class CalendarController extends Controller {
                 if ($request->job_result != $job->result) {
                     $job->result = $request->job_result;
                     $log .= Utils::timeToStringGmT7(time()) . " $user->user_name update result = $request->job_result" . PHP_EOL;
+                                        // Tạo thông báo Result updated
+                    $receives = ($job->member != null && $job->member != '[]') ? json_decode($job->member) : [];
+                    $receives[] = $job->username;
+                    $receives[] = $job->admin;
+                    $receives = Utils::deleteValueArray([$user->user_name], $receives);
+                    
+                    foreach ($receives as $mem) {
+                        $history = new CampaignTasksHistory();
+                        $history->type = 3;
+                        $history->task_id = $job->task_id;
+                        $history->job_id = $job->id;
+                        $history->username = $user->user_name;
+                        $history->receive = $mem;
+                        $history->created = time();
+                        $history->content = "Result updated";
+                        $history->title = "Result updated";
+                        $history->save();
+                    }
+
+                    $data = (object) [
+                                "type" => 2,
+                                "job_id" => $job->id,
+                                "title" => $job->name,
+                                "message" => "Result updated",
+                                "comment" => null,
+                                "redirect" => "/calendar?jid=$job->id",
+                                "noti_id" => uniqid()
+                    ];
+                    event(new ChatEvent($user, $receives, $data));
                 }
             }
 

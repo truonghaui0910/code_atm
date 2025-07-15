@@ -1,6 +1,7 @@
 @extends('layouts.master')
 
 @section('content')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         #action-toolbar {
             /*position: fixed;*/
@@ -452,6 +453,8 @@
                             <button id="setReleasableBtn" data-mutiple="1" data-type="set_releasable"
                                 class="btn btn-sm btn-info btn-remove-song"><i class="fa fa-check-circle mr-1"></i> Set
                                 Releasable</button>
+                            <button id="downloadBtn" data-mutiple="1" data-type="download_songs"
+                                class="btn btn-sm btn-success btn-download-songs"><i class="fa fa-download mr-1"></i> Download</button>
                             <button id="deleteBtn" data-mutiple="1" data-type="delete_song"
                                 class="btn btn-sm btn-danger btn-remove-song"> <i class="fa fa-trash mr-1"></i>
                                 Delete</button>
@@ -1697,6 +1700,160 @@
             });
         }
 
+        $(".btn-download-songs").click(function(e) {
+            e.preventDefault();
+            var chkBomAllArray = $("input[name='chkBomAll[]']:checked").map(function() {
+                return $(this).val();
+            }).get();
+            
+            if (chkBomAllArray.length === 0) {
+                $.Notification.notify('error', 'top center', '', 'Please select songs to download');
+                return;
+            }
+
+            var $this = $(this);
+            var loadingText = '<i class="fa fa-circle-o-notch fa-spin"></i> Preparing...';
+            if ($(this).html() !== loadingText) {
+                $this.data('original-text', $(this).html());
+                $this.html(loadingText);
+            }
+
+            // Get song information from server
+            $.ajax({
+                type: "POST",
+                url: "/downloadSongs",
+                data: {
+                    "bom_array": chkBomAllArray,
+                    "_token": $('input[name="_token"]').val()
+                },
+                dataType: 'json',
+                success: function(data) {
+                    if (data.status == "success") {
+                        // Start client-side download with progress
+                        startClientDownload(data.songs, $this);
+                    } else {
+                        $this.html($this.data('original-text'));
+                        $.Notification.notify('error', 'top center', '', data.message);
+                    }
+                },
+                error: function(data) {
+                    $this.html($this.data('original-text'));
+                    $.Notification.notify('error', 'top center', '', 'Failed to prepare downloads');
+                    console.log('Error:', data);
+                }
+            });
+        });
+
+        async function startClientDownload(songs, $button) {
+            const totalSongs = songs.length;
+            let completedSongs = 0;
+            const downloadedFiles = [];
+            
+            // Update button to show progress
+            function updateProgress() {
+                const percentage = Math.round((completedSongs / totalSongs) * 100);
+                $button.html(`<i class="fa fa-download"></i> ${percentage}% (${completedSongs}/${totalSongs})`);
+            }
+            
+            updateProgress();
+            
+            // Download songs in parallel (limited concurrency)
+            const downloadPromises = songs.map(async (song, index) => {
+                try {
+                    const response = await fetch(song.url, {
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const blob = await response.blob();
+                    downloadedFiles.push({
+                        filename: song.filename,
+                        blob: blob,
+                        song_name: song.song_name,
+                        artist: song.artist
+                    });
+                    
+                    completedSongs++;
+                    updateProgress();
+                    
+                    return { success: true, song: song };
+                } catch (error) {
+                    console.error(`Failed to download ${song.filename}:`, error);
+                    completedSongs++;
+                    updateProgress();
+                    return { success: false, song: song, error: error.message };
+                }
+            });
+            
+            // Wait for all downloads to complete
+            const results = await Promise.all(downloadPromises);
+            
+            // Check if we have any successful downloads
+            if (downloadedFiles.length === 0) {
+                $button.html($button.data('original-text'));
+                $.Notification.notify('error', 'top center', '', 'No files could be downloaded');
+                return;
+            }
+            
+            // Create and download ZIP file
+            $button.html('<i class="fa fa-file-archive-o"></i> Creating ZIP...');
+            
+            try {
+                // Create ZIP using JSZip
+                if (typeof JSZip === 'undefined') {
+                    // Fallback: download files individually
+                    downloadedFiles.forEach(file => {
+                        const url = URL.createObjectURL(file.blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = file.filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    });
+                    
+                    $button.html($button.data('original-text'));
+                    $.Notification.notify('success', 'top center', '', `Downloaded ${downloadedFiles.length} files individually`);
+                } else {
+                    // Create ZIP file
+                    const zip = new JSZip();
+                    
+                    downloadedFiles.forEach(file => {
+                        zip.file(file.filename, file.blob);
+                    });
+                    
+                    const zipBlob = await zip.generateAsync({type: "blob"});
+                    const zipUrl = URL.createObjectURL(zipBlob);
+                    
+                    // Download ZIP
+                    const a = document.createElement('a');
+                    a.href = zipUrl;
+                    a.download = `songs_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(zipUrl);
+                    
+                    $button.html($button.data('original-text'));
+                    
+                    const failedCount = totalSongs - downloadedFiles.length;
+                    if (failedCount > 0) {
+                        $.Notification.notify('warning', 'top center', '', `Downloaded ${downloadedFiles.length} files. ${failedCount} failed.`);
+                    } else {
+                        $.Notification.notify('success', 'top center', '', `Successfully downloaded ${downloadedFiles.length} songs`);
+                    }
+                }
+            } catch (error) {
+                console.error('ZIP creation failed:', error);
+                $button.html($button.data('original-text'));
+                $.Notification.notify('error', 'top center', '', 'Failed to create ZIP file');
+            }
+        }
         $(".btn-remove-song").click(function(e) {
             e.preventDefault();
             var type = $(this).attr("data-type");

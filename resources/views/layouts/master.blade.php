@@ -7,7 +7,7 @@
     <meta name="description" content="Automusic.win">
     <meta name="author" content="Victorteam">
     <meta name="us" content="<?php echo isset($user_login) ? $user_login->user_name : ''; ?>">
-    <meta name="rs" content="<?php echo $is_admin_calendar;?>">
+    <meta name="rs" content="<?php echo $is_admin_calendar; ?>">
 
     <link rel="shortcut icon" href="images/favicon.ico">
 
@@ -16,7 +16,7 @@
 
 
     <!-- DataTables -->
-<!--    <link href="https://cdn.jsdelivr.net/npm/flowbite@2.4.1/dist/flowbite.min.css" rel="stylesheet" />
+    <!--    <link href="https://cdn.jsdelivr.net/npm/flowbite@2.4.1/dist/flowbite.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.4.1/dist/flowbite.min.js"></script>-->
     <link href="assets/plugins/fullcalendar/css/fullcalendar.min.css" rel="stylesheet" />
     <link href="assets/plugins/summernote/summernote.css" rel="stylesheet" />
@@ -62,7 +62,7 @@
     <script src="js/avatar-handlers.js?v=1.2"></script>
 
     <style>
-        
+
     </style>
 
 </head>
@@ -110,7 +110,7 @@
     </script>
 
     <!-- Plugins  -->
-    
+
     <script src="assets/js/jquery.min.js"></script>
 
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -128,7 +128,7 @@
     <script src="assets/js/jquery.scrollTo.min.js"></script>
     <script src="assets/plugins/switchery/switchery.min.js"></script>
     <script src="assets/plugins/summernote/summernote.min.js?v=1.01"></script>
-    
+
     <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 
@@ -203,7 +203,7 @@
     <script src='assets/plugins/fullcalendar/js/fullcalendar.min.js'></script>
     <script src="assets/pages/jquery.fullcalendar.js?v=1.70"></script>
 
-    
+
     <!--<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>-->
 
 
@@ -290,11 +290,11 @@
                     } else if (data.data.type == 3) {
                         //image,delete
                         listComment(data.data.job_id);
-                    }else if (data.data.type == 4) {
+                    } else if (data.data.type == 4) {
                         //check claim
-//                        editCampaign(data.data.job_id,0);
+                        //                        editCampaign(data.data.job_id,0);
                         $(".btn-check-claim").html(`<i class="fa fa-refresh"></i>`);
-                    }else if (data.data.type == 5) {
+                    } else if (data.data.type == 5) {
                         showRewardNotification({
                             avatar: data.data.avatar,
                             name: data.data.name,
@@ -313,8 +313,8 @@
             $('[data-plugin-one="switchery"]').each(function(idx, obj) {
                 new Switchery($(this)[0], $(this).data());
             });
-            
-            $("#btn-read-all").click(function(){
+
+            $("#btn-read-all").click(function() {
                 $.ajax({
                     type: "GET",
                     url: "/readAllNotify",
@@ -324,7 +324,8 @@
                     },
                     dataType: 'json',
                     success: function(data) {
-                        $.Notification.autoHideNotify("success", 'top center', "Notify", `Mark as read ${data}`);
+                        $.Notification.autoHideNotify("success", 'top center', "Notify",
+                            `Mark as read ${data}`);
                         loadNotify(0);
                     },
                     error: function(data) {}
@@ -369,115 +370,115 @@
                 localStorage.setItem("noti_group", JSON.stringify(groups));
                 loadNotify(0);
             };
-            notiUpdateStatus = function(id) {
-                $.ajax({
-                    type: "GET",
-                    url: "/notiUpdateStatus",
-                    data: {
-                        id: id
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        loadNotify(0);
-                    },
-                    error: function(data) {}
-                });
-            };
-            notiUpdateRead = function(id) {
-                $.ajax({
-                    type: "GET",
-                    url: "/notiUpdateRead",
-                    data: {
-                        id: id
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        loadNotify(0);
-                        if(data.redirect!=null){
-                            window.open(data.redirect,'_blank');
-                        }
-                    },
-                    error: function(data) {}
-                });
-            };
+            //            notiUpdateStatus = function(id) {
+            //                $.ajax({
+            //                    type: "GET",
+            //                    url: "/notiUpdateStatus",
+            //                    data: {
+            //                        id: id
+            //                    },
+            //                    dataType: 'json',
+            //                    success: function(data) {
+            //                        loadNotify(0);
+            //                    },
+            //                    error: function(data) {}
+            //                });
+            //            };
+            //            notiUpdateRead = function(id) {
+            //                $.ajax({
+            //                    type: "GET",
+            //                    url: "/notiUpdateRead",
+            //                    data: {
+            //                        id: id
+            //                    },
+            //                    dataType: 'json',
+            //                    success: function(data) {
+            //                        loadNotify(0);
+            //                        if (data.redirect != null) {
+            //                            window.open(data.redirect, '_blank');
+            //                        }
+            //                    },
+            //                    error: function(data) {}
+            //                });
+            //            };
             var isShowDialogNotify = 0;
-            loadNotify = function(show = 1) {
-                $("#openNotify").addClass("disabled");
-                $("#notify_loading").show();
-                $.ajax({
-                    type: "GET",
-                    url: "/getNotify",
-                    data: {
-                        status: status,
-                        group: groups
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        $("#notify_loading").hide();
-                        logger("notify", data);
-                        if (data.count > 0) {
-                            $("#notify-count").html(data.count);
-                            $("#notify-count").css({
-                                "display": "flex"
-                            });
-                        } else {
-                            $("#notify-count").hide();
-                        }
-                        var html = `<table class="table table-hover mails m-0"  style="border-collapse: inherit;table-layout: fixed">
-                                            <tbody>`;
-                        $.each(data.noti, function(key, value) {
-                            var platform =
-                                `<a onclick="notiUpdateRead(${value.id})" class="cur-poiter">${value.platform}</a>`;
-                            if (value.action_type === 'redirect') {
-                                platform =
-                                    `<a target="_blank" href="${value.action}" >${value.platform}</a>`;
-                            }
-                            var content =
-                                `<a onclick="notiUpdateRead(${value.id})" class="cur-poiter">${value.content}</a>`;
-                            if (value.action_type === 'redirect') {
-                                content =
-                                    `<a target="_blank" href="${value.action}" >${value.content}</a>`;
-                            }
-                            html += `<tr class="${value.unread}">
-                                                            <td style="width:5%">
-                                                                <i class="fa fa-circle m-l-5 ${value.group_color}"></i>
-                                                            </td>
-                                                            <td style="width:10%" >
-                                                                ${platform}
-                                                            </td>
-                                                            <td style="width:50%" class="hidden-xs text-wrap " data-toggle="tooltip" data-placement="top" data-original-title="">
-                                                                ${content}
-                                                            </td><td style="width:12%">`;
-                            @if ($is_admin_music)
-                                if (value.platform == 'automusic') {
-                                    html += `${value.username}`;
-                                }
-                            @endif
-
-                            html += `</td><td style="width:12%" class="text-right">${value.created}</td>
-                                                            <td style="width:10%" class="text-right" onclick='notiUpdateStatus(${value.id})'>${value.status_badge}</td>
-                                                        </tr>`;
-                        });
-                        html += `</tbody></table>`;
-                        $("#table-noti-data").html(html);
-                        $('[data-toggle="tooltip"]').tooltip();
-                        if (data.noti.length === 0) {
-                            $("#table-noti-data").html("No Data");
-                        }
-                        $("#openNotify").removeClass("disabled");
-                        if (show === 1) {
-                            $('#dialog_list_notify').modal({
-                                backdrop: false
-                            });
-                        }
-                    },
-                    error: function(data) {}
-                });
-            };
-            loadNotify(0);
-            setInterval(function() {
-                loadNotify(0);
-            }, 30000);
+            //            loadNotify = function(show = 1) {
+            //                $("#openNotify").addClass("disabled");
+            //                $("#notify_loading").show();
+            //                $.ajax({
+            //                    type: "GET",
+            //                    url: "/getNotify",
+            //                    data: {
+            //                        status: status,
+            //                        group: groups
+            //                    },
+            //                    dataType: 'json',
+            //                    success: function(data) {
+            //                        $("#notify_loading").hide();
+            //                        logger("notify", data);
+            //                        if (data.count > 0) {
+            //                            $("#notify-count").html(data.count);
+            //                            $("#notify-count").css({
+            //                                "display": "flex"
+            //                            });
+            //                        } else {
+            //                            $("#notify-count").hide();
+            //                        }
+            //                        var html = `<table class="table table-hover mails m-0"  style="border-collapse: inherit;table-layout: fixed">
+        //                                            <tbody>`;
+            //                        $.each(data.noti, function(key, value) {
+            //                            var platform =
+            //                                `<a onclick="notiUpdateRead(${value.id})" class="cur-poiter">${value.platform}</a>`;
+            //                            if (value.action_type === 'redirect') {
+            //                                platform =
+            //                                    `<a target="_blank" href="${value.action}" >${value.platform}</a>`;
+            //                            }
+            //                            var content =
+            //                                `<a onclick="notiUpdateRead(${value.id})" class="cur-poiter">${value.content}</a>`;
+            //                            if (value.action_type === 'redirect') {
+            //                                content =
+            //                                    `<a target="_blank" href="${value.action}" >${value.content}</a>`;
+            //                            }
+            //                            html += `<tr class="${value.unread}">
+        //                                                            <td style="width:5%">
+        //                                                                <i class="fa fa-circle m-l-5 ${value.group_color}"></i>
+        //                                                            </td>
+        //                                                            <td style="width:10%" >
+        //                                                                ${platform}
+        //                                                            </td>
+        //                                                            <td style="width:50%" class="hidden-xs text-wrap " data-toggle="tooltip" data-placement="top" data-original-title="">
+        //                                                                ${content}
+        //                                                            </td><td style="width:12%">`;
+            //                            @if ($is_admin_music)
+            //                                if (value.platform == 'automusic') {
+            //                                    html += `${value.username}`;
+            //                                }
+            //                            @endif
+            //
+            //                            html += `</td><td style="width:12%" class="text-right">${value.created}</td>
+        //                                                            <td style="width:10%" class="text-right" onclick='notiUpdateStatus(${value.id})'>${value.status_badge}</td>
+        //                                                        </tr>`;
+            //                        });
+            //                        html += `</tbody></table>`;
+            //                        $("#table-noti-data").html(html);
+            //                        $('[data-toggle="tooltip"]').tooltip();
+            //                        if (data.noti.length === 0) {
+            //                            $("#table-noti-data").html("No Data");
+            //                        }
+            //                        $("#openNotify").removeClass("disabled");
+            //                        if (show === 1) {
+            //                            $('#dialog_list_notify').modal({
+            //                                backdrop: false
+            //                            });
+            //                        }
+            //                    },
+            //                    error: function(data) {}
+            //                });
+            //            };
+            //            loadNotify(0);
+            //            setInterval(function() {
+            //                loadNotify(0);
+            //            }, 30000);
             numberToShorten = function(num) {
                 num = num.toString().replace(/[^0-9.]/g, '');
                 if (num < 1000) {
@@ -700,14 +701,15 @@
                                 newOption.insertAfter(noGroupOption);
                             } else {
                                 // Các option tiếp theo sẽ được thêm sau option cuối cùng vừa thêm
-                                var lastAddedOption = $('#targetGroup option[value="' + data.groups[index-1].id + '"]');
+                                var lastAddedOption = $('#targetGroup option[value="' +
+                                    data.groups[index - 1].id + '"]');
                                 newOption.insertAfter(lastAddedOption);
                             }
                         });
                         $("#targetGroup").selectpicker('refresh');
                         $('#group_channel_1').groupDropdown('refresh');
                         $('#group_channel_2').groupDropdown('refresh');
-                        
+
                     },
                     error: function(data) {
                         //                    console.log('Error:', data);
@@ -823,9 +825,9 @@
                 $temp.remove();
                 $.Notification.notify('success', 'top center', 'Notification', 'Copied');
             };
-            
+
             // Helper function to copy text to clipboard
-            copyToClipboard2 = function (text) {
+            copyToClipboard2 = function(text) {
                 const tempInput = document.createElement('input');
                 tempInput.value = text;
                 document.body.appendChild(tempInput);
@@ -835,12 +837,12 @@
             };
 
             // Helper function to show the copied effect
-            showCopiedEffect =function (element) {
+            showCopiedEffect = function(element) {
                 element.addClass('copied');
                 setTimeout(() => {
                     element.removeClass('copied');
                 }, 2000);
-            };            
+            };
             $('#select_all').change(function() {
                 var checkboxes = $(this).closest('.table').find('.checkbox-multi');
                 checkboxes.prop('checked', $(this).is(':checked'));
@@ -1060,50 +1062,50 @@
                     }
                 });
             };
-            activeTableCopy = function(){
+            activeTableCopy = function() {
                 $(".table-copy").on("click", "td", function() {
                     var text = $(this).text();
                     copyText(text);
                 });
             }
             activeTableCopy();
-                    // Function to show notification
-            showNotification = function (message, type = 'info') {
-            // Create notification element if it doesn't exist
-            if ($('#notification-container').length === 0) {
-                $('body').append(
-                    '<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>'
-                );
-            }
+            // Function to show notification
+            showNotification = function(message, type = 'info') {
+                // Create notification element if it doesn't exist
+                if ($('#notification-container').length === 0) {
+                    $('body').append(
+                        '<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>'
+                    );
+                }
 
-            // Generate a unique ID for this notification
-            const id = 'notification-' + Date.now();
+                // Generate a unique ID for this notification
+                const id = 'notification-' + Date.now();
 
-            // Create the notification HTML
-            let bgColor = '';
-            let icon = '';
+                // Create the notification HTML
+                let bgColor = '';
+                let icon = '';
 
-            switch (type) {
-                case 'success':
-                    bgColor = '#38b000';
-                    icon = '<i class="fas fa-check-circle mr-2"></i>';
-                    break;
-                case 'error':
-                    bgColor = '#ef233c';
-                    icon = '<i class="fas fa-exclamation-circle mr-2"></i>';
-                    break;
-                case 'warning':
-                    bgColor = '#fb8500';
-                    icon = '<i class="fas fa-exclamation-triangle mr-2"></i>';
-                    break;
-                case 'info':
-                default:
-                    bgColor = '#3a86ff';
-                    icon = '<i class="fas fa-info-circle mr-2"></i>';
-                    break;
-            }
+                switch (type) {
+                    case 'success':
+                        bgColor = '#38b000';
+                        icon = '<i class="fas fa-check-circle mr-2"></i>';
+                        break;
+                    case 'error':
+                        bgColor = '#ef233c';
+                        icon = '<i class="fas fa-exclamation-circle mr-2"></i>';
+                        break;
+                    case 'warning':
+                        bgColor = '#fb8500';
+                        icon = '<i class="fas fa-exclamation-triangle mr-2"></i>';
+                        break;
+                    case 'info':
+                    default:
+                        bgColor = '#3a86ff';
+                        icon = '<i class="fas fa-info-circle mr-2"></i>';
+                        break;
+                }
 
-            const notificationHTML = `
+                const notificationHTML = `
             <div id="${id}" class="notification" style="
                 background-color: ${bgColor};
                 color: white;
@@ -1134,107 +1136,403 @@
             </div>
         `;
 
-            // Add the notification to the container
-            $('#notification-container').append(notificationHTML);
+                // Add the notification to the container
+                $('#notification-container').append(notificationHTML);
 
-            // Show the notification with animation
-            setTimeout(() => {
-                $(`#${id}`).css({
-                    'opacity': '1',
-                    'transform': 'translateX(0)'
+                // Show the notification with animation
+                setTimeout(() => {
+                    $(`#${id}`).css({
+                        'opacity': '1',
+                        'transform': 'translateX(0)'
+                    });
+                }, 10);
+
+                // Set up the close button
+                $(`#${id} .close-btn`).click(function() {
+                    removeNotification(id);
                 });
-            }, 10);
 
-            // Set up the close button
-            $(`#${id} .close-btn`).click(function() {
-                removeNotification(id);
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    removeNotification(id);
+                }, 5000);
+            };
+
+            // Function to remove a notification with animation
+            removeNotification = function(id) {
+                $(`#${id}`).css({
+                    'opacity': '0',
+                    'transform': 'translateX(100px)'
+                });
+
+                setTimeout(() => {
+                    $(`#${id}`).remove();
+                }, 300);
+            };
+
+
+
+
+
+
+
+
+            // Ví dụ cách sử dụng:
+
+            //showRewardNotification({
+            //  avatar: 'https://automusic.win/images/avatar/hieumusic.jpg',
+            //  name: 'Nguyễn Văn A',
+            //  position: 'Nhân viên xuất sắc',
+            //  content: 'Xuất sắc hoàn thành dự án ABC với thành tích vượt 150% chỉ tiêu. Đồng thời hỗ trợ đồng nghiệp một cách nhiệt tình và hiệu quả.',
+            //  theme: 'royal', // Có thể chọn: 'gold', 'royal', 'neon', 'rainbow'
+            //  onClose: function() {
+            //    console.log('Modal đã đóng');
+            //  }
+            //});
+
+            //khóa DevTools
+            @if (!($is_admin_music || $is_dev_tool))
+                window.devtools = (function() {
+                    const devtools = {
+                        open: false,
+                        orientation: null,
+                    };
+
+                    const threshold = 160;
+
+                    const emitEvent = (state, orientation) => {
+                        devtools.open = state;
+                        devtools.orientation = orientation;
+                        const event = new CustomEvent('devtoolschange', {
+                            detail: {
+                                open: state,
+                                orientation: orientation
+                            },
+                        });
+                        window.dispatchEvent(event);
+                    };
+
+                    setInterval(() => {
+                        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+                        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+                        const orientation = widthThreshold ? 'vertical' : 'horizontal';
+
+                        if (!(heightThreshold && widthThreshold) && (widthThreshold ||
+                                heightThreshold)) {
+                            if (!devtools.open || devtools.orientation !== orientation) {
+                                emitEvent(true, orientation);
+                            }
+                        } else {
+                            if (devtools.open) {
+                                emitEvent(false, null);
+                            }
+                        }
+                    }, 500);
+
+                    return devtools;
+                })();
+                window.addEventListener('devtoolschange', function(e) {
+                    if (e.detail.open) {
+                        // DevTools đang mở
+                        window.location.href = 'https://moonseo.app/images/stop.png';
+                    }
+                });
+            @endif
+
+            loadNotifyCount = function() {
+                $.ajax({
+                    type: "GET",
+                    url: "/getNotifyCount",
+                    data: {
+                        status: status,
+                        group: groups
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        logger("notify-count", data);
+
+                        // Update regular notification count
+                        if (data.notify_count > 0) {
+                            $("#notify-count").html(data.notify_count);
+                            $("#notify-count").css({
+                                "display": "flex"
+                            });
+                        } else {
+                            $("#notify-count").hide();
+                        }
+
+                        // Update money notification count
+                        if (data.money_count > 0) {
+                            $("#notify-money-count").html(data.money_count);
+                            $("#notify-money-count").css({
+                                "display": "flex"
+                            });
+                        } else {
+                            $("#notify-money-count").hide();
+                        }
+                    },
+                    error: function(data) {
+                        console.log('Error loading notification counts:', data);
+                    }
+                });
+            };
+
+            loadNotify = function(show = 1) {
+                $("#openNotify").addClass("disabled");
+                $("#notify_loading").show();
+                $.ajax({
+                    type: "GET",
+                    url: "/getNotify",
+                    data: {
+                        status: status,
+                        group: groups
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        $("#notify_loading").hide();
+                        logger("notify", data);
+
+                        var html = `<table class="table table-hover mails m-0" style="border-collapse: inherit;table-layout: fixed">
+                                <tbody>`;
+                        $.each(data.noti, function(key, value) {
+                            var platform =
+                                `<a onclick="notiUpdateRead(${value.id})" class="cur-poiter">${value.platform}</a>`;
+                            if (value.action_type === 'redirect') {
+                                platform =
+                                    `<a target="_blank" href="${value.action}" >${value.platform}</a>`;
+                            }
+                            var content =
+                                `<a onclick="notiUpdateRead(${value.id})" class="cur-poiter">${value.content}</a>`;
+                            if (value.action_type === 'redirect') {
+                                content =
+                                    `<a target="_blank" href="${value.action}" >${value.content}</a>`;
+                            }
+                            html += `<tr class="${value.unread}">
+                                    <td style="width:5%">
+                                        <i class="fa fa-circle m-l-5 ${value.group_color}"></i>
+                                    </td>
+                                    <td style="width:10%">
+                                        ${platform}
+                                    </td>
+                                    <td style="width:50%" class="hidden-xs text-wrap" data-toggle="tooltip" data-placement="top" data-original-title="">
+                                        ${content}
+                                    </td><td style="width:12%">`;
+                            @if ($is_admin_music)
+                                if (value.platform == 'automusic') {
+                                    html += `${value.username}`;
+                                }
+                            @endif
+                            html += `</td><td style="width:12%" class="text-right">${value.created}</td>
+                                    <td style="width:10%" class="text-right" onclick='notiUpdateStatus(${value.id})'>${value.status_badge}</td>
+                                </tr>`;
+                        });
+                        html += `</tbody></table>`;
+                        $("#table-noti-data").html(html);
+                        $('[data-toggle="tooltip"]').tooltip();
+                        if (data.noti.length === 0) {
+                            $("#table-noti-data").html("No Data");
+                        }
+                        $("#openNotify").removeClass("disabled");
+                        if (show === 1) {
+                            $('#dialog_list_notify').modal({
+                                backdrop: false
+                            });
+                        }
+                    },
+                    error: function(data) {
+                        $("#notify_loading").hide();
+                        $("#openNotify").removeClass("disabled");
+                    }
+                });
+            };
+            loadNotifyMoney = function() {
+                $("#openNotifyMoney").addClass("disabled");
+                $("#money_loading").show();
+
+                $.ajax({
+                    type: "GET",
+                    url: "/getNotify",
+                    data: { type: 'money' },
+                    dataType: 'json',
+                    success: function(data) {
+                        $("#money_loading").hide();
+
+                        var html = '';
+                        if (data.noti.length > 0) {
+                            $.each(data.noti, function(key, value) {
+                                var timeText = value.created || 'Unknown time';
+                                var unreadClass = value.status == 0 ? 'unread-money' : '';
+
+                                html += `
+                                    <a href="javascript:notiUpdateReadMoney(${value.id});" class="money-notify-item ${unreadClass}">
+                                        <div class="money-notify-content">
+                                            <div class="money-notify-icon">
+                                                <i class="ti-money"></i>
+                                            </div>
+                                            <div class="money-notify-details">
+                                                <div class="money-notify-text">${value.content}</div>
+                                                <div class="money-notify-time">${timeText}</div>
+                                            </div>
+                                            ${value.status == 0 ? '<div class="money-notify-badge"><span class="badge badge-success">New</span></div>' : ''}
+                                        </div>
+                                    </a>
+                                `;
+                            });
+                        } else {
+                            html = `
+                                <div class="money-empty">
+                                    <i class="ti-money"></i>
+                                    <div>No payment notifications</div>
+                                </div>
+                            `;
+                        }
+
+                        $("#money-noti-data").html(html);
+                        $("#openNotifyMoney").removeClass("disabled");
+                    },
+                    error: function(data) {
+                        $("#money_loading").hide();
+                        $("#openNotifyMoney").removeClass("disabled");
+                        $("#money-noti-data").html('<div class="money-empty"><i class="fa fa-exclamation-triangle"></i><div>Error loading notifications</div></div>');
+                    }
+                });
+            };
+            notiUpdateRead = function(id) {
+                $.ajax({
+                    type: "GET",
+                    url: "/notiUpdateRead",
+                    data: {
+                        id: id
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        loadNotifyCount(); // Update counts
+                        loadNotify(0); // Reload regular notifications
+                        if (data.redirect != null) {
+                            window.open(data.redirect, '_blank');
+                        }
+                    },
+                    error: function(data) {}
+                });
+            };
+
+            notiUpdateReadMoney = function(id) {
+                $.ajax({
+                    type: "GET",
+                    url: "/notiUpdateRead",
+                    data: {
+                        id: id
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        loadNotifyCount(); // Update counts
+                        loadNotifyMoney(0); // Reload money notifications
+                        if (data.redirect != null) {
+                            window.open(data.redirect, '_blank');
+                        }
+                    },
+                    error: function(data) {
+                        console.log('Error updating notification:', data);
+                    }
+                });
+            };
+
+            notiUpdateStatus = function(id) {
+                $.ajax({
+                    type: "GET",
+                    url: "/notiUpdateStatus",
+                    data: {
+                        id: id
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        loadNotifyCount(); // Update counts
+                        loadNotify(0); // Reload notifications
+                    },
+                    error: function(data) {}
+                });
+            };
+            $("#btn-read-all").click(function() {
+                $.ajax({
+                    type: "GET",
+                    url: "/readAllNotify",
+                    data: {
+                        status: status,
+                        group: groups
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        $.Notification.autoHideNotify("success", 'top center', "Notify",
+                            `Mark as read ${data}`);
+                        loadNotifyCount(); // Update counts
+                        loadNotify(0); // Reload notifications
+                    },
+                    error: function(data) {}
+                });
             });
-
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                removeNotification(id);
-            }, 5000);
-        };
-
-        // Function to remove a notification with animation
-        removeNotification = function(id) {
-            $(`#${id}`).css({
-                'opacity': '0',
-                'transform': 'translateX(100px)'
+            $("#btn-read-all-money").click(function() {
+                $.ajax({
+                    type: "GET",
+                    url: "/readAllNotify",
+                    data: {
+                        type: 'money'
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        $.Notification.autoHideNotify("success", 'top center', "Notify",
+                            `Marked ${data} money notifications as read`);
+                        loadNotifyCount(); // Update counts
+                        loadNotifyMoney(0); // Reload money notifications
+                    },
+                    error: function(data) {
+                        console.log('Error marking all as read:', data);
+                    }
+                });
             });
+            loadNotifyCount();
 
-            setTimeout(() => {
-                $(`#${id}`).remove();
-            }, 300);
-        };
-        
+            // Timer chỉ chạy cho count - mỗi phút
+            setInterval(function() {
+                loadNotifyCount();
+            }, 60000);
 
+var moneyDropdownOpen = false;
 
+function toggleMoneyDropdown() {
+    if (moneyDropdownOpen) {
+        hideMoneyDropdown();
+    } else {
+        showMoneyDropdown();
+    }
+}
 
-
-
-
-
-// Ví dụ cách sử dụng:
-
-//showRewardNotification({
-//  avatar: 'https://automusic.win/images/avatar/hieumusic.jpg',
-//  name: 'Nguyễn Văn A',
-//  position: 'Nhân viên xuất sắc',
-//  content: 'Xuất sắc hoàn thành dự án ABC với thành tích vượt 150% chỉ tiêu. Đồng thời hỗ trợ đồng nghiệp một cách nhiệt tình và hiệu quả.',
-//  theme: 'royal', // Có thể chọn: 'gold', 'royal', 'neon', 'rainbow'
-//  onClose: function() {
-//    console.log('Modal đã đóng');
-//  }
-//});
-
-//khóa DevTools
-@if(!($is_admin_music || $is_dev_tool))
-window.devtools = (function () {
-    const devtools = {
-        open: false,
-        orientation: null,
-    };
-
-    const threshold = 160;
-
-    const emitEvent = (state, orientation) => {
-        devtools.open = state;
-        devtools.orientation = orientation;
-        const event = new CustomEvent('devtoolschange', {
-            detail: { open: state, orientation: orientation },
-        });
-        window.dispatchEvent(event);
-    };
-
-    setInterval(() => {
-        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-        const orientation = widthThreshold ? 'vertical' : 'horizontal';
-
-        if (!(heightThreshold && widthThreshold) && (widthThreshold || heightThreshold)) {
-            if (!devtools.open || devtools.orientation !== orientation) {
-                emitEvent(true, orientation);
-            }
-        } else {
-            if (devtools.open) {
-                emitEvent(false, null);
-            }
+function showMoneyDropdown() {
+    $('#money-dropdown-custom').show();
+    moneyDropdownOpen = true;
+    loadNotifyMoney(0);
+    
+    // Click outside to close
+    $(document).on('click.moneyDropdown', function(e) {
+        if (!$(e.target).closest('#openNotifyMoney, #money-dropdown-custom').length) {
+            hideMoneyDropdown();
         }
-    }, 500);
+    });
+}
 
-    return devtools;
-})(); 
-    window.addEventListener('devtoolschange', function (e) {
-        if (e.detail.open) {
-            // DevTools đang mở
-            window.location.href = 'https://moonseo.app/images/stop.png';
-        }
-    }); 
-@endif
+function hideMoneyDropdown() {
+    $('#money-dropdown-custom').hide();
+    moneyDropdownOpen = false;
+    $(document).off('click.moneyDropdown');
+}
 
-
-
+// Bind click event
+$(document).ready(function() {
+    $('#openNotifyMoney').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleMoneyDropdown();
+    });
+});
         });
     </script>
     @yield('script')

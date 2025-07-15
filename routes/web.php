@@ -739,6 +739,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
 
     //2024/06/12 đưa ra ngoài để ko lưu last_activity
     Route::get('/getNotify', 'NotificationController@getNotify')->name('getNotify');
+    Route::get('/getNotifyCount', 'NotificationController@getNotifyCount')->name('getNotifyCount');
     Route::get('/calendar/notify/list', 'CalendarController@listCalendarNotify')->name('listCalendarNotify');
 
     //2023/05/29 api getMonthlyViewGroupByUserOrDistributor

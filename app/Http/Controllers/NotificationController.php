@@ -97,96 +97,96 @@ class NotificationController extends Controller {
         }
     }
 
-    public function getNotify(Request $request) {
-        DB::enableQueryLog();
-        $user = Auth()->user();
-        if (!Auth::check()) {
-            return;
-        }
-        // Lấy thời gian hiện tại ở GMT+0 và trừ đi 3 tháng
-        $now = Carbon::now('UTC');
-        $threeMonthsAgo = $now->subMonths(3);
-
-// Chuyển đổi thời gian này thành GMT+7 để so sánh với create_time
-        $threeMonthsAgoGmt7 = $threeMonthsAgo->setTimezone('Asia/Bangkok'); // GMT+7
-//        Log::info($user->user_name . '|NotificationController.getNotify|request=' . json_encode($request->all()));
-        $roles = explode(",", $user->role);
-        $result = [];
-        $count = 0;
-        $groupAll = ["campaign", "release", "invoice", "lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "crosspost", "channel"];
-        $groupColor = ["text-info", "text-warning", "text-purple", "text-success", "text-pink", "text-danger", "text-primary", "", "text-warning"];
-        //show những notify trạng thái 0,3 mặc định
-        $status = ["0", "2"];
-        if (isset($request->status)) {
-            $status = $request->status;
-        }
-        $groupFilter = ["lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "crosspost", "channel"];
-        if ($request->is_admin_music) {
-            $groupFilter = ["campaign", "release", "invoice", "lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "channel"];
-        }
-        if (isset($request->group)) {
-            $groupFilter = $request->group;
-        }
-
-        $notis = Notification::whereIn("status", $status)->where("del_status", 0)->whereIn("group", $groupFilter)->orderBy("id", "desc")->where('create_time', '>=', $threeMonthsAgoGmt7)->get();
-        foreach ($notis as $noti) {
-            $noti->group_color = 'text-info';
-
-            //mỗi group có 1 màu tương ứng
-            foreach ($groupAll as $index => $g) {
-                if ($noti->group == $g) {
-                    $noti->group_color = $groupColor[$index];
-                }
-            }
-            $noti->unread = "unread";
-            if ($noti->type == "notify") {
-                $noti->status_badge = "";
-                if ($noti->status == 1) {
-                    $noti->unread = "";
-                }
-            } else {
-                if ($noti->status == 0) {
-                    $noti->status_badge = "<span class='badge badge-danger cur-poiter'>New</span>";
-                    $noti->unread = "unread";
-                }
-
-                if ($noti->status == 2) {
-                    $noti->status_badge = "<span class='badge badge-warning cur-poiter'>Processing</span>";
-                    $noti->unread = "";
-                }
-                if ($noti->status == 3) {
-                    $noti->status_badge = "<span  class='badge badge-success cur-poiter'>Done</span>";
-                    $noti->unread = "";
-                }
-            }
-
-            $created = strtotime("$noti->create_time GMT+7");
-            $noti->created = Utils::calcTimeText($created);
-            $show = 0;
-            $notiRole = explode(",", $noti->role);
-
-            //show cho những user có cùng role
-            foreach ($notiRole as $notiR) {
-                if (in_array($notiR, $roles)) {
-                    $show = 1;
-                    break;
-                }
-            }
-
-            //show cho nhưng user có cùng username
-            if ($user->user_name == $noti->username) {
-                $show = 1;
-            }
-            if ($show) {
-                if ($noti->status == 0) {
-                    $count++;
-                }
-                $result[] = $noti;
-            }
-        }
-//        Log::info(DB::getQueryLog());
-        return response()->json(["noti" => $result, "count" => $count]);
-    }
+//    public function getNotify(Request $request) {
+//        DB::enableQueryLog();
+//        $user = Auth()->user();
+//        if (!Auth::check()) {
+//            return;
+//        }
+//        // Lấy thời gian hiện tại ở GMT+0 và trừ đi 3 tháng
+//        $now = Carbon::now('UTC');
+//        $threeMonthsAgo = $now->subMonths(3);
+//
+//// Chuyển đổi thời gian này thành GMT+7 để so sánh với create_time
+//        $threeMonthsAgoGmt7 = $threeMonthsAgo->setTimezone('Asia/Bangkok'); // GMT+7
+////        Log::info($user->user_name . '|NotificationController.getNotify|request=' . json_encode($request->all()));
+//        $roles = explode(",", $user->role);
+//        $result = [];
+//        $count = 0;
+//        $groupAll = ["campaign", "release", "invoice", "lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "crosspost", "channel"];
+//        $groupColor = ["text-info", "text-warning", "text-purple", "text-success", "text-pink", "text-danger", "text-primary", "", "text-warning"];
+//        //show những notify trạng thái 0,3 mặc định
+//        $status = ["0", "2"];
+//        if (isset($request->status)) {
+//            $status = $request->status;
+//        }
+//        $groupFilter = ["lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "crosspost", "channel"];
+//        if ($request->is_admin_music) {
+//            $groupFilter = ["campaign", "release", "invoice", "lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "channel"];
+//        }
+//        if (isset($request->group)) {
+//            $groupFilter = $request->group;
+//        }
+//
+//        $notis = Notification::whereIn("status", $status)->where("del_status", 0)->whereIn("group", $groupFilter)->orderBy("id", "desc")->where('create_time', '>=', $threeMonthsAgoGmt7)->get();
+//        foreach ($notis as $noti) {
+//            $noti->group_color = 'text-info';
+//
+//            //mỗi group có 1 màu tương ứng
+//            foreach ($groupAll as $index => $g) {
+//                if ($noti->group == $g) {
+//                    $noti->group_color = $groupColor[$index];
+//                }
+//            }
+//            $noti->unread = "unread";
+//            if ($noti->type == "notify") {
+//                $noti->status_badge = "";
+//                if ($noti->status == 1) {
+//                    $noti->unread = "";
+//                }
+//            } else {
+//                if ($noti->status == 0) {
+//                    $noti->status_badge = "<span class='badge badge-danger cur-poiter'>New</span>";
+//                    $noti->unread = "unread";
+//                }
+//
+//                if ($noti->status == 2) {
+//                    $noti->status_badge = "<span class='badge badge-warning cur-poiter'>Processing</span>";
+//                    $noti->unread = "";
+//                }
+//                if ($noti->status == 3) {
+//                    $noti->status_badge = "<span  class='badge badge-success cur-poiter'>Done</span>";
+//                    $noti->unread = "";
+//                }
+//            }
+//
+//            $created = strtotime("$noti->create_time GMT+7");
+//            $noti->created = Utils::calcTimeText($created);
+//            $show = 0;
+//            $notiRole = explode(",", $noti->role);
+//
+//            //show cho những user có cùng role
+//            foreach ($notiRole as $notiR) {
+//                if (in_array($notiR, $roles)) {
+//                    $show = 1;
+//                    break;
+//                }
+//            }
+//
+//            //show cho nhưng user có cùng username
+//            if ($user->user_name == $noti->username) {
+//                $show = 1;
+//            }
+//            if ($show) {
+//                if ($noti->status == 0) {
+//                    $count++;
+//                }
+//                $result[] = $noti;
+//            }
+//        }
+////        Log::info(DB::getQueryLog());
+//        return response()->json(["noti" => $result, "count" => $count]);
+//    }
 
     public function notiUpdateRead(Request $request) {
         $user = Auth::user();
@@ -209,6 +209,7 @@ class NotificationController extends Controller {
     public function notiUpdateStatus(Request $request) {
         $user = Auth::user();
         $noti = Notification::where("id", $request->id)->first();
+        $status = 1;
         if ($noti) {
             if ($noti->type == 'task') {
                 if ($noti->status == 0) {
@@ -282,16 +283,307 @@ class NotificationController extends Controller {
         }
     }
 
+//    public function readAllNotify(Request $request) {
+//        $user = Auth::user();
+//        Log::info($user->user_name . 'NotificationController.readAllNotify|request=' . json_encode($request->all()));
+//        $groupFilter = ["campaign", "release"];
+//        if (isset($request->group)) {
+//            $groupFilter = $request->group;
+//        }
+//
+//        $log = Utils::timeToStringGmT7(time()) . " $user->user_name read all notify" . PHP_EOL;
+//        $notify = Notification::whereIn("group", $groupFilter)->where("type", "<>", "task_auto_done")->where("status", 0)->update(["status" => 1, "log" => $log]);
+//        return $notify;
+//    }
+
+    public function getNotifyCount(Request $request) {
+        $user = Auth()->user();
+        if (!Auth::check()) {
+            return response()->json(["notify_count" => 0, "money_count" => 0]);
+        }
+
+        // Get regular notification count
+        $notify_count = $this->getRegularNotificationCount($user, $request);
+
+        // Get money notification count
+        $money_count = $this->getMoneyNotificationCount($user);
+
+        return response()->json([
+                    "notify_count" => $notify_count,
+                    "money_count" => $money_count
+        ]);
+    }
+
+    private function getRegularNotificationCount($user, $request) {
+        $now = Carbon::now('UTC');
+        $threeMonthsAgo = $now->subMonths(3);
+        $threeMonthsAgoGmt7 = $threeMonthsAgo->setTimezone('Asia/Bangkok');
+
+        $roles = explode(",", $user->role);
+        $count = 0;
+
+        $status = ["0", "2"];
+        if (isset($request->status)) {
+            $status = $request->status;
+        }
+
+        $groupFilter = ["lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "crosspost", "channel"];
+        if ($request->is_admin_music) {
+            $groupFilter = ["campaign", "release", "invoice", "lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "channel"];
+        }
+        if (isset($request->group)) {
+            $groupFilter = $request->group;
+        }
+
+        $notis = Notification::whereIn("status", $status)
+                ->where("del_status", 0)
+                ->whereIn("group", $groupFilter)
+                ->where('create_time', '>=', $threeMonthsAgoGmt7)
+                ->get();
+
+        foreach ($notis as $noti) {
+            $show = 0;
+            $notiRole = explode(",", $noti->role);
+
+            foreach ($notiRole as $notiR) {
+                if (in_array($notiR, $roles)) {
+                    $show = 1;
+                    break;
+                }
+            }
+
+            if ($user->user_name == $noti->username) {
+                $show = 1;
+            }
+
+            if ($show && $noti->status == 0) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    private function getMoneyNotificationCount($user) {
+        $now = Carbon::now('UTC');
+        $oneMonthAgo = $now->subMonth();
+        $oneMonthAgoGmt7 = $oneMonthAgo->setTimezone('Asia/Bangkok');
+
+        $roles = explode(",", $user->role);
+        $count = 0;
+
+        $notis = Notification::where("type", "task")
+                ->where("platform", "360promo")
+                ->where("group", "invoice")
+                ->where("content", "like", "%paid%")
+                ->where("del_status", 0)
+                ->where("status", 0)
+                ->where('create_time', '>=', $oneMonthAgoGmt7)
+                ->get();
+
+        foreach ($notis as $noti) {
+            $show = 0;
+            $notiRole = explode(",", $noti->role);
+
+            foreach ($notiRole as $notiR) {
+                if (in_array($notiR, $roles)) {
+                    $show = 1;
+                    break;
+                }
+            }
+
+            if ($user->user_name == $noti->username) {
+                $show = 1;
+            }
+
+            if ($show) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    public function getNotify(Request $request) {
+        DB::enableQueryLog();
+        $user = Auth()->user();
+        if (!Auth::check()) {
+            return;
+        }
+
+        // Check if this is a money notification content request
+        if (isset($request->type) && $request->type === 'money') {
+            return $this->getMoneyNotifications($request, $user);
+        }
+
+        // Get regular notifications data for display
+        return $this->getRegularNotifications($request, $user);
+    }
+
+    /**
+     * Lấy dữ liệu regular notifications cho hiển thị
+     */
+    private function getRegularNotifications(Request $request, $user) {
+        $now = Carbon::now('UTC');
+        $threeMonthsAgo = $now->subMonths(3);
+        $threeMonthsAgoGmt7 = $threeMonthsAgo->setTimezone('Asia/Bangkok');
+
+        $roles = explode(",", $user->role);
+        $result = [];
+        $groupAll = ["campaign", "release", "invoice", "lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "crosspost", "channel"];
+        $groupColor = ["text-info", "text-warning", "text-purple", "text-success", "text-pink", "text-danger", "text-primary", "", "text-warning"];
+
+        $status = ["0", "2"];
+        if (isset($request->status)) {
+            $status = $request->status;
+        }
+
+        $groupFilter = ["lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "crosspost", "channel"];
+        if ($request->is_admin_music) {
+            $groupFilter = ["campaign", "release", "invoice", "lyric_timestamp", "lyric_video", "promo_mix", "start_campaign", "channel"];
+        }
+        if (isset($request->group)) {
+            $groupFilter = $request->group;
+        }
+
+        $notis = Notification::whereIn("status", $status)
+                ->where("del_status", 0)
+                ->whereIn("group", $groupFilter)
+                ->orderBy("id", "desc")
+                ->where('create_time', '>=', $threeMonthsAgoGmt7)
+                ->get();
+
+        foreach ($notis as $noti) {
+            $noti->group_color = 'text-info';
+
+            foreach ($groupAll as $index => $g) {
+                if ($noti->group == $g) {
+                    $noti->group_color = $groupColor[$index];
+                }
+            }
+
+            $noti->unread = "unread";
+            if ($noti->type == "notify") {
+                $noti->status_badge = "";
+                if ($noti->status == 1) {
+                    $noti->unread = "";
+                }
+            } else {
+                if ($noti->status == 0) {
+                    $noti->status_badge = "<span class='badge badge-danger cur-poiter'>New</span>";
+                    $noti->unread = "unread";
+                }
+
+                if ($noti->status == 2) {
+                    $noti->status_badge = "<span class='badge badge-warning cur-poiter'>Processing</span>";
+                    $noti->unread = "";
+                }
+                if ($noti->status == 3) {
+                    $noti->status_badge = "<span  class='badge badge-success cur-poiter'>Done</span>";
+                    $noti->unread = "";
+                }
+            }
+
+            $created = strtotime("$noti->create_time GMT+7");
+            $noti->created = Utils::calcTimeText($created);
+            $show = 0;
+            $notiRole = explode(",", $noti->role);
+
+            foreach ($notiRole as $notiR) {
+                if (in_array($notiR, $roles)) {
+                    $show = 1;
+                    break;
+                }
+            }
+
+            if ($user->user_name == $noti->username) {
+                $show = 1;
+            }
+
+            if ($show) {
+                $result[] = $noti;
+            }
+        }
+
+        return response()->json(["noti" => $result]);
+    }
+
+    /**
+     * Lấy dữ liệu money notifications cho hiển thị
+     */
+    private function getMoneyNotifications(Request $request, $user) {
+        $now = Carbon::now('UTC');
+        $oneMonthAgo = $now->subMonth();
+        $oneMonthAgoGmt7 = $oneMonthAgo->setTimezone('Asia/Bangkok');
+
+        $roles = explode(",", $user->role);
+        $result = [];
+
+        $notis = Notification::where("type", "task")
+                ->where("platform", "360promo")
+                ->where("group", "invoice")
+                ->where("content", "like", "%paid%")
+                ->where("del_status", 0)
+                ->where('create_time', '>=', $oneMonthAgoGmt7)
+                ->orderBy("id", "desc")
+                ->get();
+
+        foreach ($notis as $noti) {
+            $created = strtotime("$noti->create_time GMT+7");
+            $noti->created = Utils::calcTimeText($created);
+
+            $show = 0;
+            $notiRole = explode(",", $noti->role);
+
+            foreach ($notiRole as $notiR) {
+                if (in_array($notiR, $roles)) {
+                    $show = 1;
+                    break;
+                }
+            }
+
+            if ($user->user_name == $noti->username) {
+                $show = 1;
+            }
+
+            if ($show) {
+                $result[] = $noti;
+            }
+        }
+
+        return response()->json(["noti" => $result]);
+    }
+
+    /**
+     * Cập nhật readAllNotify
+     */
     public function readAllNotify(Request $request) {
         $user = Auth::user();
         Log::info($user->user_name . 'NotificationController.readAllNotify|request=' . json_encode($request->all()));
+
+        if (isset($request->type) && $request->type === 'money') {
+            // Mark all money notifications as read
+            $log = Utils::timeToStringGmT7(time()) . " $user->user_name read all money notify" . PHP_EOL;
+            $notify = Notification::where("type", "task")
+                    ->where("platform", "360promo")
+                    ->where("group", "invoice")
+                    ->where("content", "like", "%paid%")
+                    ->where("status", 0)
+                    ->update(["status" => 1, "log" => $log]);
+            return $notify;
+        }
+
+        // Original logic for regular notifications
         $groupFilter = ["campaign", "release"];
         if (isset($request->group)) {
             $groupFilter = $request->group;
         }
 
         $log = Utils::timeToStringGmT7(time()) . " $user->user_name read all notify" . PHP_EOL;
-        $notify = Notification::whereIn("group", $groupFilter)->where("type", "<>", "task_auto_done")->where("status", 0)->update(["status" => 1, "log" => $log]);
+        $notify = Notification::whereIn("group", $groupFilter)
+                ->where("type", "<>", "task_auto_done")
+                ->where("status", 0)
+                ->update(["status" => 1, "log" => $log]);
         return $notify;
     }
 

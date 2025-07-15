@@ -70,58 +70,12 @@
                                 <a id="filter-status-1" onclick="changeStatus('1')" class="list-group-item b-0 cur-poiter mb-1"><span class="badge badge-primary">Read</span></a>
                                 <a id="filter-status-2" onclick="changeStatus('2')" class="list-group-item b-0 cur-poiter mb-1"><span class="badge badge-warning ">Processing</span></a>
                                 <a id="filter-status-3" onclick="changeStatus('3')" class="list-group-item b-0 cur-poiter mb-1"><span class="badge badge-success">Done</span></a>
-
-
-
-                            </div> </div>
+                            </div> 
+                        </div>
 
                     </div>
 
                     <div class="col-xl-9 col-lg-8">
-                        <!--                        <div class="row">
-                                                    <div class="col-lg-12">
-                                                        <div class="btn-toolbar m-t-20" role="toolbar">
-                                                            <div class="btn-group">
-                                                                <button type="button" class="btn btn-primary waves-effect waves-light "><i class="fa fa-inbox"></i></button>
-                                                                <button type="button" class="btn btn-primary waves-effect waves-light "><i class="fa fa-exclamation-circle"></i></button>
-                                                                <button type="button" class="btn btn-primary waves-effect waves-light "><i class="fa fa-trash-o"></i></button>
-                                                            </div>
-                                                            <div class="btn-group ml-1">
-                                                                <button type="button" class="btn btn-primary dropdown-toggle waves-effect waves-light" data-toggle="dropdown" aria-expanded="false">
-                                                                    <i class="fa fa-folder"></i>
-                                                                </button>
-                                                                <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
-                                                                    <a class="dropdown-item" href="#">Dropdown One</a>
-                                                                    <a class="dropdown-item" href="#">Dropdown Two</a>
-                                                                    <a class="dropdown-item" href="#">Dropdown Three</a>
-                                                                    <a class="dropdown-item" href="#">Dropdown Four</a>
-                                                                </div>
-                                                            </div>
-                                                            <div class="btn-group ml-1">
-                                                                <button type="button" class="btn btn-primary waves-effect waves-light  dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                                                                    <i class="fa fa-tag"></i>
-                                                                </button>
-                                                                <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
-                                                                    <a class="dropdown-item" href="#">Dropdown One</a>
-                                                                    <a class="dropdown-item" href="#">Dropdown Two</a>
-                                                                    <a class="dropdown-item" href="#">Dropdown Three</a>
-                                                                    <a class="dropdown-item" href="#">Dropdown Four</a>
-                                                                </div>
-                                                            </div>
-                        
-                                                            <div class="btn-group ml-1">
-                                                                <button type="button" class="btn btn-primary waves-effect waves-light  dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                                                                    More
-                                                                </button>
-                                                                <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
-                                                                    <a class="dropdown-item" href="#">Dropdown One</a>
-                                                                    <a class="dropdown-item" href="#">Dropdown Two</a>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>-->
-
                         <div class="card-box p-5">
                             <div class="panel-body p-0">
 

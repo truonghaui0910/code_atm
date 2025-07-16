@@ -794,4 +794,11 @@ class Utils {
         return null;
     }
 
+    public static function sanitizeFilename($filename) {
+        // Remove or replace invalid characters
+        $lastName = preg_replace('/[^\w\s\-\.\(\)]/u', '_', $filename);
+        $lastName = preg_replace('/\s+/', ' ', $lastName);
+        return trim($lastName);
+    }
+
 }

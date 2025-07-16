@@ -473,6 +473,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/boomSync', 'BomController@boomSync')->name('boomSync');
         Route::get('/boomRemove', 'BomController@boomRemove')->name('boomRemove');
         Route::post('/boomStore', 'BomController@store')->name('store');
+        Route::post('/downloadSongs', 'BomController@downloadSongs')->name('downloadSongs');
         Route::get('/boom', 'BomController@index')->name('bom');
         Route::post('/getLyrics', 'BomController@getLyrics')->name('getLyrics');
         Route::get('/boom/{id}', 'BomController@find')->name('find');
@@ -516,6 +517,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::post('/brandingUpdate', 'BrandingController@update')->name('update');
         Route::post('/brandingSaveAboutSection', 'BrandingController@brandingSaveAboutSection')->name('brandingSaveAboutSection');
         Route::get('/exportBoom', 'BomController@exportBoom')->name('exportBoom');
+        Route::get('/proxy-download/{encodedData}', 'BomController@proxyDownload')->name('proxyDownload');
         Route::get('/exportReportGeo', 'CampaignController@exportReportGeo')->name('exportReportGeo');
         Route::get('/exportScanArtist', 'CampaignController@exportScanArtist')->name('exportScanArtist');
         Route::get('/deleteProgressScan', 'CampaignController@deleteProgressScan')->name('deleteProgressScan');

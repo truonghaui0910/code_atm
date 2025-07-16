@@ -1055,7 +1055,7 @@ class BomController extends Controller {
     public function downloadSongs(Request $request) {
         $user = Auth::user();
         Log::info($user->user_name . '|BomController.downloadSongs|request=' . json_encode($request->all()));
-        
+
         try {
             $bomIds = $request->bom_array;
             if (empty($bomIds)) {
@@ -1098,12 +1098,12 @@ class BomController extends Controller {
                             Log::info("Got download URL from timestamp API for song {$song->id}: {$downloadUrl}");
                         }
                     }
-                    
+
                     // If timestamp API doesn't have url_128, call deezer API
                     if (!$downloadUrl) {
                         Log::info("Calling Deezer API for song {$song->id}, deezer_id: {$song->deezer_id}");
                         $deezerResponse = RequestHelper::getRequest("http://source.automusic.win/deezer/track/get/{$song->deezer_id}");
-                        
+
                         if ($deezerResponse) {
                             // Try timestamp API again after deezer call
                             $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id={$song->deezer_id}");
@@ -1122,9 +1122,16 @@ class BomController extends Controller {
                         }
                     }
                 }
-
                 if ($downloadUrl && $trackInfo) {
-                    $filename = $this->sanitizeFilename($trackInfo['id'] . '-' . $trackInfo['artist'] . '-' . $trackInfo['song_name'] . '.mp3');
+                    $filename = Utils::sanitizeFilename($trackInfo['id'] . '-' . $trackInfo['artist'] . '-' . $trackInfo['song_name'] . '.mp3');
+                    if (Utils::containString($downloadUrl, "http://")) {
+                        $dataUrl = [
+                            'url' => $downloadUrl,
+                            'filename' => $filename
+                        ];
+                        $encodedData = base64_encode(json_encode($dataUrl));
+                        $downloadUrl = "/proxy-download/$encodedData";
+                    }
                     $songInfos[] = [
                         'id' => $trackInfo['id'],
                         'url' => $downloadUrl,
@@ -1142,25 +1149,78 @@ class BomController extends Controller {
             }
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Songs ready for download',
-                'songs' => $songInfos,
-                'total' => count($songInfos)
+                        'status' => 'success',
+                        'message' => 'Songs ready for download',
+                        'songs' => $songInfos,
+                        'total' => count($songInfos)
             ]);
-
         } catch (\Exception $e) {
             Log::error('Download songs error: ' . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => 'Download failed: ' . $e->getMessage()]);
         }
-    }    
-    
-    private function sanitizeFilename($filename) {
-        // Remove or replace invalid characters
-        $filename = preg_replace('/[^\w\s\-\.\(\)]/u', '_', $filename);
-        $filename = preg_replace('/\s+/', ' ', $filename);
-        return trim($filename);
-    }    
-    
+    }
+
+//    public function proxyDownload($downloadUrl, $fileName) {
+//        // Download file từ HTTP server
+//        $httpUrl = urldecode($downloadUrl);
+//        Log::info("$httpUrl,$fileName");
+//        $fileContent = file_get_contents($httpUrl);
+//        if ($fileContent === false) {
+////            abort(404, 'File not found');
+//        }
+//
+//        return response($fileContent)
+//                        ->header('Content-Type', 'audio/mpeg')
+//                        ->header('Content-Disposition', 'attachment; filename="' . $fileName . '.mp3"');
+//    }
+
+    public function proxyDownload($encodedData) {
+        try {
+            // Decode URL
+            $data = json_decode(base64_decode($encodedData), true);
+
+            if (!$data || !isset($data['url']) || !isset($data['filename'])) {
+                abort(400, 'Invalid data');
+            }
+
+            $httpUrl = $data['url'];
+            $fileName = $data['filename'];
+
+            Log::info("Downloading: $httpUrl, fileName: $fileName");
+
+
+
+            // Thêm context options để xử lý redirects và headers
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'header' => [
+                        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    ],
+                    'follow_location' => true,
+                    'max_redirects' => 5,
+                    'timeout' => 30
+                ]
+            ]);
+
+            $fileContent = file_get_contents($httpUrl, false, $context);
+
+            if ($fileContent === false) {
+                Log::error("Failed to download file from: $httpUrl");
+                abort(404, 'File not found or cannot be downloaded');
+            }
+
+            return response($fileContent)
+                            ->header('Content-Type', 'audio/mpeg')
+                            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '.mp3"')
+                            ->header('Content-Length', strlen($fileContent));
+        } catch (\Exception $e) {
+            Log::error("Proxy download error: " . $e->getMessage());
+            abort(500, 'Download failed');
+        }
+    }
+
+
     public function exportBoom(Request $request) {
         $user = Auth::user();
         Log::info($user->user_name . '|BomController.exportBoom|request=' . json_encode($request->all()));
@@ -3304,7 +3364,7 @@ class BomController extends Controller {
 
         return response()->json($albums);
     }
-
+    
     public function getAlbum(Request $request) {
         $user = Auth::user();
         if ($request->is_admin_music) {

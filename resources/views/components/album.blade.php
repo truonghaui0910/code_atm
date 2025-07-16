@@ -138,7 +138,7 @@
                 </div>
             </div>
         </div>
-    </div>
+                    </div>
 
     <!-- Modal for adding songs to album -->
     <div class="modal fade" id="addSongsModal" tabindex="-1" role="dialog">
@@ -3756,7 +3756,7 @@
             const info = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total} results`;
             $('#artist-pagination-info').text(info);
         }
-
+        
         $(document).ready(function() {
             window.albums = [];
             window.currentAlbumId = null;
@@ -3764,7 +3764,7 @@
             window.selectedSongs = [];
             window.currentAudio = null;
             window.currentModalAudio = null;
-
+            
 
             fetchAlbums();
 

@@ -499,290 +499,6 @@ class BomController extends Controller {
         }
     }
 
-    // <editor-fold defaultstate="collapsed" desc="store old">
-//    public function store1(Request $request) {
-//        $user = Auth::user();
-//        Log::info($user->user_name . '|BomController.store|request=' . json_encode($request->all()));
-//        $curr = gmdate("Y/m/d H:i:s", time() + 7 * 3600);
-//        if ($request->genre == '-1') {
-//            return response()->json(array("status" => "error", "message" => "Please select the Genre"));
-//        }
-//        if ($request->deezerId == null && $request->localId == null) {
-//            return response()->json(array("status" => "error", "message" => "Enter Deezer Link/Id or Local Id"));
-//        }
-//        if ($request->deezerId != null && $request->localId != null) {
-//            return response()->json(array("status" => "error", "message" => "You can only enter the Deezer Link/Id or the Local Id"));
-//        }
-//
-//        $listAllSong = [];
-//        $localId = null;
-//        $isrc = null;
-//        $deezerId = null;
-//        $results = [];
-//        //thêm mới
-//        if ($request->bom_id == null) {
-//            if ($request->deezerId != null) {
-//
-//                $listDeezerId = explode("@;@", str_replace(array("\r\n", "\n"), "@;@", trim($request->deezerId)));
-//                $fail = 0;
-//                $success = 0;
-//                foreach ($listDeezerId as $dzid) {
-//                    $result = (object) [
-//                                "status" => 2,
-//                                "deezer" => $dzid,
-//                                "song_name" => "",
-//                                "artist" => "",
-//                                "is_lyric" => 0
-//                    ];
-//                    $deezerId = null;
-//                    if (is_numeric($dzid)) {
-//                        $deezerId = $dzid;
-//                    } else {
-//                        if (!Utils::containString($dzid, "deezer.com")) {
-//                            $fail++;
-//                            $result->status = 3;
-//                            $results[] = $result;
-//                            continue;
-//                        }
-//                        preg_match("/track\/(\d+)/", $dzid, $matches);
-//                        if (count($matches) == 2) {
-//                            $deezerId = $matches[1];
-//                        }
-//                        if ($deezerId == null) {
-//                            $result->status = 3;
-//                            $results[] = $result;
-//                            $fail++;
-//                            continue;
-//                        }
-//                    }
-//
-//                    $isLyric = 0;
-//                    $isSync = 0;
-//                    $isrc = null;
-//                    $songTitle = null;
-//                    $songArtist = null;
-//
-//                    //check bài hát dã đươc download về hệ thống chưa
-//                    if ($isSync == 0) {
-//                        //nếu chưa được down thì thực hiện download
-//                        Log::info("http://source.automusic.win/deezer/track/get/$deezerId");
-//                        $res = RequestHelper::getRequest("http://source.automusic.win/deezer/track/get/$deezerId");
-//                        Log::info("download $res");
-//                    }
-//
-//                    $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$deezerId");
-////                    $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$deezerId");
-//                    if ($trackRes != null && $trackRes != "") {
-//                        $track = json_decode($trackRes);
-//                        if ($track->count > 0) {
-//                            if (!empty($track->results[0])) {
-//                                $isrc = $track->results[0]->isrc;
-//                                $songTitle = $track->results[0]->title;
-//                                $songArtist = $track->results[0]->artist;
-//                                if ($track->results[0]->lyric_sync != "" && $track->results[0]->lyric_sync != "null" && $track->results[0]->lyric_sync != null) {
-//                                    $isLyric = 1;
-//                                }
-//                                if ($track->results[0]->url_128 != "") {
-//                                    $isSync = 1;
-//                                }
-//                            }
-//                        }
-//                    }
-//                    Log::info("$deezerId $isrc $songTitle $songArtist");
-//                    $result->song_name = $songTitle;
-//                    $result->artist = $songArtist;
-//                    $result->is_lyric = $isLyric;
-//                    if ($songTitle == null || $songArtist == null) {
-//                        $result->status = 3;
-//                    }
-//                    $check = Bom::where("deezer_id", $deezerId)->where("status", 1)->first();
-//                    if ($check) {
-//                        $check->song_name = $songTitle;
-//                        $check->artist = $songArtist;
-//                        $check->isrc = $isrc;
-//                        $check->save();
-//                        $listAllSong[] = $check->id;
-//                        $fail++;
-//                        $result->status = 2;
-//                        $result->bom_id = $check->id;
-//                        $results[] = $result;
-//                        continue;
-//                    }
-//                    $bom = new Bom();
-//                    $bom->username = $user->user_name;
-//                    $bom->genre = $request->genre;
-//                    $bom->song_name = $songTitle;
-//                    $bom->deezer_id = $deezerId;
-//                    $bom->local_id = $localId;
-//                    $bom->artist = $songArtist;
-//                    $bom->social = $request->social;
-//                    $bom->deezer_artist_id = $request->deezerArtistId;
-//                    $bom->created = $curr;
-//                    $bom->created_timestamp = time();
-//                    $bom->count = 0;
-//                    $bom->lyric = $isLyric;
-//                    $bom->sync = $isSync;
-//                    $bom->isrc = $isrc;
-//                    $bom->status = 1;
-//                    $bom->log = "$curr $user->user_name added to the system";
-//                    $bom->save();
-//                    $success++;
-//                    $result->status = 1;
-//                    $result->bom_id = $bom->id;
-//                    $results[] = $result;
-//                    $listAllSong[] = $bom->id;
-//                }
-//                //thêm vào group 
-//                $bomGroups = BomGroups::whereIn("id", $request->local_group)->get();
-//                foreach ($bomGroups as $bGroup) {
-//                    $listSong = [];
-//                    if ($bGroup->list_song != null) {
-//                        $listSong = json_decode($bGroup->list_song);
-//                    }
-//                    $mergedArray = array_merge($listSong, $listAllSong);
-//                    $uniqueArray = array_unique($mergedArray);
-//                    $uniqueArray = array_values($uniqueArray);
-//                    $bGroup->list_song = json_encode($uniqueArray);
-//                    $bGroup->save();
-//                }
-//                return response()->json(array("status" => "success", "message" => "Success $success", "results" => $results));
-//            } else if ($request->localId != null) {
-//                if ($request->songName == null) {
-//                    return response()->json(array("status" => "error", "message" => "Song Name is invalid"));
-//                }
-//                if ($request->artist == null) {
-//                    return response()->json(array("status" => "error", "message" => "Artist is invalid"));
-//                }
-//                $isLyric = 1;
-//                $isSync = 1;
-//                $localId = trim($request->localId);
-//                $check = Bom::where("local_id", $localId)->first();
-//                if (!$check) {
-//                    $bom = new Bom();
-//                    $bom->username = $user->user_name;
-//                    $bom->genre = $request->genre;
-//                    $bom->song_name = $request->songName;
-//                    $bom->deezer_id = $deezerId;
-//                    $bom->local_id = $localId;
-//                    $bom->artist = $request->artist;
-//                    $bom->social = $request->social;
-//                    $bom->deezer_artist_id = $request->deezerArtistId;
-//                    $bom->created = $curr;
-//                    $bom->created_timestamp = time();
-//                    $bom->count = 0;
-//                    $bom->lyric = $isLyric;
-//                    $bom->sync = $isSync;
-//                    $bom->isrc = $isrc;
-//                    $bom->status = 1;
-//                    $bom->log = "$curr $user->user_name added to the system";
-//                    $bom->save();
-//                    $listAllSong[] = $bom->id;
-//                } else {
-//                    return response()->json(array("status" => "error", "message" => "The song " . ($deezerId != null ? $deezerId : $localId) . " was added to the system by $check->username at $check->created"));
-//                }
-//                //thêm vào group 
-//                $bomGroups = BomGroups::whereIn("id", $request->local_group)->get();
-//                foreach ($bomGroups as $bGroup) {
-//                    $listSong = [];
-//                    if ($bGroup->list_song != null) {
-//                        $listSong = json_decode($bGroup->list_song);
-//                    }
-//                    $mergedArray = array_merge($listSong, $listAllSong);
-//                    $uniqueArray = array_unique($mergedArray);
-//                    $uniqueArray = array_values($uniqueArray);
-//                    $bGroup->list_song = json_encode($uniqueArray);
-//                    $bGroup->save();
-//                }
-//            }
-//        } else {
-//            //edit
-//            $bom = Bom::find($request->bom_id);
-//            if (!$bom) {
-//                return response()->json(array("status" => "error", "message" => "Not found Bom Id $request->bom_id"));
-//            }
-//            if ($bom->album_id != null) {
-//                return response()->json(array("status" => "error", "message" => "This song has been distributed, you cannot edit it."));
-//            }
-//            $deezerId = null;
-//            if ($request->deezerId != null) {
-//                if (is_numeric($request->deezerId)) {
-//                    $deezerId = $request->deezerId;
-//                } else {
-//                    if (!Utils::containString($request->deezerId, "deezer.com")) {
-//                        return response()->json(array("status" => "error", "message" => "You must enter deezer link"));
-//                    }
-//                    preg_match("/track\/(\d+)/", $request->deezerId, $matches);
-//                    if (count($matches) == 2) {
-//                        $deezerId = $matches[1];
-//                    }
-//                    if ($deezerId == null) {
-//                        return response()->json(array("status" => "error", "message" => "Deezer link is invalid"));
-//                    }
-//                }
-//            }
-//            if ($request->songName == null) {
-//                return response()->json(array("status" => "error", "message" => "Song Name is invalid"));
-//            }
-//            if ($request->artist == null) {
-//                return response()->json(array("status" => "error", "message" => "Artist is invalid"));
-//            }
-//            $songName = trim($request->songName);
-//            $artist = trim($request->artist);
-//            $localId = trim($request->localId);
-//            //2024/11/15 update bài hát mà có localid hoăc deezerid thì set lyric ok, sync ok
-//            if (isset($request->localId) || isset($request->deezerId)) {
-//                if (trim($request->localId) != $bom->local_id || $bom->deezer_id != $deezerId) {
-//                    $bom->sync = 1;
-//                    $bom->lyric = 1;
-//                }
-//            }
-//            $bom->local_id = $localId;
-//            $bom->deezer_id = $deezerId;
-//            $bom->genre = $request->genre;
-//            $bom->song_name = $songName;
-//            $bom->artist = $artist;
-//            $bom->social = $request->social;
-//            $bom->log = $bom->log . PHP_EOL . "$curr $user->user_name update to the system";
-//            //2024/12/05 update thông tin lên timestamp
-//            $header = array(
-//                'Authorization: Token 783667efd4d78e99c9b38de66eca82c5246cf6ee',
-//                'Content-Type: application/json'
-//            );
-//
-//            if (isset($request->deezerId)) {
-//                //lấy thông tin bài deezer trên hệ thống timestamp
-//                $trackRes = RequestHelper::getRequest("http://54.39.49.17:6132/api/tracks/?deezer_id=$deezerId");
-//                if ($trackRes != null && $trackRes != "") {
-//                    $track = json_decode($trackRes);
-//                    if ($track->count > 0) {
-//                        if (!empty($track->results[0])) {
-//                            $timestampId = $track->results[0]->id;
-//                            $data = (object) [
-//                                        "title" => $songName,
-//                                        "title_short" => $songName,
-//                                        "artist" => $artist,
-//                                        "deezer_id" => $deezerId,
-//                                        "id" => $timestampId
-//                            ];
-//                            RequestHelper::callAPI2("PUT", "http://54.39.49.17:6132/api/tracks/$timestampId/", $data, $header);
-//                        }
-//                    }
-//                }
-//            }
-//            if (isset($request->localId)) {
-//                $data = (object) [
-//                            "title" => $songName,
-//                            "artist" => $artist,
-//                            "id" => $localId
-//                ];
-//                RequestHelper::callAPI2("PUT", "https://cdn.soundhex.com/api/v1/timestamp/$localId/", $data, array('Content-Type: application/json'));
-//            }
-//            $bom->save();
-//        }
-//        return response()->json(array("status" => "success", "message" => "Success"));
-//    }
-// </editor-fold>
-
     public function boomSync(Request $request) {
         $user = Auth::user();
         Log::info($user->user_name . '|BomController.boomSync|request=' . json_encode($request->all()));
@@ -1160,20 +876,6 @@ class BomController extends Controller {
         }
     }
 
-//    public function proxyDownload($downloadUrl, $fileName) {
-//        // Download file từ HTTP server
-//        $httpUrl = urldecode($downloadUrl);
-//        Log::info("$httpUrl,$fileName");
-//        $fileContent = file_get_contents($httpUrl);
-//        if ($fileContent === false) {
-////            abort(404, 'File not found');
-//        }
-//
-//        return response($fileContent)
-//                        ->header('Content-Type', 'audio/mpeg')
-//                        ->header('Content-Disposition', 'attachment; filename="' . $fileName . '.mp3"');
-//    }
-
     public function proxyDownload($encodedData) {
         try {
             // Decode URL
@@ -1219,7 +921,6 @@ class BomController extends Controller {
             abort(500, 'Download failed');
         }
     }
-
 
     public function exportBoom(Request $request) {
         $user = Auth::user();
@@ -3139,13 +2840,13 @@ class BomController extends Controller {
             ],
                 [
                 "id" => null,
-                "name" => "James Dunn",
+                "name" => $albumDb->artist,
                 "role" => "Composer",
                 "sort_order" => 1
             ],
                 [
                 "id" => null,
-                "name" => "James Dunn",
+                "name" => $albumDb->artist,
                 "role" => "Songwriter",
                 "sort_order" => 2
             ],
@@ -3297,52 +2998,139 @@ class BomController extends Controller {
 
     public function getListAlbum(Request $request) {
         $user = Auth::user();
-        DB::enableQueryLog();
+        Log::info("$user->user_name|BomController.getListAlbum|request=" . json_encode($request->all()));
+        
+
+
         $albumId = $request->id;
+        $page = $request->get('page', 1);
+        $perPage = $request->get('per_page', 12); // 12 items per page for grid
+        $search = $request->get('search', '');
+        $status = $request->get('status', 'all');
+
+        // Giới hạn per_page
+        if ($perPage > 100) {
+            $perPage = 100;
+        }
+        if ($perPage < 1) {
+            $perPage = 12;
+        }
 
         $query = DB::table('bom_albums as a')
                 ->leftJoin('bom as b', 'a.id', '=', 'b.album_id')
-                ->leftJoin('bom_artists as ar', 'a.artist', '=', 'ar.artist_name') // Join với bảng bom_artists
+                ->leftJoin('bom_artists as ar', 'a.artist', '=', 'ar.artist_name')
                 ->select(
-                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', 'ar.artist_total_streams', // Lấy từ bảng bom_artists
-                        'ar.last_update', 'ar.youtube_claim as artist_youtube_claim', 'a.youtube_claim', // Thêm cột last_update từ bảng bom_artists
-                        DB::raw('GROUP_CONCAT(b.id) as songs')
+                        'a.id', 'a.username', 'a.album_name as name', 'a.artist', 'a.desc as description', 'a.is_released as distributed', 'a.album_cover as coverImg', 'a.release_date as releaseDate', 'a.genre_name as genre', 'ar.artist_total_streams', 'ar.last_update', 'ar.youtube_claim as artist_youtube_claim', 'a.youtube_claim', 'a.distro_release_date', DB::raw('GROUP_CONCAT(b.id) as songs')
                 )
                 ->groupBy(
-                'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams', 'ar.last_update', 'ar.youtube_claim', 'a.youtube_claim'
+                'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams', 'ar.last_update', 'ar.youtube_claim', 'a.youtube_claim', 'a.distro_release_date'
         );
+        
 
         $query->where('a.status', 1);
-
-        // Nếu có id thì chỉ lấy album đó
+        $countQuery = DB::table('bom_albums as a')->where('a.status', 1);
+        // Nếu có id cụ thể thì chỉ lấy album đó
         if (!empty($albumId)) {
             $query->where('a.id', $albumId);
+            $countQuery->where('a.id', $albumId);
         }
 
+        // Phân quyền
         if (!$request->is_admin_music) {
             $query->where('a.username', $user->user_name);
-            $query->orderBy("a.id", "desc");
-        } else {
-            $query->orderBy("a.release_date", "asc");
+            $countQuery->where('a.username', $user->user_name);
         }
 
-        $albums = $query->get();
+        // Xử lý search
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('a.album_name', 'like', '%' . $search . '%')
+                        ->orWhere('a.artist', 'like', '%' . $search . '%')
+                        ->orWhere('a.genre_name', 'like', '%' . $search . '%')
+                        ->orWhere('a.username', 'like', '%' . $search . '%')
+                        ->orWhere('a.id', 'like', '%' . $search . '%');
+            });
+            $countQuery->where(function($q) use ($search) {
+                $q->where('a.album_name', 'like', '%' . $search . '%')
+                        ->orWhere('a.artist', 'like', '%' . $search . '%')
+                        ->orWhere('a.genre_name', 'like', '%' . $search . '%')
+                        ->orWhere('a.username', 'like', '%' . $search . '%')
+                        ->orWhere('a.id', 'like', '%' . $search . '%');
+            });
+        }
 
-        // Chuyển danh sách bài hát từ chuỗi sang mảng và tính toán thời gian
+        // Xử lý status filter
+        if ($status !== 'all') {
+            switch ($status) {
+                case 'not-distributed':
+                    $query->where('a.is_released', 0);
+                    $countQuery->where('a.is_released', 0);
+                    break;
+                case 'pending':
+                    $query->where('a.is_released', 1);
+                    $countQuery->where('a.is_released', 1);
+                    break;
+                case 'distributing':
+                    $query->where('a.is_released', 2);
+                    $countQuery->where('a.is_released', 2);
+                    break;
+                case 'distributed':
+                    $query->where('a.is_released', 3);
+                    $countQuery->where('a.is_released', 3);
+                    break;
+                case 'error':
+                    $query->where('a.is_released', 4);
+                    $countQuery->where('a.is_released', 4);
+                    break;
+                case 'online':
+                    $query->where('a.is_released', 5);
+                    $countQuery->where('a.is_released', 5);
+                    break;
+            }
+        }
+
+        // Sắp xếp
+        $isAdmin = $request->is_admin_music;
+        if ($status === 'all') {
+            $query->orderBy('ar.artist_total_streams', 'desc');
+            $countQuery->orderBy('ar.artist_total_streams', 'desc');
+        } else if (!$isAdmin) {
+            $query->orderBy('a.id', 'desc');
+            $countQuery->orderBy('a.id', 'desc');
+        } else {
+            $query->orderBy('a.release_date', 'asc');
+            $countQuery->orderBy('a.release_date', 'asc');
+        }
+
+        $total = $countQuery->count();
+
+        Log::info("getListAlbum Debug", [
+            'user' => $user->user_name,
+            'is_admin_music' => $request->is_admin_music,
+            'search' => $request->get('search'),
+            'status' => $request->get('status'),
+            'total_from_query' => $total,
+            'total_from_status_counts' => $this->getAlbumStatusCounts($request)['all']
+        ]);
+
+DB::enableQueryLog();
+
+        $albums = $query->offset(($page - 1) * $perPage)
+                ->limit($perPage)
+                ->get();
+        $queries = DB::getQueryLog();
+        Log::info('SQL Queries:', $queries);
+        // Xử lý dữ liệu như cũ
         $albums = $albums->map(function ($album) {
             $album->songs = $album->songs ? explode(',', $album->songs) : [];
 
-            // Tính toán thời gian "time ago" từ last_update
+            // Tính toán thời gian "time ago"
             if ($album->last_update) {
                 try {
-                    // Tạo DateTime object từ last_update (GMT+7)
                     $lastUpdate = new \DateTime($album->last_update, new \DateTimeZone('Asia/Ho_Chi_Minh'));
                     $now = new \DateTime('now', new \DateTimeZone('Asia/Ho_Chi_Minh'));
-
-                    // Tính khoảng cách thời gian
                     $interval = $now->diff($lastUpdate);
 
-                    // Format thời gian theo yêu cầu
                     if ($interval->d > 0) {
                         $album->last_update_ago = $interval->d . 'd ago';
                     } elseif ($interval->h > 0) {
@@ -3362,9 +3150,80 @@ class BomController extends Controller {
             return $album;
         });
 
-        return response()->json($albums);
+        // Tính toán status counts
+        $statusCounts = $this->getAlbumStatusCounts($request);
+
+        return response()->json([
+                    'data' => $albums,
+                    'pagination' => [
+                        'current_page' => (int) $page,
+                        'per_page' => (int) $perPage,
+                        'total' => $total,
+                        'last_page' => ceil($total / $perPage),
+                        'from' => (($page - 1) * $perPage) + 1,
+                        'to' => min($page * $perPage, $total)
+                    ],
+                    'status_counts' => $statusCounts
+        ]);
     }
-    
+
+    private function getAlbumStatusCounts(Request $request) {
+        $user = Auth::user();
+
+        $query = DB::table('bom_albums as a')
+                ->select('a.is_released', DB::raw('COUNT(*) as count'))
+                ->where('a.status', 1);
+
+        if (!$request->is_admin_music) {
+            $query->where('a.username', $user->user_name);
+        }
+
+        // Nếu có search thì apply cùng điều kiện
+        if (!empty($request->get('search'))) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('a.album_name', 'like', '%' . $search . '%')
+                        ->orWhere('a.artist', 'like', '%' . $search . '%')
+                        ->orWhere('a.genre_name', 'like', '%' . $search . '%')
+                        ->orWhere('a.username', 'like', '%' . $search . '%')
+                        ->orWhere('a.id', 'like', '%' . $search . '%');
+            });
+        }
+
+        $statusData = $query->groupBy('a.is_released')->get();
+
+        $counts = [
+            'all' => 0,
+            'not-distributed' => 0,
+            'pending' => 0,
+            'distributing' => 0,
+            'distributed' => 0,
+            'error' => 0,
+            'online' => 0
+        ];
+
+        foreach ($statusData as $item) {
+            $counts['all'] += $item->count;
+
+            switch ($item->is_released) {
+                case 0: $counts['not-distributed'] += $item->count;
+                    break;
+                case 1: $counts['pending'] += $item->count;
+                    break;
+                case 2: $counts['distributing'] += $item->count;
+                    break;
+                case 3: $counts['distributed'] += $item->count;
+                    break;
+                case 4: $counts['error'] += $item->count;
+                    break;
+                case 5: $counts['online'] += $item->count;
+                    break;
+            }
+        }
+
+        return $counts;
+    }
+
     public function getAlbum(Request $request) {
         $user = Auth::user();
         if ($request->is_admin_music) {

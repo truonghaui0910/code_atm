@@ -3163,13 +3163,14 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $info = json_decode($string);
 //            $info = json_decode(trim($result));
             Log::info(json_encode($info));
-            $info->pass = Utils::generateRandomString(16);
-            $info->birthday = Utils::randomBirthday();
-            $dobArr = explode("-", $info->birthday);
+//            $info->pass = Utils::generateRandomString(16);
             $id = rand(0, 2);
             $acc = AccountInfo::where("user_name", "recovery_email_1730865536")->where("status", 1)->where("del_status", 0)->orderByRaw('RAND()')->first(["note"]);
             $info->recovery = Utils::genRecovery($acc->note);
+            $info->birthday = Utils::randomBirthday();
+            $dobArr = explode("-", $info->birthday);
             $lastFullEmail = $info->username . Utils::getFirstNameLowercase($info->name) . $dobArr[$id];
+            $info->pass = $this->generatePassword($lastFullEmail, $info->birthday);
             $info->last_full_email = $lastFullEmail;
             $account = new AccountInfoMaking();
             $account->user = $username;
@@ -3181,6 +3182,95 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $account->save();
             return response()->json($info);
         }
+    }
+
+    function generatePassword($email, $birthDate) {
+        $specialChars = '!@#$%^&*';
+
+        // Xử lý ngày sinh
+        $dateComponents = explode('-', $birthDate);
+        $year = $dateComponents[0];
+        $month = $dateComponents[1];
+        $day = $dateComponents[2];
+
+        // Random cách lấy ngày sinh
+        $dateOptions = [$day, $month, $year, $month . $day, $day . $month, $year . $month, $month . $year, $day . $month . $year, $year . $month . $day, substr($year, -2) . $month . $day];
+        $selectedDate = $dateOptions[array_rand($dateOptions)];
+
+        // Random cách lấy email
+        $emailPart = explode('@', $email)[0];
+        $emailLength = strlen($emailPart);
+        $emailOptions = [
+            $emailPart,
+            substr($emailPart, 0, rand(3, min(8, $emailLength))),
+            substr($emailPart, rand(0, max(0, $emailLength - 5)), rand(3, min(6, $emailLength))),
+            substr($emailPart, 0, rand(2, min(5, $emailLength))) . substr($emailPart, -rand(2, min(4, $emailLength)))
+        ];
+        $selectedEmail = $emailOptions[array_rand($emailOptions)];
+
+        // Tạo base password
+        $basePassword = $selectedEmail . $selectedDate;
+        $password = '';
+        $hasUpper = $hasLower = $hasNumber = false;
+
+        // Xử lý từng ký tự
+        for ($i = 0; $i < strlen($basePassword); $i++) {
+            $char = $basePassword[$i];
+            if (is_numeric($char)) {
+                $password .= $char;
+                $hasNumber = true;
+            } else {
+                if (rand(0, 1) && !$hasUpper) {
+                    $password .= strtoupper($char);
+                    $hasUpper = true;
+                } elseif (!$hasLower) {
+                    $password .= strtolower($char);
+                    $hasLower = true;
+                } else {
+                    $password .= rand(0, 1) ? strtoupper($char) : strtolower($char);
+                }
+            }
+        }
+
+        // Đảm bảo có đủ các loại ký tự
+        if (!$hasUpper)
+            $password .= chr(rand(65, 90));
+        if (!$hasLower)
+            $password .= chr(rand(97, 122));
+        if (!$hasNumber)
+            $password .= rand(0, 9);
+
+        // Thêm ký tự đặc biệt
+        $specialCount = rand(1, 3);
+        for ($i = 0; $i < $specialCount; $i++) {
+            $password .= $specialChars[rand(0, strlen($specialChars) - 1)];
+        }
+
+        // Giới hạn 15 ký tự
+        if (strlen($password) > 15) {
+            $password = substr($password, 0, 15);
+        }
+
+        // Kiểm tra cuối cùng để đảm bảo có đủ: chữ hoa, số, ký tự đặc biệt
+        $hasUpper = preg_match('/[A-Z]/', $password);
+        $hasNumber = preg_match('/[0-9]/', $password);
+        $hasSpecial = preg_match('/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/', $password);
+
+        // Nếu thiếu loại ký tự nào, thay thế ký tự cuối
+        $passwordArray = str_split($password);
+        $length = count($passwordArray);
+
+        if (!$hasUpper) {
+            $passwordArray[$length - 1] = chr(rand(65, 90)); // A-Z
+        }
+        if (!$hasNumber) {
+            $passwordArray[$length - 2] = rand(0, 9); // 0-9
+        }
+        if (!$hasSpecial) {
+            $passwordArray[$length - 3] = $specialChars[rand(0, strlen($specialChars) - 1)];
+        }
+
+        return implode('', $passwordArray);
     }
 
     function createEmail(Request $request) {

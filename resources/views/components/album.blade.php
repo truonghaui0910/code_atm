@@ -1,7 +1,7 @@
 @extends('layouts.master')
 
 @section('content')
-    <link href="css/album.css" rel="stylesheet" type="text/css" />
+    <link href="css/album.css?v1.01" rel="stylesheet" type="text/css" />
     <div class="container">
         <nav class="navbar navbar-expand-lg navbar-light bg-white rounded shadow-sm mb-4">
             <div class="search-container" id="album-search-container">
@@ -138,7 +138,7 @@
                 </div>
             </div>
         </div>
-                    </div>
+    </div>
 
     <!-- Modal for adding songs to album -->
     <div class="modal fade" id="addSongsModal" tabindex="-1" role="dialog">
@@ -352,7 +352,7 @@
             if (album.coverImg) {
                 $('#imagePreview').html(
                     `<img src="${album.coverImg}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;">`
-                    );
+                );
             } else {
                 $('#imagePreview').html(`<i class="fas fa-image fa-3x music-icon"></i>`);
             }
@@ -599,42 +599,8 @@
             });
         }
 
-        function updateFilterCounts() {
-            const statusCounts = {
-                'all': albums.length,
-                'not-distributed': 0,
-                'pending': 0,
-                'distributing': 0,
-                'distributed': 0,
-                'error': 0,
-                'online': 0
-            };
-
-            // Đếm số lượng cho mỗi status
-            albums.forEach(album => {
-                switch (album.distributed) {
-                    case 0:
-                        statusCounts['not-distributed']++;
-                        break;
-                    case 1:
-                        statusCounts['pending']++;
-                        break;
-                    case 2:
-                        statusCounts['distributing']++;
-                        break;
-                    case 3:
-                        statusCounts['distributed']++;
-                        break;
-                    case 4:
-                        statusCounts['error']++;
-                        break;
-                    case 5:
-                        statusCounts['online']++;
-                        break;
-                }
-            });
-
-            // Cập nhật hiển thị trên buttons
+        function updateFilterCountsFromServer(statusCounts) {
+            // Cập nhật hiển thị từ server response
             $('.filter-btn').each(function() {
                 const status = $(this).data('status');
                 const count = statusCounts[status] || 0;
@@ -642,37 +608,77 @@
             });
         }
 
-        function fetchAlbums() {
-            // Hiển thị loading
-            $('#albums-list').html(
-                '<div class="col-12 text-center my-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2 col-md-12">Loading albums...</p></div>'
-            );
+        function fetchAlbums(page = 1, append = false) {
+            // Tránh multiple requests
+            if (window.isLoading) return;
+            window.isLoading = true;
 
-            // Gọi API lấy danh sách album
+            // Hiển thị loading nếu không phải append
+            if (!append) {
+                $('#albums-list').html(
+                    '<div class="col-12 text-center my-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2 col-md-12">Loading albums...</p></div>'
+                );
+            }
+
+            // Gọi API với parameters
             $.ajax({
                 url: '/getListAlbum',
                 type: 'GET',
+                data: {
+                    page: page,
+                    per_page: window.perPage,
+                    search: window.currentSearch,
+                    status: window.currentStatus
+                },
                 dataType: 'json',
                 success: function(response) {
-                    if (response && Array.isArray(response)) {
-                        // Lưu trữ danh sách album vào biến toàn cục
-                        albums = response;
-                        // Render danh sách album
-                        renderAlbumsWithView();
+                    if (append) {
+                        hideScrollLoading();
+                    }
+                    if (response && response.data && Array.isArray(response.data)) {
+                        // Cập nhật pagination info
+                        window.currentPage = response.pagination.current_page;
+                        window.totalPages = response.pagination.last_page;
+
+                        if (append) {
+                            // Append data cho pagination
+                            albums = albums.concat(response.data);
+                            hideScrollLoading();
+                        } else {
+                            // Replace data cho search/filter mới
+                            albums = response.data;
+                        }
+
+                        // Cập nhật status counts
+                        updateFilterCountsFromServer(response.status_counts);
+
+                        // Render albums
+                        renderAlbumsWithView(append);
+
+                        showEndMessage();
+
                     } else {
-                        // Hiển thị thông báo lỗi
                         $('#albums-list').html(
                             '<div class="col-12 text-center my-5"><i class="fas fa-exclamation-triangle text-warning fa-2x"></i><p class="mt-2 col-md-12">Failed to load albums. Invalid data format.</p></div>'
                         );
-                        console.error('Invalid album data format:', response);
                     }
                 },
                 error: function(xhr, status, error) {
-                    // Hiển thị thông báo lỗi
-                    $('#albums-list').html(
-                        '<div class="col-12 text-center my-5"><i class="fas fa-exclamation-triangle text-danger fa-2x"></i><p class="mt-2 col-md-12">Failed to load albums. Please try again later.</p></div>'
-                    );
+                    hideScrollLoading();
+                    if (append) {
+                        // Hiển thị error message khi load more
+                        $('#albums-list').append(
+                            '<div class="col-12 text-center my-3"><div class="alert alert-danger">Failed to load more albums. Please try again.</div></div>'
+                        );
+                    } else {
+                        $('#albums-list').html(
+                            '<div class="col-12 text-center my-5"><i class="fas fa-exclamation-triangle text-danger fa-2x"></i><p class="mt-2 col-md-12">Failed to load albums. Please try again later.</p></div>'
+                        );
+                    }
                     console.error('Error fetching albums:', error);
+                },
+                complete: function() {
+                    window.isLoading = false;
                 }
             });
         }
@@ -941,54 +947,14 @@
             });
         }
 
-        function setupAlbumSearch() {
-            //            console.log('Setting up album search'); // Log để debug
-
-            // Xóa sự kiện cũ (nếu có) để tránh trùng lặp
-            $('#album-search').off('input');
-
-            // Thêm sự kiện mới
-            $('#album-search').on('input', function() {
-                const searchTerm = $(this).val().toLowerCase().trim();
-                //                console.log('Search term:', searchTerm); // Log term tìm kiếm
-
-                // Tìm kiếm qua tất cả card album
-                $('.card.album-card').each(function() {
-                    const cardElement = $(this);
-                    const parentElement = cardElement.closest('.col-md-3');
-
-                    const albumTitle = cardElement.find('.album-title').text().toLowerCase();
-                    const albumArtist = cardElement.find('.album-meta-item').eq(0).text().toLowerCase();
-                    const albumDate = cardElement.find('.album-meta-item').eq(1).text().toLowerCase();
-                    const albumSongs = cardElement.find('.album-meta-item').eq(2).text().toLowerCase();
-                    const albumGenre = cardElement.find('.album-genre').text().toLowerCase();
-                    const albumStatus = cardElement.find('.album-status-badge').text().toLowerCase();
-                    //                const albumUsername = cardElement.find('.album-username').text().toLowerCase();
-                    const albumUsername = cardElement.find('.user-avatar').attr('title').toLowerCase();
-
-                    // Hiển thị/ẩn dựa trên kết quả tìm kiếm
-                    if (albumTitle.includes(searchTerm) ||
-                        albumArtist.includes(searchTerm) ||
-                        albumDate.includes(searchTerm) ||
-                        albumSongs.includes(searchTerm) ||
-                        albumStatus.includes(searchTerm) ||
-                        albumUsername.includes(searchTerm) ||
-                        albumGenre.includes(searchTerm)) {
-                        parentElement.show();
-                    } else {
-                        parentElement.hide();
-                    }
-                });
-            });
-
-        }
-
-        function renderAlbums() {
+        function renderAlbums(append = false) {
             const albumsContainer = $('#albums-list');
-            albumsContainer.empty();
+            if (!append) {
+                albumsContainer.empty();
+            }
 
             // Check if there are no albums
-            if (!albums.length) {
+            if (!albums.length && !append) {
                 const emptyStateHTML = `
                 <div class="col-12">
                     <div class="empty-state-container">
@@ -1015,10 +981,13 @@
 
                 return; // No need to process the rest of the function
             }
-            console.log(albums);
 
+            const albumsToRender = append ? albums.slice(window.lastRenderedIndex || 0) : albums;
+
+            // Cập nhật index đã render
+            window.lastRenderedIndex = albums.length;
             // Display albums list (only runs when there's at least 1 album)
-            albums.forEach(album => {
+            albumsToRender.forEach(album => {
                 const songCount = album.songs.length;
 
                 // Updated distributeStatus logic to reflect new is_released values
@@ -1042,7 +1011,7 @@
                         break;
                     case 3: // distributed
                         distributeStatus =
-                        `<span class="badge badge-success album-status-badge">Distributed</span>`;
+                            `<span class="badge badge-success album-status-badge">Distributed</span>`;
                         statusClass = 'badge-success';
                         break;
                     case 4: // error distribute
@@ -1146,7 +1115,11 @@
             });
 
             // Setup album search functionality after rendering albums
-            setupAlbumSearch();
+            //            setupAlbumSearch();
+            setupAlbumEvents();
+            setTimeout(() => {
+                setupLazyLoading();
+            }, 50);
         }
 
         function setupReleaseDateEdit() {
@@ -1367,18 +1340,18 @@
                         spotifyLinksHTML = `
                     <div class="album-spotify-links">
                         ${spotifyInfo.album_id ? `
-                                <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/album/${spotifyInfo.album_id}">
-                                    <i class="fab fa-spotify"></i>
-                                    <span>Copy Album Link</span>
-                                </div>
-                            ` : ''}
+                                        <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/album/${spotifyInfo.album_id}">
+                                            <i class="fab fa-spotify"></i>
+                                            <span>Copy Album Link</span>
+                                        </div>
+                                    ` : ''}
 
                         ${spotifyInfo.artist_id ? `
-                                <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/artist/${spotifyInfo.artist_id}">
-                                    <i class="fas fa-user"></i>
-                                    <span>Copy Artist Link</span>
-                                </div>
-                            ` : ''}
+                                        <div class="album-spotify-link" data-spotify-url="https://open.spotify.com/artist/${spotifyInfo.artist_id}">
+                                            <i class="fas fa-user"></i>
+                                            <span>Copy Artist Link</span>
+                                        </div>
+                                    ` : ''}
                     </div>
                 `;
                     }
@@ -1467,8 +1440,8 @@
                     
                     ${album.distributed < 2 ?
                 `<button class="edit-release-date-btn edit-release-info-btn ml-2" data-album-id="${album.id}" data-date="${album.releaseDate}">
-                                <i class="fas fa-pencil-alt"></i>
-                            </button>` : ''}
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </button>` : ''}
                 </div>
             </div>
 
@@ -1658,13 +1631,13 @@
                     </button>
                 @else
                     ${album.distributed === 0 ? `
-                            <button id="album-details-distribute-btn" class="btn btn-action btn-distribute-detail distribute-btn" data-album-id="${album.id}" onclick="distribute(${album.id})">
-                                <i class="fas fa-solid fa-rocket"></i> Distribute
-                            </button>
-                            <button class="btn btn-action btn-add-songs" data-toggle="modal" data-target="#addSongsModal">
-                                <i class="fas fa-plus"></i> Add Songs
-                            </button>
-                        ` : ''}
+                                    <button id="album-details-distribute-btn" class="btn btn-action btn-distribute-detail distribute-btn" data-album-id="${album.id}" onclick="distribute(${album.id})">
+                                        <i class="fas fa-solid fa-rocket"></i> Distribute
+                                    </button>
+                                    <button class="btn btn-action btn-add-songs" data-toggle="modal" data-target="#addSongsModal">
+                                        <i class="fas fa-plus"></i> Add Songs
+                                    </button>
+                                ` : ''}
                 @endif
             `;
                 }
@@ -1794,8 +1767,8 @@
                     <p class="w-100">This album has no songs yet</p>
                     ${canEdit ?
                     `<button class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#addSongsModal">
-                                Add Songs Now
-                            </button>` : ''}
+                                        Add Songs Now
+                                    </button>` : ''}
                 </div>
             `);
                 $('#audio-player').addClass('d-none');
@@ -1840,8 +1813,8 @@
                         <span class="song-duration mr-3">${song.duration || '00:00'}</span>
                         ${canEdit ?
                     `<button class="btn btn-sm btn-outline-danger remove-song-btn btn-remove-song" data-song-id="${song.id}" title="Remove song" type="button">
-                                    <i class="fas fa-times"></i>
-                                </button>` : ''}
+                                            <i class="fas fa-times"></i>
+                                        </button>` : ''}
                     </div>
                 </div>
             `;
@@ -1905,7 +1878,7 @@
                 });
             } else {
                 console.warn(
-                'Could not initialize Sortable.js. Make sure the library is loaded and the songs list exists.');
+                    'Could not initialize Sortable.js. Make sure the library is loaded and the songs list exists.');
             }
         }
 
@@ -2688,12 +2661,6 @@
             });
         }
 
-        function showNoResultsMessage(container, message) {
-            if ($(container).find('.no-results-message').length === 0) {
-                $(container).append(`<div class="no-results-message">${message}</div>`);
-            }
-        }
-
         function hideNoResultsMessage(container) {
             $(container).find('.no-results-message').remove();
         }
@@ -2789,7 +2756,7 @@
                 error: function(data) {
                     console.log('Error:', data);
                     $("#album-details-distribute-btn").html(
-                    `<i class="fas fa-solid fa-rocket"></i> Distribute`);
+                        `<i class="fas fa-solid fa-rocket"></i> Distribute`);
                     $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-solid fa-rocket"></i>`);
                     showNotification("Error distributing album. Please try again.", "error");
                 }
@@ -2935,7 +2902,7 @@
                     console.error('Error checking artist name:', error);
                     feedbackElement.html(
                         '<i class="fas fa-exclamation-triangle text-warning mr-1"></i> Error during validation'
-                        );
+                    );
                 }
             });
         }
@@ -2965,165 +2932,30 @@
                 error: function(data) {
                     console.log('Error:', data);
                     $("#album-details-distribute-btn").html(
-                    `<i class="fas fa-solid fa-rocket"></i> Distribute`);
+                        `<i class="fas fa-solid fa-rocket"></i> Distribute`);
                     $(`#btn-quick-dis-${id}`).html(`<i class="fas fa-solid fa-rocket"></i>`);
                     showNotification("Error distributing album. Please try again.", "error");
                 }
             });
         }
 
-        function applyFilters() {
-            const searchTerm = $('#album-search').val().toLowerCase().trim();
+        function applyFiltersServer() {
+            const searchTerm = $('#album-search').val().trim();
             const selectedStatus = $('.filter-btn.active').data('status');
-            const currentView = getViewPreference();
-            let visibleCount = 0;
-            if (currentView === 'table') {
-                // Xử lý cho table view
-                $('.albums-table tbody tr').each(function() {
-                    const row = $(this);
 
-                    // Lấy dữ liệu từ các cột (chú ý index của cột)
-                    const albumId = row.find('.album-id-badge').text().toLowerCase();
-                    const albumTitle = row.find('td').eq(1).text().toLowerCase(); // Cột 2 - Title
-                    const albumArtist = row.find('td').eq(2).text().toLowerCase(); // Cột 3 - Artist
-                    const albumGenre = row.find('td').eq(3).text().toLowerCase(); // Cột 4 - Genre
-                    const albumDate = row.find('td').eq(4).text().toLowerCase(); // Cột 5 - Release Date
-                    const albumSongs = row.find('td').eq(5).text().toLowerCase(); // Cột 6 - Songs
-                    const albumCreator = row.find('td').eq(6).text().toLowerCase(); // Cột 7 - Creator
-                    const albumStatusText = row.find('.badge').text().trim(); // Status badge text
+            // Cập nhật state
+            window.currentSearch = searchTerm;
+            window.currentStatus = selectedStatus;
+            window.currentPage = 1;
+            window.totalPages = 1;
+            window.lastRenderedIndex = 0;
+            $(window).scrollTop(0);
 
-                    // Check search match
-                    const matchesSearch = searchTerm === '' ||
-                        albumId.includes(searchTerm) ||
-                        albumTitle.includes(searchTerm) ||
-                        albumArtist.includes(searchTerm) ||
-                        albumGenre.includes(searchTerm) ||
-                        albumDate.includes(searchTerm) ||
-                        albumSongs.includes(searchTerm) ||
-                        albumCreator.includes(searchTerm) ||
-                        albumStatusText.toLowerCase().includes(searchTerm);
-
-                    // Check status match
-                    let matchesStatus = true;
-                    if (selectedStatus !== 'all') {
-                        switch (selectedStatus) {
-                            case 'not-distributed':
-                                matchesStatus = albumStatusText === 'Not Distributed';
-                                break;
-                            case 'pending':
-                                matchesStatus = albumStatusText === 'Pending Distribution' || albumStatusText ===
-                                    'Pending';
-                                break;
-                            case 'distributing':
-                                matchesStatus = albumStatusText === 'Distributing';
-                                break;
-                            case 'distributed':
-                                matchesStatus = albumStatusText === 'Distributed';
-                                break;
-                            case 'error':
-                                matchesStatus = albumStatusText === 'Distribution Error' || albumStatusText ===
-                                    'Error';
-                                break;
-                            case 'online':
-                                matchesStatus = albumStatusText === 'Online';
-                                break;
-                        }
-                    }
-
-                    // Show/hide row
-                    if (matchesSearch && matchesStatus) {
-                        row.show();
-                        visibleCount++;
-                    } else {
-                        row.hide();
-                    }
-                });
-            } else {
-                $('.card.album-card').each(function() {
-                    const cardElement = $(this);
-                    const parentElement = cardElement.closest('.col-md-3');
-
-                    // Get album data
-                    const albumId = cardElement.find('.album-meta-item').eq(0).text().toLowerCase();
-                    const albumTitle = cardElement.find('.album-title').text().toLowerCase();
-                    const albumArtist = cardElement.find('.album-meta-item').eq(0).text().toLowerCase();
-                    const albumDate = cardElement.find('.album-meta-item').eq(1).text().toLowerCase();
-                    const albumSongs = cardElement.find('.album-meta-item').eq(2).text().toLowerCase();
-                    const albumGenre = cardElement.find('.album-genre').text().toLowerCase();
-                    const albumStatusText = cardElement.find('.album-status-badge').text().trim();
-                    const albumUsername = cardElement.find('.user-avatar').attr('title').toLowerCase();
-
-                    // Check search match
-                    const matchesSearch = searchTerm === '' ||
-                        albumTitle.includes(searchTerm) ||
-                        albumId.includes(searchTerm) ||
-                        albumArtist.includes(searchTerm) ||
-                        albumDate.includes(searchTerm) ||
-                        albumSongs.includes(searchTerm) ||
-                        albumUsername.includes(searchTerm) ||
-                        albumGenre.includes(searchTerm) ||
-                        albumStatusText.toLowerCase().includes(searchTerm);
-
-                    // Check status match
-                    let matchesStatus = true;
-                    if (selectedStatus !== 'all') {
-                        switch (selectedStatus) {
-                            case 'not-distributed':
-                                matchesStatus = albumStatusText === 'Not Distributed';
-                                break;
-                            case 'pending':
-                                matchesStatus = albumStatusText === 'Pending Distribution';
-                                break;
-                            case 'distributing':
-                                matchesStatus = albumStatusText === 'Distributing';
-                                break;
-                            case 'distributed':
-                                matchesStatus = albumStatusText === 'Distributed';
-                                break;
-                            case 'error':
-                                matchesStatus = albumStatusText === 'Error';
-                                break;
-                            case 'online':
-                                matchesStatus = albumStatusText === 'Online';
-                                break;
-                        }
-                    }
-
-                    // Show/hide based on both filters
-                    if (matchesSearch && matchesStatus) {
-                        parentElement.show();
-                        visibleCount++;
-                    } else {
-                        parentElement.hide();
-                    }
-                });
-            }
-            if (visibleCount === 0) {
-                if ($('#no-results-message').length === 0) {
-                    $('#albums-list').append(`
-                <div id="no-results-message" class="col-12 text-center my-5 py-5">
-                    <i class="fas fa-search text-muted fa-2x mb-3"></i>
-                    <p class="text-muted w-100">No albums match your filters.</p>
-                    <button class="btn btn-outline-primary btn-sm mt-2 reset-filters-btn">
-                        <i class="fas fa-redo mr-1"></i> Reset Filters
-                    </button>
-                </div>
-            `);
-
-                    // Add reset filters button handler
-                    $('.reset-filters-btn').click(function() {
-                        $('#album-search').val('');
-                        $('.filter-btn').removeClass('active');
-                        $('.filter-btn[data-status="all"]').addClass('active');
-                        applyFilters();
-                    });
-                }
-            } else {
-                $('#no-results-message').remove();
-            }
-            setTimeout(() => {
-                setupLazyLoading();
-            }, 50);
+            // Remove các message cũ
+            $('#scroll-loading').remove();
+            $('#end-message').remove();
+            // Fetch data từ server
+            fetchAlbums(1, false);
         }
 
         function saveViewPreference(view) {
@@ -3139,39 +2971,74 @@
             $(`.view-btn[data-view="${view}"]`).addClass('active');
         }
 
-        function renderAlbumsTable() {
+        function renderAlbumsTable(append = false) {
             const albumsContainer = $('#albums-list');
-            albumsContainer.empty();
 
-            if (!albums.length) {
-                // Empty state (giữ nguyên)
-                const emptyStateHTML = `...`; // giữ nguyên code cũ
+            if (!append) {
+                albumsContainer.empty();
+            }
+
+            if (!albums.length && !append) {
+                // Empty state
+                const emptyStateHTML = `
+            <div class="col-12">
+                <div class="empty-state-container">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-compact-disc"></i>
+                    </div>
+                    <h3 class="empty-state-title">Your album collection is empty</h3>
+                    <p class="empty-state-description">
+                        Start building your music collection by creating your first album. 
+                        You can add songs, set details, and distribute your albums to share your music with the world.
+                    </p>
+                    <button class="btn btn-create-first-album" data-toggle="modal" data-target="#addAlbumModal">
+                        <i class="fas fa-plus-circle"></i> Create Your First Album
+                    </button>
+                </div>
+            </div>
+        `;
                 albumsContainer.html(emptyStateHTML);
+
+                $('.btn-create-first-album').click(function() {
+                    $('#addAlbumModal').modal('show');
+                });
+
                 return;
             }
 
-            // Create table HTML với thiết kế mới
-            let tableHTML = `
-    <div class="col-12">
-        <div class="table-view">
-            <table class="albums-table">
-                <thead>
-                    <tr>
-                        <th class="album-id-cell">ID</th>
-                        <th class="album-cover-cell"></th>
-                        <th>Album</th>
-                        <th>Genre</th>
-                        <th>Release Date</th>
-                        <th>Songs</th>
-                        <th>Created By</th>
-                        <th>Status</th>
-                        <th class="actions-cell"></th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
 
-            albums.forEach(album => {
+            if (!append) {
+                let tableHTML = `
+            <div class="col-12">
+                <div class="table-view">
+                    <table class="albums-table">
+                        <thead>
+                            <tr>
+                                <th class="album-id-cell">ID</th>
+                                <th class="album-cover-cell"></th>
+                                <th>Album</th>
+                                <th>Genre</th>
+                                <th>Release Date</th>
+                                <th>Songs</th>
+                                <th>Created By</th>
+                                <th>Status</th>
+                                <th class="actions-cell"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+                albumsContainer.html(tableHTML);
+            }
+            const albumsToRender = append ? albums.slice(window.lastRenderedIndex || 0) : albums;
+
+            // Cập nhật index đã render
+            window.lastRenderedIndex = albums.length;
+
+            albumsToRender.forEach(album => {
                 const songCount = album.songs.length;
 
                 // Status HTML (giữ nguyên logic)
@@ -3225,7 +3092,7 @@
                     `<span class="artist-total-streams ml-2" title="Total stream, last update ${album.last_update_ago || 'unknown'}">
                     <i class="fas fa-headphones"></i> ${album.artist_total_streams.toLocaleString()}
                             </span>` : '';
-                const cidColor  = album.youtube_claim == 5?"#28a745":"#ebdb0e";        
+                const cidColor = album.youtube_claim == 5 ? "#28a745" : "#ebdb0e";
                 const coverImgHtml = album.coverImg ? `
                         <div class="table-album-cover-wrapper" style="position: relative; width: 56px; height: 56px;">
                             <div class="table-cover-placeholder" style="
@@ -3290,7 +3157,7 @@
                         </div>
                     `;
 
-                tableHTML += `
+                const tableRow = `
             <tr class="album-row" data-album-id="${album.id}">
                    <td class="album-id-cell">
         <span class="album-id-badge">#${album.id}</span>
@@ -3331,72 +3198,28 @@
                 </td>
             </tr>
         `;
+                $('.albums-table tbody').append(tableRow);
             });
 
-            tableHTML += `
-                </tbody>
-            </table>
-        </div>
-    </div>
-    `;
 
-            albumsContainer.html(tableHTML);
-            // Event handlers
-            $('.album-row').click(function(e) {
-                // Prevent opening album detail if clicking on artist stats button
-                if (
-                    $(e.target).closest('.btn-artist-stats').length > 0 ||
-                    $(e.target).hasClass('btn-artist-stats') ||
-                    $(e.target).closest('.artist-album-count-table').length > 0 ||
-                    $(e.target).hasClass('artist-album-count-table') ||
-                    $(e.target).closest('.artist-total-streams').length > 0 ||
-                    $(e.target).hasClass('artist-total-streams')
-                ) {
-                    return;
-                }
-                if (!$(e.target).hasClass('distribute-btn') && !$(e.target).parent().hasClass('distribute-btn')) {
-                    const albumId = $(this).data('album-id');
-                    showAlbumDetails(albumId);
-                }
-            });
 
-            $('.distribute-btn').click(function(e) {
-                e.stopPropagation();
-                const albumId = $(this).data('album-id');
-                distribute(albumId);
-            });
+            setupAlbumEvents();
 
-            // Artist stats button: open modal only
-            $(document).off('click', '.btn-artist-stats').on('click', '.btn-artist-stats', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                const artist = decodeURIComponent($(this).data('artist'));
-                // Open modal and set iframe src
-                $('#artistStatsModal').modal('show');
-                $('#artist-stats-iframe').attr('src',
-                    `https://distro.360promo.fm/iframe/charts/${encodeURIComponent(artist)}`);
-            });
+            // Setup lazy loading
+            setTimeout(() => {
+                setupLazyLoading();
+            }, 50);
+
         }
 
-        function renderAlbumsWithView() {
+        function renderAlbumsWithView(append = false) {
             const currentView = getViewPreference();
 
             if (currentView === 'table') {
-                renderAlbumsTable();
+                renderAlbumsTable(append);
             } else {
-                renderAlbums(); // Original grid view function
+                renderAlbums(append);
             }
-
-            updateViewSwitcher(currentView);
-
-            updateFilterCounts();
-
-            // Apply filters after rendering
-            setTimeout(() => {
-                setupLazyLoading();
-                applyFilters();
-                setupArtistCountClick();
-            }, 100);
         }
 
         function getArtistAlbumCount(artistName) {
@@ -3626,6 +3449,7 @@
         // Render Artist Table
         let currentArtistPage = 1;
         let artistPerPage = 20;
+
         function renderArtistTable(artists) {
             const tbody = $('#artist-table-body');
             tbody.empty();
@@ -3677,7 +3501,7 @@
         // Toggle YouTube Claim Status
         function toggleYoutubeClaim(artistId, isEnabled) {
             const status = isEnabled ? 1 : 0;
-             const csrfToken = $('input[name="_token"]').val() || $('meta[name="csrf-token"]').attr('content');
+            const csrfToken = $('input[name="_token"]').val() || $('meta[name="csrf-token"]').attr('content');
             $.ajax({
                 url: '/artist/update-youtube-claim',
                 method: 'POST',
@@ -3756,7 +3580,182 @@
             const info = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total} results`;
             $('#artist-pagination-info').text(info);
         }
-        
+
+        function setupInfiniteScroll() {
+            let isScrolling = false;
+
+            $(window).off('scroll.infiniteScroll').on('scroll.infiniteScroll', function() {
+                if (isScrolling) return;
+
+                // Kiểm tra khi scroll gần đến cuối trang
+                if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+                    // Kiểm tra có thể load thêm không
+                    if (window.currentPage < window.totalPages && !window.isLoading) {
+                        isScrolling = true;
+                        loadMoreAlbums();
+
+                        // Reset flag sau 1 giây để tránh spam
+                        setTimeout(() => {
+                            isScrolling = false;
+                        }, 1000);
+                    }
+                }
+            });
+        }
+
+        function loadMoreAlbums() {
+            // Hiển thị loading indicator
+            showScrollLoading();
+
+            // Load page tiếp theo
+            fetchAlbums(window.currentPage + 1, true);
+        }
+
+        function showScrollLoading() {
+            // Remove existing loading nếu có
+            $('#scroll-loading').remove();
+
+            // Thêm loading indicator
+            const loadingHTML = `
+        <div class="col-12 text-center my-4" id="scroll-loading">
+            <div class="d-flex justify-content-center align-items-center">
+                <div class="spinner-border spinner-border-sm text-primary mr-2" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <i class="fas fa-spinner fa-spin mr-2"></i><span class="text-muted"> Loading more albums...</span>
+            </div>
+        </div>
+    `;
+
+            $('#albums-list').append(loadingHTML);
+        }
+
+        function hideScrollLoading() {
+            $('#scroll-loading').remove();
+        }
+
+        function showEndMessage() {
+            // Remove existing end message
+            $('#end-message').remove();
+
+            // Chỉ hiển thị khi đã load hết và có albums
+            if (window.currentPage >= window.totalPages && albums.length > 0) {
+                const endHTML = `
+            <div class="col-12 text-center my-4" id="end-message">
+                <div class="border-top pt-4">
+                    <div class="text-muted">
+                        <i class="fas fa-check-circle text-success mr-2"></i>
+                        You've reached the end! All ${albums.length} albums loaded.
+                    </div>
+                </div>
+            </div>
+        `;
+
+                $('#albums-list').append(endHTML);
+            }
+        }
+
+        function setupBackToTop() {
+            // Thêm button vào HTML
+            if ($('#back-to-top').length === 0) {
+                $('body').append(`
+            <button id="back-to-top" class="btn btn-primary" style="
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                display: none;
+                z-index: 1000;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            ">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+        `);
+            }
+
+            // Show/hide button based on scroll position
+            $(window).scroll(function() {
+                if ($(window).scrollTop() > 300) {
+                    $('#back-to-top').fadeIn();
+                } else {
+                    $('#back-to-top').fadeOut();
+                }
+            });
+
+            // Click event
+            $('#back-to-top').click(function() {
+                $('html, body').animate({
+                    scrollTop: 0
+                }, 600);
+                return false;
+            });
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function setupAlbumEvents() {
+            // Album card/row click events
+            $(document).off('click', '.album-row, .album-card').on('click', '.album-row, .album-card', function(e) {
+                // Kiểm tra nếu click vào các element đặc biệt thì không mở album details
+                if ($(e.target).closest('.distribute-btn').length > 0 ||
+                    $(e.target).closest('.btn-artist-stats').length > 0 ||
+                    $(e.target).closest('.artist-album-count-table').length > 0 ||
+                    $(e.target).hasClass('artist-album-count-table') ||
+                    $(e.target).closest('.artist-total-streams').length > 0 ||
+                    $(e.target).hasClass('artist-total-streams')
+                ) {
+                    return;
+                }
+
+                if (!$(e.target).hasClass('distribute-btn') && !$(e.target).parent().hasClass('distribute-btn')) {
+                    const albumId = $(this).data('album-id');
+                    showAlbumDetails(albumId);
+                }
+            });
+
+            // Distribute button click events
+            $(document).off('click', '.distribute-btn').on('click', '.distribute-btn', function(e) {
+                e.stopPropagation();
+                const albumId = $(this).data('album-id');
+                distribute(albumId);
+            });
+
+            // Artist stats button events
+            $(document).off('click', '.btn-artist-stats').on('click', '.btn-artist-stats', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                const artist = decodeURIComponent($(this).data('artist'));
+                // Open modal and set iframe src
+                $('#artistStatsModal').modal('show');
+                $('#artist-stats-iframe').attr('src',
+                    `https://distro.360promo.fm/iframe/charts/${encodeURIComponent(artist)}`);
+            });
+
+            // Copy link events (nếu có)
+            $(document).off('click', '.copy-link').on('click', '.copy-link', function(e) {
+                e.stopPropagation();
+                const albumId = $(this).data('album-id');
+                const link = `${window.location.origin}/album/${albumId}`;
+                copyToClipboard2(link);
+                showNotification('Album link copied to clipboard', 'success');
+            });
+
+            // Tooltip initialization
+            $('[data-toggle="tooltip"]').tooltip();
+        }
+
         $(document).ready(function() {
             window.albums = [];
             window.currentAlbumId = null;
@@ -3764,9 +3763,18 @@
             window.selectedSongs = [];
             window.currentAudio = null;
             window.currentModalAudio = null;
-            
+
+            window.currentPage = 1;
+            window.totalPages = 1;
+            window.perPage = 12;
+            window.currentSearch = '';
+            window.currentStatus = 'all';
+            window.isLoading = false;
+            window.lastRenderedIndex = 0;
 
             fetchAlbums();
+            setupInfiniteScroll();
+            setupBackToTop();
 
             setupAddSongsModal();
 
@@ -3787,7 +3795,7 @@
                 }
             });
 
-            setupAlbumSearch();
+            //            setupAlbumSearch();
 
             $('#show-all-albums').click(function(e) {
                 e.preventDefault();
@@ -3857,24 +3865,41 @@
                     "success");
             });
 
+            //            $('.filter-btn').click(function() {
+            //                $('.filter-btn').removeClass('active');
+            //                $(this).addClass('active');
+            //                applyFilters();
+            //            });
             $('.filter-btn').click(function() {
                 $('.filter-btn').removeClass('active');
                 $(this).addClass('active');
-                applyFilters();
+                applyFiltersServer();
             });
 
-            $('.view-btn').click(function() {
+            //            $('.view-btn').click(function() {
+            //                const view = $(this).data('view');
+            //                saveViewPreference(view);
+            //                renderAlbumsWithView();
+            //            });
+            $(document).on('click', '.view-btn', function() {
                 const view = $(this).data('view');
                 saveViewPreference(view);
-                renderAlbumsWithView();
+
+                $('.view-btn').removeClass('active');
+                $(this).addClass('active');
+
+                renderAlbumsWithView(false);
             });
 
             const currentView = getViewPreference();
             updateViewSwitcher(currentView);
 
-            $('#album-search').on('input', function() {
-                applyFilters();
-            });
+            //            $('#album-search').on('input', function() {
+            //                applyFiltres();
+            //            });
+            $('#album-search').on('input', debounce(function() {
+                applyFiltersServer();
+            }, 300));
 
             if ($('.filter-btn').length > 0 && albums.length > 0) {
                 updateFilterCounts();

@@ -1,3 +1,18 @@
+#scroll-loading {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+#end-message {
+    opacity: 0.8;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
 body {
     background-color: #f8f9fa;
     font-size: 16px;

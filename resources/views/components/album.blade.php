@@ -3256,12 +3256,12 @@
                     const width = this.width;
                     const height = this.height;
 
-                    if (width < 1400 || height < 1400) {
-                        reject(['Image dimensions must be at least 1400x1400 pixels. Current: ' + width + 'x' +
-                            height
-                        ]);
-                        return;
-                    }
+//                    if (width < 1400 || height < 1400) {
+//                        reject(['Image dimensions must be at least 1400x1400 pixels. Current: ' + width + 'x' +
+//                            height
+//                        ]);
+//                        return;
+//                    }
 
                     resolve({
                         width,
@@ -4028,6 +4028,27 @@
                     $('#artist-filter-btn').click();
                 }
             });
+            
+            $('.artist-album-count').click(function(e) {
+                e.stopPropagation();
+                const artistName = $(this).closest('.album-info-value').find('span:first').text().trim();
+                if (artistName) {
+                    // Set search value to artist name
+                    $('#album-search').val(artistName);
+                    
+                    // Trigger search
+                    $('#album-search').trigger('input');
+                    
+                    // Add visual feedback
+                    $(this).addClass('clicked');
+                    setTimeout(() => {
+                        $(this).removeClass('clicked');
+                    }, 300);
+                    
+                    // Show notification
+//                    showNotification(`Filtering albums by artist: ${artistName}`, 'info');
+                }
+            });            
         });
     </script>
 @endsection

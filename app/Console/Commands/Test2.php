@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Common\Network\RequestHelper;
 use App\Common\Utils;
 use App\Http\Controllers\BomController;
+use App\Http\Controllers\ChannelManagementController;
 use App\Http\Models\AccountInfo;
 use App\Http\Models\Bom;
 use App\Http\Models\MooncoinContent;
@@ -66,6 +67,12 @@ class Test2 extends Command {
                 $this->error("Hàm '$functionName' không tồn tại.");
             }
         }
+//         $functionName = $this->argument('fn');
+//                  if (method_exists($this, $functionName)) {
+//                $this->$functionName(); // Gọi hàm dựa vào tham số
+//            } else {
+//                $this->error("Hàm '$functionName' không tồn tại.");
+//            }
     }
 
     //
@@ -953,6 +960,89 @@ class Test2 extends Command {
             $data->save();
         }
         error_log("rs Cnd " . json_encode($rs));
+    }
+
+    public function syncEmail() {
+        $accountInfo = new ChannelManagementController();
+        $accountInfo->syncEmailFromMaking();
+    }
+
+    //đồng bộ album lên soundhex: php artisan app:test2 syncSoundhex x
+    public function syncSoundhex() {
+        $bom = new BomController();
+        $bom->syncToSoundhex();
+    }
+
+    //đồng bộ user lên soundhex, php artisan app:test2 updateUserToSoundHex x
+    public function updateUserToSoundHex() {
+
+        try {
+            // Lấy danh sách users từ bảng users
+            $users = DB::table('users')
+                    ->select('user_name', 'password_plaintext','name','avatar')
+                    ->where('status', '1')
+                    ->where('role', 'LIKE', '%26%')
+//                    ->where('description', '=', 'admin')
+                    ->get();
+
+            if ($users->isEmpty()) {
+                return response()->json([
+                            'status' => 'error',
+                            'message' => 'No users found in database',
+                            'data' => null
+                ]);
+            }
+
+            $headers = [
+                "Content-Type: application/json",
+                "Authorization: Bearer soundhex_webhook_secret_2025",
+            ];
+
+            $results = [];
+            $successCount = 0;
+            $errorCount = 0;
+
+            foreach ($users as $user) {
+                error_log("start add user $user->user_name@soundhex.com");
+                try {
+                    $data = [
+                        'email' => "$user->user_name@soundhex.com",
+                        'password' => $user->password_plaintext,
+                        'name' => $user->name,
+                        'avatar' => "https://automusic.win$user->avatar",
+                    ];
+                    $response = RequestHelper::callAPI2(
+                                    'POST', "https://1c083d1d-baaf-4188-aa2e-0ebb35dc9970-00-6xjglm3f1xxb.sisko.replit.dev/api/sync/user", $data, $headers);
+                    if ($response && isset($response->success) && $response->success) {
+                        $successCount++;
+                        error_log("add user $user->user_name@soundhex.com success");
+                        \App\User::where('user_name', $user->user_name)->update(['soundhex_id' => $response->user->id]);
+                    } else {
+                        if (isset($response->error)) {
+                            error_log("error user $user->user_name@soundhex.com $response->error");
+                        }
+                    }
+                    usleep(500000); // 0.5 giây
+                } catch (Exception $e) {
+                    error_log("Exception for {$user->user_name}: " . $e->getMessage());
+                    $errorCount++;
+                }
+            }
+
+            $rp = [
+                'status' => 'completed',
+                'message' => "Sync completed. Success: {$successCount}, Errors: {$errorCount}",
+                'summary' => [
+                    'total_users' => count($users),
+                    'success_count' => $successCount,
+                    'error_count' => $errorCount
+                ],
+                'details' => $results
+            ];
+            error_log(json_encode($rp));
+        } catch (Exception $e) {
+            error_log("syncUsersToExternalSystem error: " . $e->getMessage());
+        }
     }
 
 }

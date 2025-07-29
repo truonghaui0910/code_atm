@@ -1089,6 +1089,9 @@ class ChannelManagementController extends Controller {
                                 "is_proxy6" => $is_proxy6,
                                 "call_back" => "http://automusic.win/callback/login",
                     ];
+                    if (!empty($channel->host_url)) {
+                        $req->exts_name = "youtube_bas_mv3";
+                    }
                     Log::info("Login bas new $channel->note" . json_encode($req));
                     $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
                     if (!empty($res->job_id)) {
@@ -1235,7 +1238,9 @@ class ChannelManagementController extends Controller {
                                 "piority" => 50,
                                 "call_back" => "http://automusic.win/callback/channel/create"
                     ];
-
+                    if (!empty($channel->host_url)) {
+                        $req->exts_name = "youtube_bas_mv3";
+                    }
                     $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
                     error_log("createChannel $request->genre : $index/$total " . json_encode($bas));
                     $channel->bas_new_status = 1;
@@ -2911,6 +2916,9 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                     "piority" => 50,
                     "call_back" => "http://automusic.win/callback/pass/change",
         ];
+        if (!empty($channel->host_url)) {
+            $req->exts_name = "youtube_bas_mv3";
+        }
         Log::info("change Pass $channel->note" . json_encode($req));
         $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
         if (!empty($res->job_id)) {
@@ -2964,6 +2972,9 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                     "piority" => 50,
                     "call_back" => "http://automusic.win/callback/info/change",
         ];
+        if (!empty($channel->host_url)) {
+            $req->exts_name = "youtube_bas_mv3";
+        }
         Log::info("change info $channel->note" . json_encode($req));
         $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
         if (!empty($res->job_id)) {
@@ -3028,7 +3039,9 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                     "studio_id" => $channel->id,
                     "call_back" => ""
         ];
-
+        if (!empty($channel->host_url)) {
+            $req->exts_name = "youtube_bas_mv3";
+        }
         $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
 
         if (!empty($res->job_id)) {
@@ -3076,6 +3089,9 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                     "piority" => 10,
                     "call_back" => "",
         ];
+        if (!empty($channel->host_url)) {
+            $req->exts_name = "youtube_bas_mv3";
+        }
         Log::info("change yt_device_oauth $channel->note" . json_encode($req));
         $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
     }
@@ -3138,7 +3154,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         return response()->json(array("status" => "success", "message" => "Success"));
     }
 
-    function genEmailInfo() {
+    function genEmailInfo(Request $request) {
         $username = "api";
         $user = Auth::user();
         if (isset($user)) {
@@ -3162,7 +3178,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             // Chuyển đổi chuỗi JSON
             $info = json_decode($string);
 //            $info = json_decode(trim($result));
-            Log::info(json_encode($info));
+            Log::info("genEmailInfo " . json_encode($info));
 //            $info->pass = Utils::generateRandomString(16);
             $id = rand(0, 2);
             $acc = AccountInfo::where("user_name", "recovery_email_1730865536")->where("status", 1)->where("del_status", 0)->orderByRaw('RAND()')->first(["note"]);
@@ -3172,6 +3188,17 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $lastFullEmail = $info->username . Utils::getFirstNameLowercase($info->name) . $dobArr[$id];
             $info->pass = $this->generatePassword($lastFullEmail, $info->birthday);
             $info->last_full_email = $lastFullEmail;
+
+            $firstName = $info->name;
+            $lastName = "B";
+            $fullNameSplit = explode(" ", $info->name);
+            if (count($fullNameSplit) > 1) {
+                $firstName = $fullNameSplit[0];
+                $lastName = $fullNameSplit[1];
+            }
+            $info->first_name = $firstName;
+            $info->last_name = $lastName;
+
             $account = new AccountInfoMaking();
             $account->user = $username;
             $account->email = $lastFullEmail;
@@ -3179,24 +3206,49 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $account->recovery = $info->recovery;
             $account->full_info = json_encode($info);
             $account->created = Utils::timeToStringGmT7(time());
+            if (isset($request->kas_profile_id)) {
+                $account->kas_profile_id = $request->kas_profile_id;
+            }
+            if (isset($request->moon_profile_id)) {
+                $account->moon_profile_id = $request->moon_profile_id;
+            }
+            if (isset($request->host_url)) {
+                $account->host_url = $request->host_url;
+            }
             $account->save();
+            if (isset($request->format)) {
+                $firstName = $info->name;
+                $lastName = "B";
+                $fullNameSplit = explode(" ", $info->name);
+                if (count($fullNameSplit) > 1) {
+                    $firstName = $fullNameSplit[0];
+                    $lastName = $fullNameSplit[1];
+                }
+                $result = (object) [
+                            "email" => $info->last_full_email,
+                            "password" => $info->pass,
+                            "recovery_email" => $info->recovery,
+                            "first_name" => $firstName,
+                            "last_name" => $lastName,
+                            "birthdate" => $info->birthday,
+                            "sex" => $info->sex
+                ];
+                return response()->json($result);
+            }
             return response()->json($info);
         }
     }
 
     function generatePassword($email, $birthDate) {
         $specialChars = '!@#$%^&*';
-
         // Xử lý ngày sinh
         $dateComponents = explode('-', $birthDate);
         $year = $dateComponents[0];
         $month = $dateComponents[1];
         $day = $dateComponents[2];
-
         // Random cách lấy ngày sinh
         $dateOptions = [$day, $month, $year, $month . $day, $day . $month, $year . $month, $month . $year, $day . $month . $year, $year . $month . $day, substr($year, -2) . $month . $day];
         $selectedDate = $dateOptions[array_rand($dateOptions)];
-
         // Random cách lấy email
         $emailPart = explode('@', $email)[0];
         $emailLength = strlen($emailPart);
@@ -3207,12 +3259,10 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             substr($emailPart, 0, rand(2, min(5, $emailLength))) . substr($emailPart, -rand(2, min(4, $emailLength)))
         ];
         $selectedEmail = $emailOptions[array_rand($emailOptions)];
-
         // Tạo base password
         $basePassword = $selectedEmail . $selectedDate;
         $password = '';
         $hasUpper = $hasLower = $hasNumber = false;
-
         // Xử lý từng ký tự
         for ($i = 0; $i < strlen($basePassword); $i++) {
             $char = $basePassword[$i];
@@ -3231,7 +3281,6 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                 }
             }
         }
-
         // Đảm bảo có đủ các loại ký tự
         if (!$hasUpper)
             $password .= chr(rand(65, 90));
@@ -3239,10 +3288,14 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $password .= chr(rand(97, 122));
         if (!$hasNumber)
             $password .= rand(0, 9);
-
         // Thêm ký tự đặc biệt
-        $specialCount = rand(1, 3);
+        $specialCount = rand(2, 3);
         for ($i = 0; $i < $specialCount; $i++) {
+            $password .= $specialChars[rand(0, strlen($specialChars) - 1)];
+        }
+
+        // Đảm bảo password có ít nhất 8 ký tự
+        while (strlen($password) < 8) {
             $password .= $specialChars[rand(0, strlen($specialChars) - 1)];
         }
 
@@ -3250,26 +3303,41 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         if (strlen($password) > 15) {
             $password = substr($password, 0, 15);
         }
-
-        // Kiểm tra cuối cùng để đảm bảo có đủ: chữ hoa, số, ký tự đặc biệt
+        // Kiểm tra cuối cùng để đảm bảo có đủ: chữ hoa, số, và đúng số lượng ký tự đặc biệt
         $hasUpper = preg_match('/[A-Z]/', $password);
         $hasNumber = preg_match('/[0-9]/', $password);
-        $hasSpecial = preg_match('/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/', $password);
+        $specialCharCount = preg_match_all('/[!@#$%^&*]/', $password);
 
-        // Nếu thiếu loại ký tự nào, thay thế ký tự cuối
         $passwordArray = str_split($password);
         $length = count($passwordArray);
 
+        // Đảm bảo có chữ hoa
         if (!$hasUpper) {
             $passwordArray[$length - 1] = chr(rand(65, 90)); // A-Z
         }
+
+        // Đảm bảo có số
         if (!$hasNumber) {
             $passwordArray[$length - 2] = rand(0, 9); // 0-9
         }
-        if (!$hasSpecial) {
-            $passwordArray[$length - 3] = $specialChars[rand(0, strlen($specialChars) - 1)];
-        }
 
+        // Đảm bảo có đúng 2-3 ký tự đặc biệt
+        if ($specialCharCount < 2) {
+            // Thiếu ký tự đặc biệt, thay thế từ cuối lên
+            $needMore = 2 - $specialCharCount;
+            for ($i = 0; $i < $needMore; $i++) {
+                $passwordArray[$length - 3 - $i] = $specialChars[rand(0, strlen($specialChars) - 1)];
+            }
+        } elseif ($specialCharCount > 3) {
+            // Thừa ký tự đặc biệt, thay thế bớt
+            $removeCount = $specialCharCount - 3;
+            for ($i = 0; $i < $length && $removeCount > 0; $i++) {
+                if (preg_match('/[!@#$%^&*]/', $passwordArray[$i])) {
+                    $passwordArray[$i] = chr(rand(97, 122)); // Thay bằng chữ thường
+                    $removeCount--;
+                }
+            }
+        }
         return implode('', $passwordArray);
     }
 
@@ -3459,6 +3527,9 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
                     "piority" => 10,
                     "call_back" => $callback
         ];
+        if (!empty($channel->host_url)) {
+            $req->exts_name = "youtube_bas_mv3";
+        }
         $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
         if ($bas->mess == "ok") {
             return 1;
@@ -3848,14 +3919,17 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         if (isset($request->status)) {
             $data->status = $request->status;
         }
-        if (isset($request->profile_id)) {
-            $data->profile_id = trim($request->profile_id);
+        if (isset($request->kas_profile_id)) {
+            $data->kas_profile_id = trim($request->kas_profile_id);
         }
         if (isset($request->moon_profile_id)) {
             $data->moon_profile_id = trim($request->moon_profile_id);
         }
-        if (isset($request->ip)) {
-            $data->ip = trim($request->ip);
+        if (isset($request->channel_id)) {
+            $data->channel_id = trim($request->channel_id);
+        }
+        if (isset($request->host_url)) {
+            $data->host_url = trim($request->host_url);
         }
         $data->updated = Utils::timeToStringGmT7(time());
         $data->save();
@@ -3875,4 +3949,253 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
     }
 
     //2025/04/03 tiến trình tự dộng change info sau 2 tuần, tính từ thời điểm chuyển kênh, confirm_time (ngày chuyển kênh)
+
+
+    public function syncEmailFromMaking() {
+        try {
+            // Lấy danh sách mail cần đồng bộ từ bảng accountinfo_making
+            $emailsToSync = AccountInfoMaking::where('status_email', '1')
+                    ->where('status_channel', '1')
+                    ->whereNotNull('kas_profile_id')
+                    ->whereNotNull('moon_profile_id')
+                    ->whereNotNull('channel_id')
+                    ->where('is_sync', '0')
+                    ->get();
+            error_log("syncEmailFromMaking count: " . count($emailsToSync));
+            if ($emailsToSync->isEmpty()) {
+                return response()->json([
+                            "status" => "success",
+                            "message" => "Không có mail nào cần đồng bộ",
+                            "data" => []
+                ]);
+            }
+
+            $successCount = 0;
+            $errorCount = 0;
+            $results = [];
+
+            foreach ($emailsToSync as $emailMaking) {
+                try {
+                    // Kiểm tra xem mail đã tồn tại trong account_info chưa
+                    $existingAccount = AccountInfo::where('note', $emailMaking->email)->first();
+
+                    if ($existingAccount) {
+                        error_log("Đồng bộ thành công mail: {$emailMaking->email}");
+                        $emailMaking->is_sync = '1';
+                        $emailMaking->save();
+                        $existingAccount->host_url = $emailMaking->host_url;
+                        $existingAccount->save();
+                        continue;
+                    }
+
+                    // Tạo record mới trong account_info
+                    $newAccount = new AccountInfo();
+                    $newAccount->user_name = "email_making_1680247568";
+                    $newAccount->chanel_name = trim($emailMaking->chanel_id);
+                    $newAccount->note = trim($emailMaking->email);
+                    $newAccount->gmail = trim($emailMaking->email);
+                    $newAccount->reco_email = trim($emailMaking->recovery_email ?? '');
+                    $newAccount->pass_word = trim($emailMaking->password ?? '');
+                    $newAccount->chanel_id = $emailMaking->channel_id;
+                    $newAccount->host_url = $emailMaking->host_url;
+                    $newAccount->gologin = $emailMaking->moon_profile_id;
+
+
+                    // Tạo hash password
+                    $hash = Utils::generateRandomHash(8);
+                    $newAccount->hash_pass = md5($hash . $newAccount->chanel_id);
+
+                    // Log và thông tin khác
+                    $newAccount->log = gmdate("Y-m-d H:i:s", time() + 7 * 3600) . " synced from accountinfo_making";
+                    $newAccount->create_time = time();
+                    $newAccount->del_status = 0;
+
+                    $newAccount->save();
+
+                    // Chuẩn bị dữ liệu để gọi API automail
+                    $dob = '';
+                    $firstName = '';
+                    $phone = '';
+                    $recoveryEmail = '';
+
+                    // Parse JSON từ cột full_info để lấy thông tin
+                    if (!empty($emailMaking->full_info)) {
+                        $fullInfo = json_decode($emailMaking->full_info, true);
+                        if ($fullInfo) {
+                            // Lấy ngày sinh từ birthdate hoặc birthday
+                            $dob = $fullInfo['birthdate'] ?? $fullInfo['birthday'] ?? '';
+                            $firstName = $fullInfo['name'] ?? '';
+                            $phone = $fullInfo['phone'] ?? '';
+                            $recoveryEmail = $fullInfo['recovery'] ?? '';
+                        }
+                    }
+
+                    $dobArr = explode("-", $dob);
+
+
+                    $input = array(
+                        "gmail" => trim($emailMaking->email),
+                        "userCreate" => "email_making_1680247568",
+                        "passWord" => trim($emailMaking->password ?? ''),
+                        "firstName" => trim($firstName),
+                        "recoveryEmail" => $emailMaking->recovery,
+                        "phoneNumber" => trim($phone),
+                        "birthDay" => $dobArr[2],
+                        "birthMonth" => $dobArr[1],
+                        "birthYear" => $dobArr[0]
+                    );
+                    error_log("request automail" . json_encode($input));
+
+                    // Gọi API automail để tạo mail
+                    $mail = RequestHelper::callAPI2("POST", "http://165.22.105.138/automail/api/mail/create/", $input);
+                    error_log("$emailMaking->email automail" . json_encode($mail));
+
+                    $input2 = array("gmail" => $emailMaking->email, "profile_id" => $emailMaking->moon_profile_id);
+                    RequestHelper::callAPI2("POST", "http://165.22.105.138/automail/api/mail/update/", $input2);
+
+                    // Đánh dấu đã đồng bộ
+                    $emailMaking->is_sync = '1';
+                    $emailMaking->save();
+
+                    // Gọi API cập nhật tên lên hệ thống profile.autoseo.win
+                    $resultProfile = RequestHelper::callAPI2(
+                                    "POST", "http://profile.autoseo.win/profile-tmp/update/name", [
+                                "id" => $emailMaking->moon_profile_id,
+                                "name" => $emailMaking->email
+                                    ]
+                    );
+                    error_log("$emailMaking->email [resultProfile]: " . json_encode($resultProfile));
+
+                    // Gọi API assign lên hệ thống bas.reupnet.info
+                    $resultBas = RequestHelper::callAPI2(
+                                    "POST", "http://bas.reupnet.info/profile/kasmoon/assign", [
+                                "gmail" => $emailMaking->email,
+                                "host_url" => $emailMaking->host_url,
+                                "kas_profile_id" => $emailMaking->kas_profile_id
+                                    ]
+                    );
+                    error_log("$emailMaking->email [resultBas]: " . json_encode($resultBas));
+
+
+                    $successCount++;
+                    $results[] = [
+                        'email' => $emailMaking->email,
+                        'status' => 'success',
+                        'account_info_id' => $newAccount->id,
+                        'automail_id' => $mail->id ?? null
+                    ];
+
+                    error_log("$emailMaking->email Đồng bộ thành công mail: {$emailMaking->email}");
+                } catch (Exception $e) {
+                    $errorCount++;
+                    $results[] = [
+                        'email' => $emailMaking->email,
+                        'status' => 'error',
+                        'message' => $e->getMessage()
+                    ];
+
+                    error_log("$emailMaking->email Lỗi đồng bộ mail {$emailMaking->email}: " . $e->getMessage());
+                }
+            }
+
+            return response()->json([
+                        "status" => "success",
+                        "message" => "Đồng bộ hoàn tất. Thành công: $successCount, Lỗi: $errorCount",
+                        "data" => [
+                            'total_processed' => count($emailsToSync),
+                            'success_count' => $successCount,
+                            'error_count' => $errorCount,
+                            'results' => $results
+                        ]
+            ]);
+        } catch (Exception $e) {
+            Log::error("Lỗi trong syncEmailFromMaking: " . $e->getMessage());
+            return response()->json([
+                        "status" => "error",
+                        "message" => "Lỗi hệ thống: " . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function moonSpaceLogin(Request $request) {
+        $user = Auth::user();
+        Log::info($user->user_name . '|ChannelManagementController.moonSpaceLogin|request=' . json_encode($request->all()));
+        $hash_pass = $request->input('hash_pass');
+
+        // Kiểm tra channel tồn tại
+        $channel = \App\Http\Models\AccountInfo::where('hash_pass', $hash_pass)->first();
+        if (!$channel) {
+            return response()->json(['status' => 'error', 'message' => 'Channel not found!']);
+        }
+
+        // Kiểm tra moon_space_info có dữ liệu không
+        if ($channel->moon_space_info) {
+            $info = json_decode($channel->moon_space_info, true);
+            if (isset($info['host_url']) && isset($info['kasm_url'])) {
+                $url = $info['host_url'] . $info['kasm_url'];
+                Log::info("$user->user_name|moonSpaceLogin|url_local: " . $url);
+                return response()->json(['status' => 'success', 'url' => $url]);
+            }
+        }
+
+        // Gọi API để tạo phiên Moon Space mới
+        $gmail = $channel->note;
+        $apiUrl = "http://bas.reupnet.info/profile/kasmoon/request/" . urlencode($gmail);
+
+        try {
+            $response = file_get_contents($apiUrl);
+            if ($response === false) {
+                return response()->json(['status' => 'error', 'message' => 'Could not connect to Moon Space API!']);
+            }
+
+            $data = json_decode($response, true);
+
+            if (isset($data['host_url']) && isset($data['kasm_url'])) {
+                $url = $data['host_url'] . $data['kasm_url'];
+
+                // Lưu thông tin phiên vào database
+                $channel->moon_space_info = $response;
+                $channel->save();
+                Log::info("$user->user_name|moonSpaceLogin|url_online: " . $url);
+                return response()->json(['status' => 'success', 'url' => $url]);
+            } else {
+                return response()->json(['status' => 'error', 'message' => 'Could not get Moon Space session info!']);
+            }
+        } catch (Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Error calling API: ' . $e->getMessage()]);
+        }
+    }
+
+    public function moonSpaceDestroy(Request $request) {
+        $user = Auth::user();
+        Log::info($user->user_name . '|ChannelManagementController.moonSpaceDestroy|request=' . json_encode($request->all()));
+        $hash_pass = $request->input('hash_pass');
+
+        // Kiểm tra channel tồn tại
+        $channel = \App\Http\Models\AccountInfo::where('hash_pass', $hash_pass)->first();
+        if (!$channel) {
+            return response()->json(['status' => 'error', 'message' => 'Channel not found!']);
+        }
+
+        // Gọi API để hủy phiên Moon Space
+        $gmail = $channel->note;
+        $apiUrl = "http://bas.reupnet.info/profile/kasmoon/destroy/" . urlencode($gmail);
+
+        try {
+            $response = file_get_contents($apiUrl);
+
+            // Xóa thông tin phiên khỏi database
+            $channel->moon_space_info = null;
+            $channel->save();
+
+            return response()->json(['status' => 'success', 'message' => 'Moon Space session destroyed successfully!']);
+        } catch (Exception $e) {
+            // Vẫn xóa thông tin phiên khỏi database ngay cả khi API lỗi
+            $channel->moon_space_info = null;
+            $channel->save();
+
+            return response()->json(['status' => 'success', 'message' => 'Moon Space session destroyed!']);
+        }
+    }
+
 }

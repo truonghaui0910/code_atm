@@ -110,7 +110,9 @@
     </script>
 
     <!-- Plugins  -->
-
+     @if (!($is_admin_music || $is_dev_tool))
+    <script src="/js/devtool-protection.js?v=1.04"></script>
+     @endif
     <script src="assets/js/jquery.min.js"></script>
 
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -192,7 +194,7 @@
     <script src="js/xteam_fireworks.min.js"></script>
 
     <!--daterange picker-->
-    <script src="https://colorlib.com/polygon/vendors/moment/min/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="js/daterangepicker.js"></script>
 
     <!--multiple date picker-->
@@ -1192,51 +1194,51 @@
 
             //khóa DevTools
             @if (!($is_admin_music || $is_dev_tool))
-                window.devtools = (function() {
-                    const devtools = {
-                        open: false,
-                        orientation: null,
-                    };
-
-                    const threshold = 160;
-
-                    const emitEvent = (state, orientation) => {
-                        devtools.open = state;
-                        devtools.orientation = orientation;
-                        const event = new CustomEvent('devtoolschange', {
-                            detail: {
-                                open: state,
-                                orientation: orientation
-                            },
-                        });
-                        window.dispatchEvent(event);
-                    };
-
-                    setInterval(() => {
-                        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-                        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-                        const orientation = widthThreshold ? 'vertical' : 'horizontal';
-
-                        if (!(heightThreshold && widthThreshold) && (widthThreshold ||
-                                heightThreshold)) {
-                            if (!devtools.open || devtools.orientation !== orientation) {
-                                emitEvent(true, orientation);
-                            }
-                        } else {
-                            if (devtools.open) {
-                                emitEvent(false, null);
-                            }
-                        }
-                    }, 500);
-
-                    return devtools;
-                })();
-                window.addEventListener('devtoolschange', function(e) {
-                    if (e.detail.open) {
-                        // DevTools đang mở
-                        window.location.href = 'https://moonseo.app/images/stop.png';
-                    }
-                });
+//                window.devtools = (function() {
+//                    const devtools = {
+//                        open: false,
+//                        orientation: null,
+//                    };
+//
+//                    const threshold = 160;
+//
+//                    const emitEvent = (state, orientation) => {
+//                        devtools.open = state;
+//                        devtools.orientation = orientation;
+//                        const event = new CustomEvent('devtoolschange', {
+//                            detail: {
+//                                open: state,
+//                                orientation: orientation
+//                            },
+//                        });
+//                        window.dispatchEvent(event);
+//                    };
+//
+//                    setInterval(() => {
+//                        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+//                        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+//                        const orientation = widthThreshold ? 'vertical' : 'horizontal';
+//
+//                        if (!(heightThreshold && widthThreshold) && (widthThreshold ||
+//                                heightThreshold)) {
+//                            if (!devtools.open || devtools.orientation !== orientation) {
+//                                emitEvent(true, orientation);
+//                            }
+//                        } else {
+//                            if (devtools.open) {
+//                                emitEvent(false, null);
+//                            }
+//                        }
+//                    }, 500);
+//
+//                    return devtools;
+//                })();
+//                window.addEventListener('devtoolschange', function(e) {
+//                    if (e.detail.open) {
+//                        // DevTools đang mở
+//                        window.location.href = 'https://moonseo.app/images/stop.png';
+//                    }
+//                });
             @endif
 
             loadNotifyCount = function() {

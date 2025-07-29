@@ -1064,7 +1064,7 @@ class DashboardController extends Controller {
                         return array("status" => 0, "message" => "Not found info of claims or promo");
                     }
                 } else {
-                    $campaignStatics = CampaignStatistics::whereIn("status", [1,4])->get();
+                    $campaignStatics = CampaignStatistics::whereIn("status", [1, 4])->get();
 //                    Log::info("autosubmit: " . count($campaignStatics));
                 }
 
@@ -1717,6 +1717,9 @@ class DashboardController extends Controller {
                         "type" => 5,
                         "piority" => 80
             ];
+            if (!empty($channelInfo->host_url)) {
+                $req->exts_name = "youtube_bas_mv3";
+            }
             $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
             $jobId = $res->job_id;
             $data->job_check_id = $jobId;
@@ -2029,7 +2032,6 @@ class DashboardController extends Controller {
 //            return array("status" => "success", "message" => "Not found $request->id");
 //        }
 //    }
-
     //chay lai autowakeup bị lỗi
     public function refreshAutoWake(Request $request) {
         $user = Auth::user();
@@ -2200,6 +2202,9 @@ class DashboardController extends Controller {
                                     "type" => 9,
                                     "piority" => 10
                         ];
+                        if (!empty($channel->host_url)) {
+                            $req->exts_name = "youtube_bas_mv3";
+                        }
                         $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
                         $jobId = $res->job_id;
                         $data->job_del_id = $jobId;
@@ -2366,7 +2371,9 @@ class DashboardController extends Controller {
                     "type" => 631,
                     "piority" => 10
         ];
-
+        if (!empty($channel->host_url)) {
+            $req->exts_name = "youtube_bas_mv3";
+        }
         $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
         Log::info($user->user_name . '|DashboardController.deletePlaylistManual|jobId|' . $res->job_id);
         return array("status" => "success", "message" => "Success $res->job_id");
@@ -2410,7 +2417,9 @@ class DashboardController extends Controller {
                     "type" => 691,
                     "piority" => 10
         ];
-
+        if (!empty($channel->host_url)) {
+            $req->exts_name = "youtube_bas_mv3";
+        }
         $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
         Log::info($user->user_name . '|DashboardController.deleteVideosManual|jobId|' . $res->job_id);
         return array("status" => "success", "message" => "Success $res->job_id");

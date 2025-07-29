@@ -736,7 +736,7 @@ class CallbackController extends Controller {
             }
 
             //auto comment
-            
+
             $autoComment = false;
             if (!empty($meta->auto_comment)) {
                 $autoComment = $meta->auto_comment;
@@ -800,6 +800,9 @@ class CallbackController extends Controller {
                             "studio_id" => $upload->source_id,
                             "piority" => 30
                 ];
+                if (!empty($accountInfo->host_url)) {
+                    $req->exts_name = "youtube_bas_mv3";
+                }
                 Logger::logUpload("callbackUpload COMMENT req:" . json_encode($req));
                 $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
                 Logger::logUpload("callbackUpload COMMENT res:" . json_encode($bas));
@@ -905,6 +908,9 @@ class CallbackController extends Controller {
                             "studio_id" => $upload->source_id,
                             "piority" => 80
                 ];
+                if (!empty($accountInfo->host_url)) {
+                    $req->exts_name = "youtube_bas_mv3";
+                }
                 Logger::logUpload("callbackUpload CARD_ENDSCREEN req:" . json_encode($req));
                 $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
                 Logger::logUpload("callbackUpload CARD_ENDSCREEN res:" . json_encode($bas));

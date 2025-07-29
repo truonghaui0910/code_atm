@@ -2,6 +2,10 @@
 
 namespace App\Console;
 
+use App\Console\Commands\SunoLyricSync;
+use App\Console\Commands\UpdateEmailCountsCommand;
+use App\Http\Controllers\BomController;
+use App\Http\Controllers\ChannelManagementController;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -13,22 +17,25 @@ class Kernel extends ConsoleKernel {
      * @var array
      */
     protected $commands = [
-        Commands\UpdateEmailCountsCommand::class,
-        Commands\SunoLyricSync::class,
+        UpdateEmailCountsCommand::class,
+        SunoLyricSync::class,
     ];
 
     /**
      * Define the application's command schedule.
      *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
+     * @param  Schedule  $schedule
      * @return void
      */
     protected function schedule(Schedule $schedule) {
         $schedule->command('command:email_count')->everyFiveMinutes()->withoutOverlapping(10);
         $schedule->command('command:suno_lyric_sync')->everyFiveMinutes()->withoutOverlapping(10);
-        $bom = new \App\Http\Controllers\BomController();
+        $bom = new BomController();
         $bom->musicToText();
         $bom->makeLyricTimestamp();
+        $accountInfo = new ChannelManagementController();
+        $accountInfo->syncEmailFromMaking();
+        $bom->syncToSoundhex();
     }
 
     /**

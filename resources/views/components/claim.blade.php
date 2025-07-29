@@ -213,7 +213,9 @@ $listCampignid=[];
                                     <i class="fa fa-heart cur-poiter color-red" data-toggle="tooltip" data-placement="top" data-original-title="Tier 1"></i>
                                     @endif
                                     @if($data->status==4)
-                                    <i class="fa  fa-pause" data-toggle="tooltip" data-placement="top" data-original-title="Pause campaign"></i>
+                                    <span class="badge badge-pill badge-warning p-2" style="font-size: 1rem; background: linear-gradient(90deg, #ffb347 0%, #ffcc33 100%); color: #fff; box-shadow: 0 2px 8px rgba(255,204,51,0.3);">
+                                        <i class="fa fa-pause" style="font-size:1.2em; vertical-align:middle;"></i> <span class="ml-1" style="vertical-align:middle;">Pause</span>
+                                    </span>
                                     @endif
                                     @if($data->crypto_view_run==1)
                                     <span class="badge label-table badge-danger" data-toggle="tooltip" data-placement="top" title="" data-original-title="">Crypto Running</span>
@@ -271,7 +273,7 @@ $listCampignid=[];
                                     @else
                                          <span class="">{{$data->yt_distributor}}</span>
                                     @endif
-                                    
+                                    <div><span class="text-muted font-12">{{$data->yt_distributor_check_time}}</span></div>
                                 </td>
                               
                                 <td>

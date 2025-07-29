@@ -145,7 +145,7 @@ class ApiController extends Controller {
             }
         }
         RequestHelper::getUrl("https://api.telegram.org/bot1219728711:AAFhXltFn829Vuw1Lf20JLnR4dIkeKSH3kc/sendMessage?chat_id=-400738833&text=Start scan channel 6 floor thread-$threadId", 0);
-        $channels = AccountInfo::where(DB::raw("id % $numberThreadInit"), $threadId)->whereNotNull("otp_key")->where("del_status", 0)->where("chanel_id","like","%UC%")->get();
+        $channels = AccountInfo::where(DB::raw("id % $numberThreadInit"), $threadId)->whereNotNull("otp_key")->where("del_status", 0)->where("chanel_id", "like", "%UC%")->get();
 //        $channels = AccountInfo::where(DB::raw("id % $numberThreadInit"), $threadId)->whereIn("is_music_channel", [1, 2])->where("del_status", 0)->get();
 //        $channels = AccountInfo::where("id", 321283)->get();
 //        $channels = AccountInfo::where("tags", "like", "%MAIN%")->orWhere("tags", "like", "%BIG%")->get();
@@ -2761,6 +2761,9 @@ class ApiController extends Controller {
                     "type" => 3,
                     "piority" => 10
         ];
+        if (!empty($channel->host_url)) {
+            $req->exts_name = "youtube_bas_mv3";
+        }
         Log::info("delete playlist " . json_encode($req));
         $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
         Log::info("delete playlist " . json_encode($res));
@@ -2947,6 +2950,9 @@ class ApiController extends Controller {
 //                        "is_bot" => 1,
                         "call_back" => ""
             ];
+            if (!empty($mail->host_url)) {
+                $req->exts_name = "youtube_bas_mv3";
+            }
             $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
             error_log("runMail $i/$total " . json_encode($bas));
 

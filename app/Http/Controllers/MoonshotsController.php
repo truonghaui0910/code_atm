@@ -52,6 +52,10 @@ class MoonshotsController extends Controller {
                         "type" => 80,
                         "piority" => 80,
             ];
+            //2025/07/25 tùng confirm thêm exts_name với kênh mail tự tạo
+            if (!empty($data->host_url)) {
+                $req->exts_name = "youtube_bas_mv3";
+            }
             $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
             Logger::logUpload("moonShotsSyncCookie:$data->note " . json_encode($bas));
         }
@@ -286,6 +290,9 @@ class MoonshotsController extends Controller {
                         "piority" => 50,
                         "call_back" => "http://automusic.win/callback/brand"
             ];
+            if (!empty($data->host_url)) {
+                $req->exts_name = "youtube_bas_mv3";
+            }
 //            error_log(json_encode($req));
 //            Utils::write("brand.txt", json_encode($req));
             $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
@@ -445,6 +452,9 @@ class MoonshotsController extends Controller {
                                     "studio_id" => $res->id,
                                     "piority" => 80,
                         ];
+                        if (!empty($channel->host_url)) {
+                            $req->exts_name = "youtube_bas_mv3";
+                        }
                         Logger::logUpload("autoUploadStudio:$res->id tiktok " . json_encode($req));
                         $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
                         Logger::logUpload("autoUploadStudio:$res->id tiktok " . json_encode($bas));
@@ -778,6 +788,9 @@ class MoonshotsController extends Controller {
                                 "piority" => 30,
                                 "call_back" => $callBack
                     ];
+                    if (!empty($channel->host_url)) {
+                        $req->exts_name = "youtube_bas_mv3";
+                    }
                     Logger::logUpload("autoUploadStudio:$res->id " . json_encode($req));
                     $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
                     Logger::logUpload("autoUploadStudio:$res->id " . json_encode($bas));
@@ -1060,6 +1073,9 @@ class MoonshotsController extends Controller {
                             "studio_id" => $data->id,
                             "call_back" => "http://automusic.win/callback/card"
                 ];
+                if (!empty($data->host_url)) {
+                    $req->exts_name = "youtube_bas_mv3";
+                }
 //                Logger::logUpload("callbackUpload CARD_ENDSCREEN req:" . json_encode($req));
                 $bas = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
                 Logger::logUpload("callbackUpload CARD_ENDSCREEN res:" . json_encode($bas));

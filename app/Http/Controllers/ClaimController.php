@@ -464,11 +464,13 @@ class ClaimController extends Controller {
 
             //2025/02/22 hiển thị YT distibutor
             $data->yt_distributor = "Not_Check_Yet";
+            $data->yt_distributor_check_time = null;
             if ($data->short_text != null) {
                 $st = json_decode($data->short_text);
                 if (!isset($st->video_id) || $st->video_id == null) {
                     $data->yt_distributor = "Not_Check_Yet";
                 } else {
+                    $data->yt_distributor_check_time = !empty($st->time) ? Utils::calcTimeText($st->time): null;
                     if ($st->distributor == null) {
                         $data->yt_distributor = "No_Claim";
                     } else {

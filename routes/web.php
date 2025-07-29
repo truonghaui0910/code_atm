@@ -505,6 +505,7 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/sendAlbumToSalad', 'BomController@sendAlbumToSalad')->name('sendAlbumToSalad');
         Route::get('/updateAlbumReleaseDate', 'BomController@updateAlbumReleaseDate')->name('updateAlbumReleaseDate');
         Route::get('/scanAlbum', 'BomController@scanAlbum')->name('scanAlbum');
+        Route::post('/syncToSoundhex', 'BomController@syncToSoundhex')->name('syncToSoundhex');
         Route::get('/album/check/artist', 'BomController@checkAlbumArtist')->name('checkAlbumArtist');
         Route::post('/updateSongOrder', 'BomController@updateSongOrder')->name('updateSongOrder');
 
@@ -567,6 +568,8 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
         Route::get('/goLogin', 'ChannelManagementController@goLogin')->name('goLogin');
         Route::get('/getCodeLogin', 'ChannelManagementController@getCodeLogin')->name('getCodeLogin');
         Route::get('/getCodeRecovery', 'ChannelManagementController@getCodeRecovery')->name('getCodeRecovery');
+        Route::get('/moonSpaceLogin', 'ChannelManagementController@moonSpaceLogin')->name('moonSpaceLogin');
+        Route::get('/moonSpaceDestroy', 'ChannelManagementController@moonSpaceDestroy')->name('moonSpaceDestroy');
         Route::get('/getRecoveryEmail', 'ChannelManagementController@getRecoveryEmail')->name('getRecoveryEmail');
         Route::get('/getCodeRecoveryForChangeRecovery', 'ChannelManagementController@getCodeRecoveryForChangeRecovery')->name('getCodeRecoveryForChangeRecovery');
         Route::post('/finishRecoveryEmail', 'ChannelManagementController@finishRecoveryEmail')->name('finishRecoveryEmail');
@@ -1136,6 +1139,9 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
 
     Route::post('/api/email/status/update', 'ChannelManagementController@updateEmailMake')->name('updateEmailMake');
     Route::get('/api/email/get/{profileId}', 'ChannelManagementController@getMailMakeByProfileId')->name('getMailMakeByProfileId');
+    
+    // Đồng bộ mail từ accountinfo_making
+    Route::post('/syncEmailFromMaking', 'ChannelManagementController@syncEmailFromMaking')->name('syncEmailFromMaking');
 });
 
 

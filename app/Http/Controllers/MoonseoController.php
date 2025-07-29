@@ -340,7 +340,9 @@ class MoonseoController extends Controller {
                     "piority" => 1,
                     "call_back" => "https://moonseo.app/api/social/tiktok/qrcode",
         ];
-
+        if (!empty($accountInfo->host_url)) {
+            $req->exts_name = "youtube_bas_mv3";
+        }
         $res = RequestHelper::callAPI("POST", "http://bas.reupnet.info/job/add", $req);
         $jobId = null;
         if (!empty($res->job_id)) {

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Common\Logger;
 use App\Common\Network\EpidemicSoundHelper;
 use App\Common\Network\RequestHelper;
 use App\Common\Process\ProcessUtils;
@@ -12,11 +11,14 @@ use App\Http\Models\Bom;
 use App\Http\Models\BomAlbum;
 use App\Http\Models\BomArtist;
 use App\Http\Models\BomGroups;
+use App\User;
+use DateTime;
+use DateTimeZone;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Log;
-use TheSeer\Tokenizer\Exception;
 use Validator;
 
 class BomController extends Controller {
@@ -870,7 +872,7 @@ class BomController extends Controller {
                         'songs' => $songInfos,
                         'total' => count($songInfos)
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Download songs error: ' . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => 'Download failed: ' . $e->getMessage()]);
         }
@@ -916,7 +918,7 @@ class BomController extends Controller {
                             ->header('Content-Type', 'audio/mpeg')
                             ->header('Content-Disposition', 'attachment; filename="' . $fileName . '.mp3"')
                             ->header('Content-Length', strlen($fileContent));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Proxy download error: " . $e->getMessage());
             abort(500, 'Download failed');
         }
@@ -953,7 +955,7 @@ class BomController extends Controller {
                 fclose($FH);
             };
             return response()->stream($callback, 200, $headers);
-        } catch (Exception $ex) {
+        } catch (Exception2 $ex) {
             Log::info($ex);
         }
     }
@@ -2652,8 +2654,8 @@ class BomController extends Controller {
         }
 
         if (!$request->is_admin_music && $request->has('releaseDate') && !empty($request->releaseDate)) {
-            $releaseDate = new \DateTime($request->releaseDate);
-            $minDate = new \DateTime();
+            $releaseDate = new DateTime($request->releaseDate);
+            $minDate = new DateTime();
             $minDate->modify('+7 days');
 
             if ($releaseDate < $minDate) {
@@ -2688,7 +2690,9 @@ class BomController extends Controller {
             }
             $album->release_date = $request->releaseDate ?? null;
             $album->instruments = json_encode($instruments);
-            $album->album_cover = $request->uploaded_image_url;
+            if (isset($request->uploaded_image_url)) {
+                $album->album_cover = $request->uploaded_image_url;
+            }
             $album->save();
             return response()->json([
                         'status' => "success",
@@ -2787,8 +2791,8 @@ class BomController extends Controller {
         }
 
 
-        $releaseDate = new \DateTime($albumDb->release_date);
-        $minDate = new \DateTime();
+        $releaseDate = new DateTime($albumDb->release_date);
+        $minDate = new DateTime();
         $minDate->modify('+7 days');
         if (!$request->is_admin_music) {
             if ($releaseDate < $minDate) {
@@ -2999,7 +3003,7 @@ class BomController extends Controller {
     public function getListAlbum(Request $request) {
         $user = Auth::user();
         Log::info("$user->user_name|BomController.getListAlbum|request=" . json_encode($request->all()));
-        
+
 
 
         $albumId = $request->id;
@@ -3025,7 +3029,7 @@ class BomController extends Controller {
                 ->groupBy(
                 'a.id', 'a.username', 'a.album_name', 'a.desc', 'a.is_released', 'a.album_cover', 'a.release_date', 'a.genre_name', 'a.artist', 'ar.artist_total_streams', 'ar.last_update', 'ar.youtube_claim', 'a.youtube_claim', 'a.distro_release_date'
         );
-        
+
 
         $query->where('a.status', 1);
         $countQuery = DB::table('bom_albums as a')->where('a.status', 1);
@@ -3104,22 +3108,22 @@ class BomController extends Controller {
 
         $total = $countQuery->count();
 
-        Log::info("getListAlbum Debug", [
-            'user' => $user->user_name,
-            'is_admin_music' => $request->is_admin_music,
-            'search' => $request->get('search'),
-            'status' => $request->get('status'),
-            'total_from_query' => $total,
-            'total_from_status_counts' => $this->getAlbumStatusCounts($request)['all']
-        ]);
+//        Log::info("getListAlbum Debug", [
+//            'user' => $user->user_name,
+//            'is_admin_music' => $request->is_admin_music,
+//            'search' => $request->get('search'),
+//            'status' => $request->get('status'),
+//            'total_from_query' => $total,
+//            'total_from_status_counts' => $this->getAlbumStatusCounts($request)['all']
+//        ]);
 
-DB::enableQueryLog();
+        DB::enableQueryLog();
 
         $albums = $query->offset(($page - 1) * $perPage)
                 ->limit($perPage)
                 ->get();
         $queries = DB::getQueryLog();
-        Log::info('SQL Queries:', $queries);
+//        Log::info('SQL Queries:', $queries);
         // Xử lý dữ liệu như cũ
         $albums = $albums->map(function ($album) {
             $album->songs = $album->songs ? explode(',', $album->songs) : [];
@@ -3127,8 +3131,8 @@ DB::enableQueryLog();
             // Tính toán thời gian "time ago"
             if ($album->last_update) {
                 try {
-                    $lastUpdate = new \DateTime($album->last_update, new \DateTimeZone('Asia/Ho_Chi_Minh'));
-                    $now = new \DateTime('now', new \DateTimeZone('Asia/Ho_Chi_Minh'));
+                    $lastUpdate = new DateTime($album->last_update, new DateTimeZone('Asia/Ho_Chi_Minh'));
+                    $now = new DateTime('now', new DateTimeZone('Asia/Ho_Chi_Minh'));
                     $interval = $now->diff($lastUpdate);
 
                     if ($interval->d > 0) {
@@ -3140,7 +3144,7 @@ DB::enableQueryLog();
                     } else {
                         $album->last_update_ago = 'just now';
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $album->last_update_ago = 'unknown';
                 }
             } else {
@@ -3320,7 +3324,7 @@ DB::enableQueryLog();
                         'status' => 'success',
                         'message' => 'Song order updated successfully'
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Rollback transaction in case of error
             DB::rollBack();
 
@@ -3483,7 +3487,7 @@ DB::enableQueryLog();
                             "count" => $successCount
                         ]
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             Log::error("Error adding songs to album: " . $e->getMessage());
 
@@ -3573,8 +3577,8 @@ DB::enableQueryLog();
         }
 
         if ($request->has('release_date') && !empty($request->release_date)) {
-            $releaseDate = new \DateTime($request->release_date);
-            $minDate = new \DateTime();
+            $releaseDate = new DateTime($request->release_date);
+            $minDate = new DateTime();
             $minDate->modify('+7 days');
 
             if ($releaseDate < $minDate) {
@@ -3708,7 +3712,7 @@ DB::enableQueryLog();
                 'songsUpdated' => $totalSongs
             ]) . "\n\n";
             flush();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Spotify scan error: ' . $e->getMessage());
 
             echo "event: error\n";
@@ -3793,7 +3797,7 @@ DB::enableQueryLog();
 
             // If we get here, the artist name is valid
             return response()->json(['status' => 'valid', 'message' => 'Artist name is valid']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Error checking artist: ' . $e->getMessage()]);
         }
     }
@@ -3892,7 +3896,7 @@ DB::enableQueryLog();
                             ]
                 ]);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                         "status" => "error",
                         "message" => "Error processing artist: " . $e->getMessage(),
@@ -3998,7 +4002,7 @@ DB::enableQueryLog();
                         ],
                         'details' => $results
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Distributed albums Spotify scan error: ' . $e->getMessage());
 
             return response()->json([
@@ -4072,14 +4076,14 @@ DB::enableQueryLog();
 
                     // Nghỉ 1 giây giữa các batch để tránh spam API
                     sleep(1);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     error_log("updateArtistStreams: Error processing batch " . ($batchIndex + 1) . ": " . $e->getMessage());
                     continue;
                 }
             }
 
             error_log("updateArtistStreams: Artist streams update completed. Updated: {$updatedCount} artists.");
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             error_log("updateArtistStreams: Error updating artist streams: " . $e->getMessage());
         }
     }
@@ -4336,7 +4340,7 @@ DB::enableQueryLog();
                             'message' => "Failed to retrieve lyrics. HTTP Code: $httpCode"
                                 ], 500);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error in getLyrics: ' . $e->getMessage() . ' | Line: ' . $e->getLine());
 
             return response()->json([
@@ -4406,7 +4410,7 @@ DB::enableQueryLog();
                         'status' => 'success',
                         'data' => $data
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("$user->user_name|BomController.getArtistList|Error: " . $e->getMessage());
             return response()->json([
                         'status' => 'error',
@@ -4459,13 +4463,333 @@ DB::enableQueryLog();
                             'youtube_claim' => $artist->youtube_claim
                         ]
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("$user->user_name|BomController.updateArtistYoutubeClaim|Error: " . $e->getMessage());
             return response()->json([
                         'status' => 'error',
                         'message' => 'Error updating artist: ' . $e->getMessage()
             ]);
         }
+    }
+
+    public function syncToSoundhex() {
+        $processName = "sync_soundhex";
+        if (ProcessUtils::isfreeProcess($processName)) {
+            ProcessUtils::lockProcess($processName);
+            // Lấy albums với điều kiện is_released = 5, spotify_info is not null và chưa sync hoặc sync lỗi
+            $albums = BomAlbum::where('is_released', 5)
+                    ->whereNotNull('spotify_info')
+                    ->where('status', 1)
+                    ->whereIn('is_soundhex', [0]) // Lấy albums chưa sync (0) hoặc sync lỗi (4)
+                    ->get();
+            error_log("syncToSoundhex: " . count($albums));
+            $results = [];
+            $errors = [];
+            $i = 0;
+            $total = count($albums);
+            foreach ($albums as $album) {
+                $i++;
+                $syncResult = $this->syncSingleAlbumToSoundhex($album);
+                error_log("syncToSoundhex: $i/$total $album->id $album->album_name");
+                if ($syncResult['success']) {
+                    $results[] = $syncResult['message'];
+                } else {
+                    $errors = array_merge($errors, $syncResult['errors']);
+                }
+            }
+
+            ProcessUtils::unLockProcess($processName);
+            $rs = [
+                'status' => 'success',
+                'message' => 'Sync to SoundHex completed',
+                'results' => $results,
+                'errors' => $errors,
+                'total_albums' => count($albums),
+                'synced' => count($results),
+                'failed' => count($errors)
+            ];
+//            Log::info("syncToSoundhex result " . json_encode($rs));
+            return response()->json($rs);
+        } else {
+            error_log("$processName is locked");
+        }
+    }
+
+    /**
+     * Sync một album duy nhất lên SoundHex
+     * @param BomAlbum $album
+     * @return array ['success' => bool, 'message' => string, 'errors' => array]
+     */
+    public function syncSingleAlbumToSoundhex($album) {
+        try {
+            Log::info("BomController.syncSingleAlbumToSoundhex|album_id=" . $album->id);
+            $userAlbum = User::where("user_name", "$album->username")->first();
+            $user_id = $userAlbum->soundhex_id;
+            // Đánh dấu album đang sync
+            $album->is_soundhex = 1;
+            $album->save();
+
+            // Định nghĩa domain và headers cho tất cả API calls
+            $soundhexDomain = 'https://dev.soundhex.com';
+//            $soundhexDomain = 'https://1c083d1d-baaf-4188-aa2e-0ebb35dc9970-00-6xjglm3f1xxb.sisko.replit.dev';
+            $headers = [
+                'Content-Type: application/json',
+                'Authorization: Bearer soundhex_webhook_secret_2025'
+            ];
+
+            // Validation trước khi gọi API
+            $validationErrors = [];
+
+            // Kiểm tra spotify_info
+            $spotifyInfo = json_decode($album->spotify_info, true);
+            if (!$spotifyInfo) {
+                $validationErrors[] = "Invalid spotify_info";
+            }
+
+            // Kiểm tra thông tin album cơ bản
+            if (empty($album->album_name)) {
+                $validationErrors[] = "Album name is empty";
+            }
+
+            if (empty($album->artist)) {
+                $validationErrors[] = "Artist name is empty";
+            }
+
+            if (empty($album->genre_name)) {
+                $validationErrors[] = "Genre name is empty";
+            }
+
+            // Kiểm tra spotify_id của artist
+            $artistSpotifyId = $spotifyInfo['artist_id'] ?? null;
+            if (!$artistSpotifyId) {
+                $validationErrors[] = "No artist spotify_id in spotify_info";
+            }
+
+            // Kiểm tra spotify_id của album
+            $albumSpotifyId = $spotifyInfo['album_id'] ?? null;
+            if (!$albumSpotifyId) {
+                $validationErrors[] = "No album spotify_id in spotify_info";
+            }
+
+            // Kiểm tra tracks
+            $tracks = Bom::where('album_id', $album->id)
+                    ->where('status', 1)
+                    ->orderBy('order_id')
+                    ->get();
+
+            if (count($tracks) == 0) {
+                $validationErrors[] = "No tracks found";
+            }
+
+            // Kiểm tra tracks có thông tin cần thiết
+            foreach ($tracks as $track) {
+                if (empty($track->song_name)) {
+                    $validationErrors[] = "Track {$track->id} has empty song_name";
+                }
+                if (empty($track->direct_link)) {
+                    $validationErrors[] = "Track {$track->id} ({$track->song_name}) has no direct_link";
+                }
+            }
+
+            // Nếu có lỗi validation, đánh dấu lỗi và log
+            if (!empty($validationErrors)) {
+                $errorMessage = "[STEP: Validation] Album {$album->id} validation failed: " . implode(", ", $validationErrors);
+                $this->setSoundhexError($album, $errorMessage);
+
+                return [
+                    'success' => false,
+                    'message' => '',
+                    'errors' => [$errorMessage]
+                ];
+            }
+
+            // Gọi API để tạo/lấy artist
+            Log::info("syncSingleAlbumToSoundhex|album_id={$album->id}|STEP: Creating Artist");
+            $artistData = [
+                'user_id' => $user_id,
+                'name' => $album->artist,
+                'spotify_id' => $artistSpotifyId,
+                'profile_image_url' => $album->album_cover ?? 'https://automusic.win/images/default-avatar.png'
+            ];
+
+            $artistResponse = RequestHelper::callAPI2('POST', $soundhexDomain . '/api/sync/artist', $artistData, $headers);
+            Log::info("artistResponse: " . json_encode($artistResponse));
+            if (!$artistResponse) {
+                $errorMessage = "[STEP: Create Artist] Failed to create artist for album {$album->id}: No response from API";
+                $this->setSoundhexError($album, $errorMessage);
+
+                return [
+                    'success' => false,
+                    'message' => '',
+                    'errors' => [$errorMessage]
+                ];
+            }
+
+            $artistId = $artistResponse->id ?? null;
+
+            if (!$artistId) {
+                $errorMessage = "[STEP: Create Artist] Failed to get artist id for album {$album->id}. Response: " . json_encode($artistResponse);
+                $this->setSoundhexError($album, $errorMessage);
+
+                return [
+                    'success' => false,
+                    'message' => '',
+                    'errors' => [$errorMessage]
+                ];
+            }
+
+            Log::info("syncSingleAlbumToSoundhex|album_id={$album->id}|Artist created successfully with ID: {$artistId}");
+
+            // Gọi API để tạo/lấy album
+            Log::info("syncSingleAlbumToSoundhex|album_id={$album->id}|STEP: Creating Album");
+            $albumData = [
+                'user_id' => $user_id,
+                'title' => $album->album_name,
+                'spotify_id' => $albumSpotifyId,
+                'artist_id' => $artistId,
+                'cover_image_url' => $album->album_cover ?? 'https://automusic.win/images/default-avatar.png',
+                'release_date' => $album->release_date ?? date('Y-m-d'),
+            ];
+
+            $albumResponse = RequestHelper::callAPI2('POST', $soundhexDomain . '/api/sync/album', $albumData, $headers);
+            Log::info("albumResponse: " . json_encode($albumResponse));
+
+            if (!$albumResponse) {
+                $errorMessage = "[STEP: Create Album] Failed to create album {$album->id}: No response from API";
+                $this->setSoundhexError($album, $errorMessage);
+
+                return [
+                    'success' => false,
+                    'message' => '',
+                    'errors' => [$errorMessage]
+                ];
+            }
+
+            $albumId = $albumResponse->id ?? null;
+
+            if (!$albumId) {
+                $errorMessage = "[STEP: Create Album] Failed to get album id for album {$album->id}. Response: " . json_encode($albumResponse);
+                $this->setSoundhexError($album, $errorMessage);
+
+                return [
+                    'success' => false,
+                    'message' => '',
+                    'errors' => [$errorMessage]
+                ];
+            }
+
+            // Update soundhex_url nếu có custom_url
+            if (isset($albumResponse->custom_url) && !empty($albumResponse->custom_url)) {
+                $soundhexUrl = '/album/' . $albumResponse->custom_url;
+                $album->soundhex_url = $soundhexUrl;
+                $album->save();
+                Log::info("syncSingleAlbumToSoundhex|album_id={$album->id}|Album URL saved: {$soundhexUrl}");
+            }
+
+            Log::info("syncSingleAlbumToSoundhex|album_id={$album->id}|Album created successfully with ID: {$albumId}");
+
+            $trackErrors = [];
+            $syncedTracks = 0;
+
+            Log::info("syncSingleAlbumToSoundhex|album_id={$album->id}|STEP: Creating Tracks. Total tracks: " . count($tracks));
+
+            foreach ($tracks as $index => $track) {
+                $trackNum = $index + 1;
+                Log::info("syncSingleAlbumToSoundhex|album_id={$album->id}|Creating track {$trackNum}/{" . count($tracks) . "}: {$track->song_name}");
+
+                // Gọi API để tạo/lấy track
+                $trackData = [
+                    'user_id' => $user_id,
+                    'title' => $track->song_name,
+                    'spotify_id' => $track->spotify_id ?? '', // Spotify ID của track từ bảng bom
+                    'artist_id' => $artistId,
+                    'album_id' => $albumId,
+                    'duration' => $track->duration_ms ? intval($track->duration_ms / 1000) : 180, // Convert ms to seconds
+                    'file_url' => $track->direct_link ?? '',
+                    'genre_name' => $album->genre_name, // Sử dụng genre_name từ album
+                    'isrc' => $track->isrc ?? '',
+                    'preview_url' => $track->direct_link ?? '',
+                ];
+
+                $trackResponse = RequestHelper::callAPI2('POST', $soundhexDomain . '/api/sync/track', $trackData, $headers);
+//                    Log::info("trackResponse for track {$track->id}: ".json_encode($trackResponse));
+
+                if (!$trackResponse) {
+                    $trackErrors[] = "[STEP: Create Track] Track {$trackNum}/" . count($tracks) . " - Failed to create track {$track->id} ({$track->song_name}): No response from API";
+                } else {
+                    // Kiểm tra response có thành công không
+                    if (isset($trackResponse->id) || isset($trackResponse->status) && $trackResponse->status === 'success') {
+                        $syncedTracks++;
+                        Log::info("syncSingleAlbumToSoundhex|album_id={$album->id}|Track {$trackNum} created successfully");
+                    } else {
+                        $trackErrors[] = "[STEP: Create Track] Track {$trackNum}/{" . count($tracks) . "} - Failed to create track {$track->id} ({$track->song_name}): Invalid response data. Response: " . json_encode($trackResponse);
+                    }
+                }
+
+                // Thêm delay nhỏ để tránh spam API
+                usleep(100000); // 100ms
+            }
+
+            // Đánh dấu album đã sync thành công
+            $album->is_soundhex = 3;
+            $album->save();
+
+            Log::info("syncSingleAlbumToSoundhex|album_id={$album->id}|COMPLETED: Album synced successfully. Total tracks synced: {$syncedTracks}/" . count($tracks));
+
+            // Nếu có track errors, log chúng vào distro_log nhưng vẫn coi là thành công
+            if (!empty($trackErrors)) {
+                $currentTime = gmdate("Y-m-d H:i:s", time() + 7 * 3600);
+                $trackErrorMessage = "[STEP: Create Track] Some tracks failed: " . implode("; ", $trackErrors);
+
+                if (empty($album->distro_log)) {
+                    $album->distro_log = "$currentTime [SoundHex Sync Warning] $trackErrorMessage";
+                } else {
+                    $album->distro_log .= "\n$currentTime [SoundHex Sync Warning] $trackErrorMessage";
+                }
+                $album->save();
+
+                Log::warning("syncSingleAlbumToSoundhex|album_id={$album->id}|Some tracks failed: " . implode("; ", $trackErrors));
+            }
+
+            return [
+                'success' => true,
+                'message' => "Successfully synced album {$album->id} ({$album->album_name}) - {$syncedTracks} tracks",
+                'errors' => $trackErrors
+            ];
+        } catch (Exception $e) {
+            $errorMessage = "[STEP: Exception] Error syncing album {$album->id}: " . $e->getMessage() . " | File: " . $e->getFile() . " | Line: " . $e->getLine();
+            $this->setSoundhexError($album, $errorMessage);
+
+            Log::error("syncSingleAlbumToSoundhex exception for album {$album->id}: " . $e->getMessage() . " | File: " . $e->getFile() . " | Line: " . $e->getLine());
+            return [
+                'success' => false,
+                'message' => '',
+                'errors' => [$errorMessage]
+            ];
+        }
+    }
+
+    /**
+     * Đánh dấu album sync lỗi và append log vào distro_log
+     * @param BomAlbum $album
+     * @param string $errorMessage
+     */
+    private function setSoundhexError($album, $errorMessage) {
+        $currentTime = gmdate("Y-m-d H:i:s", time() + 7 * 3600);
+
+        // Đánh dấu sync lỗi
+        $album->is_soundhex = 4;
+
+        // Append log vào distro_log
+        if (empty($album->distro_log)) {
+            $album->distro_log = "$currentTime [SoundHex Sync Error] $errorMessage";
+        } else {
+            $album->distro_log .= "\n$currentTime [SoundHex Sync Error] $errorMessage";
+        }
+
+        $album->save();
+
+        Log::error("setSoundhexError for album {$album->id}: $errorMessage");
     }
 
 }

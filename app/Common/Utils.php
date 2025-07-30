@@ -336,6 +336,25 @@ class Utils {
 //        }
     }
 
+    //hh:mm:ss -> số giây
+    public static function timeToSeconds($timeString) {
+        $parts = explode(':', $timeString);
+        $seconds = 0;
+
+        if (count($parts) == 3) {
+            // Format: H:M:S
+            $seconds = ($parts[0] * 3600) + ($parts[1] * 60) + $parts[2];
+        } elseif (count($parts) == 2) {
+            // Format: M:S ← Sẽ vào đây với "00:43"
+            $seconds = ($parts[0] * 60) + $parts[1];
+        } elseif (count($parts) == 1) {
+            // Format: S
+            $seconds = $parts[0];
+        }
+
+        return $seconds;
+    }
+
     //chuyển các đơn vị khác thành giờ
     public static function convertToHours($value, $unit) {
         switch (strtolower($unit)) {

@@ -1142,6 +1142,8 @@ Route::group(['middleware' => 'localization', 'prefix' => Session::get('locale')
     
     // Đồng bộ mail từ accountinfo_making
     Route::post('/syncEmailFromMaking', 'ChannelManagementController@syncEmailFromMaking')->name('syncEmailFromMaking');
+
+    Route::post('api/claim/submit', 'SongMatchController@matchSongs')->name('matchSongs');
 });
 
 

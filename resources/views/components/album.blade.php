@@ -4029,26 +4029,26 @@
                 }
             });
             
-            $('.artist-album-count').click(function(e) {
+            $(document).on('click', '.artist-album-count, .artist-album-count-table', function(e) {
                 e.stopPropagation();
-                const artistName = $(this).closest('.album-info-value').find('span:first').text().trim();
-                if (artistName) {
-                    // Set search value to artist name
-                    $('#album-search').val(artistName);
-                    
-                    // Trigger search
-                    $('#album-search').trigger('input');
-                    
-                    // Add visual feedback
-                    $(this).addClass('clicked');
-                    setTimeout(() => {
-                        $(this).removeClass('clicked');
-                    }, 300);
-                    
-                    // Show notification
-//                    showNotification(`Filtering albums by artist: ${artistName}`, 'info');
-                }
-            });            
+                e.preventDefault();
+
+                const artistName = $(this).data('artist') || $(this).attr('data-artist');
+                if (!artistName) return;
+
+                // Add visual feedback
+                $(this).addClass('clicked');
+                setTimeout(() => {
+                    $(this).removeClass('clicked');
+                }, 300);
+                
+                // Set search term and trigger search
+                $('#album-search').val(artistName);
+                applyFiltersServer();
+                // Show notification
+//                showNotification(`Filtering albums by artist: ${artistName}`, 'info');
+
+            });          
         });
     </script>
 @endsection

@@ -1161,14 +1161,15 @@
                                                         title="Login to account {{ $data->gologin }}">
                                                         <i class="fas fa-sign-in-alt"></i> Login
                                                     </button>
-                                                    <a id="commit-{{ $data->hash_pass }}"
-                                                        data-mail="{{ $data->note }}" target="_blank"
-                                                        href="AutoProfile://profile/commit/?id={{ $data->gologin }}&gmail={{ $data->note }}&force=1"
-                                                        class="btn btn-sm btn-action" data-toggle="tooltip"
-                                                        title="Commit Moonshots">
-                                                        <i class="fas fa-rocket"></i> Commit
-                                                    </a>
-
+                                                    @if($is_admin_music || $data->is_autoseo != 3)
+                                                        <a id="commit-{{ $data->hash_pass }}"
+                                                            data-mail="{{ $data->note }}" target="_blank"
+                                                            href="AutoProfile://profile/commit/?id={{ $data->gologin }}&gmail={{ $data->note }}&force=1"
+                                                            class="btn btn-sm btn-action" data-toggle="tooltip"
+                                                            title="Commit Moonshots">
+                                                            <i class="fas fa-rocket"></i> Commit
+                                                        </a>
+                                                    @endif
                                                     @if ($data->otp_key != null)
                                                         <button type="button" data-toggle="tooltip"
                                                             title="Get login code"

@@ -27,6 +27,11 @@
                     Tiktok
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="#extension-b1" data-toggle="tab"  aria-expanded="false" class="nav-link">
+                    Extension
+                </a>
+            </li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane fade show active" id="home-b1">
@@ -87,6 +92,75 @@
                 <p>Bước 5: Kiểm tra nếu có extension như hình là thành công <img width="500px" src="https://automusic.win/images/setup_extention_check.png"/></p>
   
             </div>
+            <div class="tab-pane fade" id="extension-b1">
+                <h3>Browser Extensions Download</h3>
+                
+                <!-- Extension Block 1 -->
+                <div class="extension-block" style="border: 1px solid #e3e6f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; background-color: #f8f9fc;">
+                    <div class="extension-header" style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div class="extension-icon" style="width: 48px; height: 48px; background-color: #4e73df; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                            <i class="fa fa-chrome" style="color: white; font-size: 24px;"></i>
+                        </div>
+                        <div class="extension-info">
+                            <h4 style="margin: 0; color: #5a5c69;">Submit Claim Extension</h4>
+                            <p style="margin: 5px 0 0 0; color: #858796; font-size: 14px;">Browser extension for submitting claims efficiently</p>
+                        </div>
+                    </div>
+                    <div class="extension-content">
+                        <p style="margin-bottom: 15px; color: #6e707e;">
+                            This extension is used to submit video claims that you have created on the automusic system. It provides a seamless integration between your browser and the automusic platform for efficient claim management.
+                        </p>
+                        <div class="extension-actions">
+                            <button type="button" class="btn btn-primary btn-sm copy-link-btn" 
+                                    data-link="http://bas.reupnet.info/uploads/submit_claim_extension.zip"
+                                    data-toggle="tooltip" 
+                                    data-placement="top" 
+                                    data-original-title="Click to copy download link"
+                                    style="margin-right: 10px;">
+                                <i class="fa fa-copy"></i> Copy Download Link
+                            </button>
+                            <span class="badge badge-info" style="font-size: 12px;">Chrome Compatible</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Extension Block 2 -->
+                <div class="extension-block" style="border: 1px solid #e3e6f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; background-color: #f8f9fc;">
+                    <div class="extension-header" style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div class="extension-icon" style="width: 48px; height: 48px; background-color: #1cc88a; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                            <i class="fa fa-search" style="color: white; font-size: 24px;"></i>
+                        </div>
+                        <div class="extension-info">
+                            <h4 style="margin: 0; color: #5a5c69;">Epid Claim Checker</h4>
+                            <p style="margin: 5px 0 0 0; color: #858796; font-size: 14px;">Extension for checking claims on Epid channels before submission</p>
+                        </div>
+                    </div>
+                    <div class="extension-content">
+                        <p style="margin-bottom: 15px; color: #6e707e;">
+                            This extension is used to check claims for Epid channels before sending them. It helps verify and validate claims to ensure accuracy and compliance with platform requirements.
+                        </p>
+                        <div class="extension-actions">
+                            <button type="button" class="btn btn-success btn-sm copy-link-btn" 
+                                    data-link="http://bas.reupnet.info/uploads/youtube_claim_checker.zip"
+                                    data-toggle="tooltip" 
+                                    data-placement="top" 
+                                    data-original-title="Click to copy download link"
+                                    style="margin-right: 10px;">
+                                <i class="fa fa-copy"></i> Copy Download Link
+                            </button>
+                            <span class="badge badge-success" style="font-size: 12px;">Chrome Compatible</span>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- Placeholder for future extensions -->
+                <div class="future-extensions" style="text-align: center; padding: 40px 20px; color: #858796; border: 2px dashed #e3e6f0; border-radius: 8px;">
+                    <i class="fa fa-plus-circle" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+                    <h5 style="margin-bottom: 10px;">More Extensions Coming Soon</h5>
+                    <p style="margin: 0;">Additional browser extensions will be added here in the future.</p>
+                </div>
+            </div>
         </div>
         <!--</div>-->
     </div>
@@ -105,6 +179,35 @@
         e.preventDefault();
         window.open("AutoProfile://update", "_blank");
     });
+    
+    // Copy link functionality for extensions
+    $('.copy-link-btn').click(function (e) {
+        e.preventDefault();
+        var link = $(this).data('link');
+        
+        // Create temporary input to copy text
+        var tempInput = $('<input>');
+        $('body').append(tempInput);
+        tempInput.val(link).select();
+        document.execCommand('copy');
+        tempInput.remove();
+        
+        // Show success message
+        $(this).html('<i class="fa fa-check"></i> Copied!');
+        var btn = $(this);
+        setTimeout(function() {
+            btn.html('<i class="fa fa-copy"></i> Copy Download Link');
+        }, 2000);
+        
+        // Show tooltip with instruction
+        $(this).attr('data-original-title', 'Link copied! Paste in new browser tab to download')
+               .tooltip('show');
+        
+        setTimeout(function() {
+            btn.attr('data-original-title', 'Click to copy download link');
+        }, 3000);
+    });
+    
     $(".rediect").click(function (e) {
         e.preventDefault();
         $.ajax({
@@ -125,4 +228,3 @@
 
 </script>
 @endsection
-

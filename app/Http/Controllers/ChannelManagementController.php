@@ -3206,8 +3206,8 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             $account->recovery = $info->recovery;
             $account->full_info = json_encode($info);
             $account->created = Utils::timeToStringGmT7(time());
-            if (isset($request->kas_profile_id)) {
-                $account->kas_profile_id = $request->kas_profile_id;
+            if (isset($request->kasm_profile_id)) {
+                $account->kasm_profile_id = $request->kasm_profile_id;
             }
             if (isset($request->moon_profile_id)) {
                 $account->moon_profile_id = $request->moon_profile_id;
@@ -3919,8 +3919,8 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
         if (isset($request->status)) {
             $data->status = $request->status;
         }
-        if (isset($request->kas_profile_id)) {
-            $data->kas_profile_id = trim($request->kas_profile_id);
+        if (isset($request->kasm_profile_id)) {
+            $data->kasm_profile_id = trim($request->kasm_profile_id);
         }
         if (isset($request->moon_profile_id)) {
             $data->moon_profile_id = trim($request->moon_profile_id);
@@ -3956,7 +3956,7 @@ increasing,note,0,del_status,0,1,$date,1 from accountinfo where is_music_channel
             // Lấy danh sách mail cần đồng bộ từ bảng accountinfo_making
             $emailsToSync = AccountInfoMaking::where('status_email', '1')
                     ->where('status_channel', '1')
-                    ->whereNotNull('kas_profile_id')
+                    ->whereNotNull('kasm_profile_id')
                     ->whereNotNull('moon_profile_id')
                     ->whereNotNull('channel_id')
                     ->where('is_sync', '0')

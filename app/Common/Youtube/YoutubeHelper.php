@@ -1276,10 +1276,9 @@ class YoutubeHelper {
             return chr(hexdec($a[1]));
         }, $response
         );
-        Utils::write("save/video_full.txt", $response);
+//        Utils::write("save/video_full.txt", $response);
         preg_match("/<meta itemprop=\"duration\" content=\"([^\"]+)/", $response, $mat);
         if (count($mat) > 1) {
-            Log::info(json_encode($mat));
             $tmpDur = $mat[1];
             $tmpDur = str_replace("PT", "", $tmpDur);
             $tmpDur = str_replace("S", "", $tmpDur);

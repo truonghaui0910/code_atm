@@ -470,7 +470,7 @@ class ClaimController extends Controller {
                 if (!isset($st->video_id) || $st->video_id == null) {
                     $data->yt_distributor = "Not_Check_Yet";
                 } else {
-                    $data->yt_distributor_check_time = !empty($st->time) ? Utils::calcTimeText($st->time): null;
+                    $data->yt_distributor_check_time = !empty($st->time) ? Utils::calcTimeText($st->time) : null;
                     if ($st->distributor == null) {
                         $data->yt_distributor = "No_Claim";
                     } else {
@@ -3456,10 +3456,10 @@ class ClaimController extends Controller {
                 if (isset($shortText->video_id) && $shortText->video_id != null && $shortText->video_id != "" && isset($shortText->gmail) && $shortText->gmail != null && $shortText->gmail != "") {
                     $cmd = "sudo /home/tools/env/bin/python /home/tools/CopyRight.py check_copyright2 $shortText->gmail $shortText->video_id";
                     $rs = shell_exec($cmd);
+                    $title = null;
+                    $artists = [];
                     if ($rs != null && $rs != "") {
                         $info = json_decode($rs);
-                        $title = null;
-                        $artists = [];
                         $assetId = null;
                         $distributor = null;
                         if (isset($info->receivedClaims[0]->asset->metadata->soundRecording->title)) {
@@ -3488,6 +3488,10 @@ class ClaimController extends Controller {
                     if ($assetId != null) {
                         $claim->asset_id = $assetId;
                     }
+//                    if (!Utils::containString($title, "Metadata is hidden")) {
+                        $claim->claim_song_name = $title;
+                        $claim->claim_artist = implode(", ", $artists);
+//                    }
                     $claim->save();
 
                     if ($artists == []) {

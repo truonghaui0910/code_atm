@@ -979,7 +979,7 @@ class Test2 extends Command {
         try {
             // Lấy danh sách users từ bảng users
             $users = DB::table('users')
-                    ->select('user_name', 'password_plaintext','name','avatar')
+                    ->select('user_name', 'password_plaintext', 'name', 'avatar')
                     ->where('status', '1')
                     ->where('role', 'LIKE', '%26%')
 //                    ->where('description', '=', 'admin')
@@ -1042,6 +1042,26 @@ class Test2 extends Command {
             error_log(json_encode($rp));
         } catch (Exception $e) {
             error_log("syncUsersToExternalSystem error: " . $e->getMessage());
+        }
+    }
+
+    //đồng bộ lại tên bài hát và tên nghệ sỹ của  bài claim
+    public function syncClaimArtist() {
+        $datas = \App\Http\Models\CampaignStatistics::where("type", 2)
+                ->whereNull("claim_artist")
+                ->whereNotNull("short_text")
+                ->whereIn("status", [1, 4])
+                ->orderBy("id", "desc")
+                ->get();
+        foreach ($datas as $data) {
+//            error_log("process claim $data->id $data->campaign_name start");
+            $claim = new \App\Http\Controllers\ClaimController();
+            $req = new \Illuminate\Http\Request();
+            $req->id = $data->id;
+            $req->remake = 0;
+            $rs = $claim->checkClaimDistributor($req);
+            error_log("process claim $data->id $data->campaign_name end");
+//            break;
         }
     }
 

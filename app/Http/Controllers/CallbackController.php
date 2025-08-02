@@ -1190,10 +1190,10 @@ class CallbackController extends Controller {
             $rs = shell_exec($cmd);
             Log::info("callbackUploadClaim $campaignId " . $cmd);
             Log::info("callbackUploadClaim $campaignId " . $rs);
+            $title = null;
+            $artists = [];
             if ($rs != null && $rs != "") {
                 $info = json_decode($rs);
-                $title = null;
-                $artists = [];
                 $assetId = null;
                 $distributor = null;
                 if (isset($info->receivedClaims[0]->asset->metadata->soundRecording->title)) {
@@ -1245,6 +1245,8 @@ class CallbackController extends Controller {
                 $shortText->time_gmt7 = Utils::timeToStringGmT7(time());
                 $shortText->time = time();
                 $campaign->short_text = json_encode($shortText);
+                $campaign->claim_song_name = $title;
+                $campaign->claim_artist = implode(", ", $artists);
                 $campaign->save();
             }
             $message = "#$campaignId $campaignName belong to $distributor";

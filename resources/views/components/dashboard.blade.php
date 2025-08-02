@@ -742,7 +742,7 @@
 
 
 
-<!--<div class="row">
+<div class="row">
     <div class="col-lg-6">
         <div class="portlet">
 	<div id="submit-promo-claim" class="portlet-heading portlet-default">
@@ -818,7 +818,7 @@
                             <div class="form-group row">
                                 <label class="col-8 col-form-label">Link</label>
                                 <div class="col-12">
-                                    <input id="mix_link" class="form-control" type="text" name="mix_link">
+                                    <!--<input id="mix_link" class="form-control" type="text" name="mix_link">-->
                                     <textarea id="mix_link" class="form-control" rows="5" name="mix_link" spellcheck="false" style="line-height: 1.25"></textarea>
                                 </div>
                             </div>
@@ -963,7 +963,26 @@
 
     </div>
 
+    <!--    <div class="col-lg-4">
+        <div class="card-box">
+            <h4 class="header-title m-t-0 m-b-30">Tasks</h4>
+    <?php ?>
+            <form id="frm-tasks">
+
+                @foreach($listTasks as $data)
+                <div class="checkbox checkbox-primary">
+                    <input id="{{$data->code}}" class='{{$data->code}} tasks' type="checkbox" {{ $data->status }} name="{{$data->code}}">
+                    <label for="{{$data->code}}">
+                        {{$data->name}} <span class="color-red">{{$data->note}}</span>
+                    </label>
+                </div>
+                @endforeach
+
+            </form>
+        </div>
 </div>-->
+
+</div>
 
 <div class="row">
     <div class="col-lg-12">
